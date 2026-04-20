@@ -1,0 +1,917 @@
+import pytest
+from tests.conftest import auth_headers
+
+
+class TestListRequirements:
+    @pytest.mark.asyncio
+    async def test_list_requirements_success(
+        self, client, normal_user, sample_iteration, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert isinstance(body["data"], list)
+        assert len(body["data"]) >= 1
+        item = body["data"][0]
+        assert item["id"] == sample_requirement.id
+        assert "title" in item
+        assert "req_type" in item
+        assert "priority" in item
+        assert "status" in item
+        assert "task_count" in item
+        assert "created_by" in item
+        assert "created_at" in item
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_filter_by_status(
+        self, client, normal_user, sample_iteration, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements?status=drafting_req",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert all(r["status"] == "drafting_req" for r in body["data"])
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_filter_by_req_type(
+        self, client, normal_user, sample_iteration, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements?req_type=bug",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert all(r["req_type"] == "bug" for r in body["data"])
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_sort_by_priority_desc(
+        self, client, normal_user, sample_iteration, sample_requirement, db
+    ):
+        from app.models import Requirement
+
+        req2 = Requirement(
+            iteration_id=sample_iteration.id,
+            title="高优先级",
+            req_type="bug",
+            priority=99,
+            status="drafting_req",
+            created_by=normal_user.id,
+        )
+        db.add(req2)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements?sort_by=priority&sort_order=desc",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        priorities = [r["priority"] for r in body["data"]]
+        assert priorities == sorted(priorities, reverse=True)
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_sort_by_created_at_asc(
+        self, client, normal_user, sample_iteration, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements?sort_by=created_at&sort_order=asc",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert len(body["data"]) >= 1
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_empty_for_new_iteration(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert isinstance(body["data"], list)
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_excludes_soft_deleted(
+        self, client, normal_user, sample_iteration, sample_requirement, db
+    ):
+        from datetime import datetime
+
+        sample_requirement.is_deleted = True
+        sample_requirement.deleted_at = datetime.utcnow()
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        ids = [r["id"] for r in body["data"]]
+        assert sample_requirement.id not in ids
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_non_member_forbidden(
+        self, client, another_user, sample_iteration
+    ):
+        headers = auth_headers(another_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
+
+
+class TestCreateRequirement:
+    @pytest.mark.asyncio
+    async def test_create_feature_requirement_success(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "用户管理",
+                "req_type": "feature",
+                "priority": 10,
+                "description": "实现用户CRUD",
+                "type_detail": {"feature_description": "包含注册登录等功能"},
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert "id" in body["data"]
+
+    @pytest.mark.asyncio
+    async def test_create_optimization_requirement_success(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "性能优化",
+                "req_type": "optimization",
+                "priority": 5,
+                "description": "优化查询性能",
+                "type_detail": {"change_description": "重写数据库查询逻辑"},
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_create_bug_requirement_success(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "登录页面崩溃",
+                "req_type": "bug",
+                "priority": 20,
+                "description": "登录页面在某些情况下崩溃",
+                "type_detail": {
+                    "bug_steps": "1. 打开登录页 2. 输入特殊字符 3. 点击登录",
+                    "expected_behavior": "应提示输入错误",
+                    "actual_behavior": "页面崩溃",
+                    "fix_description": "需要增加输入校验",
+                },
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_create_requirement_without_type_detail(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "无详情需求",
+                "req_type": "feature",
+                "priority": 1,
+                "description": "测试无type_detail",
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_create_requirement_missing_title(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "",
+                "req_type": "feature",
+                "priority": 1,
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+
+    @pytest.mark.asyncio
+    async def test_create_requirement_invalid_req_type(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "测试需求",
+                "req_type": "invalid",
+                "priority": 1,
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+
+    @pytest.mark.asyncio
+    async def test_create_requirement_no_permission(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=[])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "用户管理",
+                "req_type": "feature",
+                "priority": 1,
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
+
+    @pytest.mark.asyncio
+    async def test_create_requirement_not_logged_in(
+        self, client, sample_iteration
+    ):
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "用户管理",
+                "req_type": "feature",
+                "priority": 1,
+            },
+        )
+        body = resp.json()
+        assert body["code"] == 40100
+
+
+class TestGetRequirementDetail:
+    @pytest.mark.asyncio
+    async def test_get_requirement_detail_success(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        data = body["data"]
+        assert data["id"] == sample_requirement.id
+        assert "title" in data
+        assert "req_type" in data
+        assert "status" in data
+        assert "description" in data
+        assert "type_detail" in data
+        assert "iteration" in data
+        assert "current_step" in data
+        assert "reviews" in data
+        assert "tasks" in data
+        assert "created_by" in data
+        assert "created_at" in data
+        assert "updated_at" in data
+
+    @pytest.mark.asyncio
+    async def test_get_requirement_not_found(self, client, normal_user):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            "/api/v1/requirements/999",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40400
+
+    @pytest.mark.asyncio
+    async def test_get_requirement_soft_deleted(
+        self, client, normal_user, sample_requirement, db
+    ):
+        from datetime import datetime
+
+        sample_requirement.is_deleted = True
+        sample_requirement.deleted_at = datetime.utcnow()
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40400
+
+
+class TestUpdateRequirement:
+    @pytest.mark.asyncio
+    async def test_update_requirement_in_drafting_req_success(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={
+                "title": "更新后的标题",
+                "type_detail": {"feature_description": "更新后的描述"},
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_update_requirement_in_reviewing_req_forbidden(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"title": "尝试修改"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_update_requirement_in_drafting_spec_forbidden(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"title": "尝试修改"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_update_requirement_in_approved_forbidden(
+        self, client, normal_user, approved_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{approved_requirement.id}",
+            json={"title": "尝试修改已通过需求"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_update_requirement_no_permission(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=[])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"title": "尝试修改"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
+
+    @pytest.mark.asyncio
+    async def test_update_requirement_after_rejection_back_to_drafting(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_req"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={
+                "title": "驳回后可重新编辑",
+                "type_detail": {"feature_description": "修改后的描述"},
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+
+class TestDeleteRequirement:
+    @pytest.mark.asyncio
+    async def test_delete_requirement_in_drafting_req_success(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:delete"])
+        resp = await client.delete(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_delete_requirement_in_reviewing_req_forbidden(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:delete"])
+        resp = await client.delete(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_delete_requirement_in_approved_forbidden(
+        self, client, normal_user, approved_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:delete"])
+        resp = await client.delete(
+            f"/api/v1/requirements/{approved_requirement.id}",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_delete_requirement_no_permission(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=[])
+        resp = await client.delete(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
+
+
+class TestSubmitReview:
+    @pytest.mark.asyncio
+    async def test_submit_review_from_drafting_req_to_reviewing_req(
+        self, client, normal_user, another_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_submit_review_from_drafting_spec_to_reviewing_spec(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_submit_review_from_drafting_tests_to_reviewing_tests(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_tests"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_submit_review_in_reviewing_req_forbidden(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_submit_review_in_approved_forbidden(
+        self, client, normal_user, another_user, approved_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{approved_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_submit_review_reviewer_not_found(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": 999},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40400
+
+    @pytest.mark.asyncio
+    async def test_submit_review_not_creator_forbidden(
+        self, client, another_user, sample_requirement
+    ):
+        headers = auth_headers(another_user.id, permissions=["requirement:edit"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
+
+
+class TestReview:
+    @pytest.mark.asyncio
+    async def test_approve_reviewing_req_to_drafting_spec(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="requirement",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=["requirement:review_req"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "approve"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_approve_reviewing_spec_to_drafting_tests(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_spec"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="specification",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=["requirement:review_spec"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "approve"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_approve_reviewing_tests_to_approved(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_tests"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="test_case",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(
+            another_user.id, permissions=["requirement:review_tests"]
+        )
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "approve"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_reject_reviewing_req_to_drafting_req(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="requirement",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=["requirement:review_req"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "reject", "comment": "描述不清晰"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_reject_reviewing_spec_to_drafting_spec(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_spec"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="specification",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=["requirement:review_spec"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "reject", "comment": "API设计有误"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_reject_reviewing_tests_to_drafting_tests(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_tests"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="test_case",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(
+            another_user.id, permissions=["requirement:review_tests"]
+        )
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "reject", "comment": "用例不完整"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_reject_without_comment_forbidden(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="requirement",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=["requirement:review_req"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "reject", "comment": ""},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40302
+
+    @pytest.mark.asyncio
+    async def test_review_not_designated_reviewer_forbidden(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="requirement",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:review_req"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "approve"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40301
+
+    @pytest.mark.asyncio
+    async def test_review_already_processed(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from datetime import datetime
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="requirement",
+            reviewer_id=another_user.id,
+            status="approved",
+            reviewed_at=datetime.utcnow(),
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=["requirement:review_req"])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "approve"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40303
+
+    @pytest.mark.asyncio
+    async def test_review_permission_mismatch(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "reviewing_req"
+        db.add(sample_requirement)
+        await db.flush()
+
+        from app.models import RequirementReview
+
+        review = RequirementReview(
+            requirement_id=sample_requirement.id,
+            review_type="requirement",
+            reviewer_id=another_user.id,
+            status="pending",
+        )
+        db.add(review)
+        await db.commit()
+
+        headers = auth_headers(
+            another_user.id, permissions=["requirement:review_spec"]
+        )
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/review",
+            json={"action": "approve"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
