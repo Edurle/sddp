@@ -1,5 +1,11 @@
 import axios from 'axios'
 
+export interface ApiResponse<T = unknown> {
+  code: number
+  message: string
+  data: T
+}
+
 export const apiClient = axios.create({
   baseURL: '',
   headers: {
@@ -16,7 +22,14 @@ apiClient.interceptors.request.use((config) => {
 })
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const body = response.data as ApiResponse
+    if (body && typeof body.code === 'number' && body.code !== 0) {
+      const err = new Error(body.message || '请求失败')
+      return Promise.reject(err)
+    }
+    return response
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
