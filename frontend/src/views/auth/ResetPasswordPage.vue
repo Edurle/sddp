@@ -1,6 +1,6 @@
 <template>
   <div class="reset-password-page">
-    <form @submit.prevent="handleSubmit">
+    <form @submit.prevent="handleSubmit" novalidate>
       <div class="form-group">
         <label for="password">新密码</label>
         <input
@@ -39,8 +39,8 @@ const error = ref('')
 async function handleSubmit() {
   error.value = ''
 
-  if (password.value.length < 6) {
-    error.value = '密码太短，至少需要6个字符'
+  if (password.value.length < 8) {
+    error.value = '密码太短，至少需要8个字符'
     return
   }
 

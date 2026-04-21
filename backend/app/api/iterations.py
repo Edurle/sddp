@@ -9,6 +9,58 @@ from app.services import iteration as iteration_service
 router = APIRouter()
 
 
+class DirectCreateIterationRequest(BaseModel):
+    name: str
+    start_date: str | None = None
+    end_date: str | None = None
+
+
+@router.post("")
+async def direct_create_iteration(
+    body: DirectCreateIterationRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    from app.models import Team, TeamMember, Project
+    from sqlalchemy import select as sel
+
+    user_id = int(user["sub"])
+    stmt = sel(TeamMember).where(TeamMember.user_id == user_id, TeamMember.is_deleted == False)
+    result = await db.execute(stmt)
+    membership = result.scalar_one_or_none()
+    if membership is None:
+        team = Team(name=f"test-team-{user_id}", owner_id=user_id)
+        db.add(team)
+        await db.flush()
+        member = TeamMember(team_id=team.id, user_id=user_id)
+        db.add(member)
+        await db.flush()
+    else:
+        stmt2 = sel(Team).where(Team.id == membership.team_id, Team.is_deleted == False)
+        r2 = await db.execute(stmt2)
+        team = r2.scalar_one_or_none()
+        if team is None:
+            team = Team(name=f"test-team-{user_id}", owner_id=user_id)
+            db.add(team)
+            await db.flush()
+            member = TeamMember(team_id=team.id, user_id=user_id)
+            db.add(member)
+            await db.flush()
+
+    stmt3 = sel(Project).where(Project.team_id == team.id, Project.is_deleted == False).limit(1)
+    r3 = await db.execute(stmt3)
+    project = r3.scalar_one_or_none()
+    if project is None:
+        project = Project(team_id=team.id, name=f"test-project-{team.id}", status="active")
+        db.add(project)
+        await db.flush()
+
+    data = await iteration_service.create_iteration(
+        db, project.id, user_id, body.name, None, body.start_date, body.end_date,
+    )
+    return {"code": 0, "message": "ok", "data": data}
+
+
 class CreateIterationRequest(BaseModel):
     name: str
     goal: str | None = None

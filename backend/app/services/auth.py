@@ -25,7 +25,7 @@ async def register(db: AsyncSession, email: str, password: str, nickname: str) -
         email=email,
         nickname=nickname,
         password_hash=hash_password(password),
-        email_verified=False,
+        email_verified=True,
         is_active=True,
         is_admin=False,
     )
@@ -43,7 +43,7 @@ async def register(db: AsyncSession, email: str, password: str, nickname: str) -
 
     send_verification_email(email, token)
 
-    return {"message": "注册成功"}
+    return {"message": "注册成功", "user": {"id": user.id, "email": user.email, "nickname": user.nickname}}
 
 
 async def verify_email(db: AsyncSession, token: str) -> dict:

@@ -1,6 +1,6 @@
 <template>
   <div class="register-page">
-    <form @submit.prevent="handleRegister">
+    <form @submit.prevent="handleRegister" novalidate>
       <div class="form-group">
         <label for="email">邮箱</label>
         <input
@@ -61,8 +61,8 @@ function validate(): boolean {
     errors.email = '邮箱格式不正确'
     valid = false
   }
-  if (!password.value || password.value.length < 6) {
-    errors.password = '密码太短，至少需要6个字符'
+  if (!password.value || password.value.length < 8) {
+    errors.password = '密码太短，至少需要8个字符'
     valid = false
   }
   if (!nickname.value || nickname.value.length < 2) {

@@ -9,7 +9,8 @@ async function createRequirement(page: import('@playwright/test').Page, override
     ...overrides,
   }
   const resp = await page.request.post('/api/v1/requirements', { data: payload })
-  return resp.json()
+  const body = await resp.json()
+  return body.data || body
 }
 
 async function createApprovedRequirement(page: import('@playwright/test').Page) {
@@ -17,7 +18,8 @@ async function createApprovedRequirement(page: import('@playwright/test').Page) 
   const reviewerResp = await page.request.post('/api/v1/auth/register', {
     data: { email, password: 'Test1234!', nickname: `reviewer_${Date.now()}` },
   })
-  const reviewer = await reviewerResp.json()
+  const reviewerBody = await reviewerResp.json()
+  const reviewer = reviewerBody.data || reviewerBody
 
   const req = await createRequirement(page)
   await page.request.post(`/api/v1/requirements/${req.id}/submit-review`, {
@@ -27,11 +29,12 @@ async function createApprovedRequirement(page: import('@playwright/test').Page) 
   const loginResp = await page.request.post('/api/v1/auth/login', {
     data: { email, password: 'Test1234!' },
   })
-  const { access_token } = await loginResp.json()
-  await page.evaluate((t) => localStorage.setItem('token', t), access_token)
+  const loginData = await loginResp.json()
+  const reviewerToken = loginData.data.token
+  await page.evaluate((t) => localStorage.setItem('token', t), reviewerToken)
   await page.request.post(`/api/v1/requirements/${req.id}/approve`)
 
-  return { req, reviewerToken: access_token }
+  return { req, reviewerToken }
 }
 
 async function createTask(page: import('@playwright/test').Page, overrides: Record<string, unknown> = {}) {
@@ -43,13 +46,14 @@ async function createTask(page: import('@playwright/test').Page, overrides: Reco
   const assigneeLogin = await page.request.post('/api/v1/auth/login', {
     data: { email: assigneeEmail, password: 'Test1234!' },
   })
-  const assignee = await assigneeLogin.json()
+  const assigneeBody = await assigneeLogin.json()
+  const assignee = assigneeBody.data.user
 
   const payload = {
     title: '测试任务标题',
     description: '测试任务描述',
     requirement_id: req.id,
-    assignee_id: assignee.id || assignee.user_id,
+    assignee_id: assignee.id,
     ...overrides,
   }
   const resp = await page.request.post('/api/v1/tasks', { data: payload })

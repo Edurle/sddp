@@ -1,5 +1,7 @@
 <template>
   <div class="admin-users-page">
+    <div v-if="accessDenied" class="error-message">无权限</div>
+    <template v-else>
     <h1>用户管理</h1>
     <div class="toolbar">
       <input
@@ -30,7 +32,7 @@
               :data-testid="`user-mgmt-btn-toggle-status-${u.id}`"
               @click="toggleStatus(u)"
             >
-              {{ u.status === 'active' || u.status === '启用' ? '禁用' : '启用' }}
+              {{ u.is_active ? '禁用' : '启用' }}
             </button>
           </td>
         </tr>
@@ -39,7 +41,7 @@
     <div data-testid="user-mgmt-pag-list">
       <button :disabled="page <= 1" @click="page--; fetchUsers()">上一页</button>
       <span>第 {{ page }} 页</span>
-      <button @click="page++; fetchUsers()">下一页</button>
+      <button v-show="page * pageSize < total" @click="page++; fetchUsers()">下一页</button>
     </div>
 
     <dialog :open="showCreateDialog" data-testid="user-mgmt-dlg-create">
@@ -63,6 +65,7 @@
       </div>
     </dialog>
     <div v-if="errorMsg" class="error-message">{{ errorMsg }}</div>
+    </template>
   </div>
 </template>
 
@@ -74,15 +77,19 @@ interface UserItem {
   id: number
   email: string
   nickname: string
-  status: string
+  is_active: boolean
+  is_admin: boolean
 }
 
 const search = ref('')
 const users = ref<UserItem[]>([])
 const page = ref(1)
+const total = ref(0)
+const pageSize = 20
 const showCreateDialog = ref(false)
 const errorMsg = ref('')
 const createError = ref('')
+const accessDenied = ref(false)
 
 const newUser = reactive({ email: '', nickname: '', password: '' })
 
@@ -103,7 +110,12 @@ async function fetchUsers() {
     const res = await apiClient.get('/api/v1/admin/users', { params })
     const data = res.data?.data
     users.value = data?.items || data?.list || data || []
-  } catch {
+    total.value = data?.total || 0
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '获取失败'
+    if (msg.includes('无权限') || msg.includes('forbidden') || msg.includes('403')) {
+      accessDenied.value = true
+    }
     users.value = []
   }
 }
@@ -134,9 +146,9 @@ async function createUser() {
 async function toggleStatus(u: UserItem) {
   errorMsg.value = ''
   try {
-    const newStatus = u.status === 'active' ? 'disabled' : 'active'
-    await apiClient.patch(`/api/v1/admin/users/${u.id}/status`, { status: newStatus })
-    u.status = newStatus
+    const newIsActive = !u.is_active
+    await apiClient.put(`/api/v1/admin/users/${u.id}/status`, { is_active: newIsActive })
+    u.is_active = newIsActive
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '操作失败'
     if (msg.includes('不能禁用自己') || msg.includes('不能禁用自身')) {

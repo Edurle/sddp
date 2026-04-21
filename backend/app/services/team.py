@@ -80,17 +80,18 @@ async def update_team(db: AsyncSession, team_id: int, name: str | None, descript
     return _team_to_dict(team)
 
 
-async def dissolve_team(db: AsyncSession, team_id: int, user_id: int, confirm_name: str) -> dict:
-    try:
-        confirm_name = confirm_name.encode("latin-1").decode("utf-8")
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        pass
+async def dissolve_team(db: AsyncSession, team_id: int, user_id: int, confirm_name: str | None = None) -> dict:
+    if confirm_name:
+        try:
+            confirm_name = confirm_name.encode("latin-1").decode("utf-8")
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            pass
 
     team = await _get_team_or_fail(db, team_id)
     if team.owner_id != user_id:
         from app.exceptions import BusinessError
         raise BusinessError(ERR_FORBIDDEN, "无权限")
-    if confirm_name != team.name:
+    if confirm_name and confirm_name != team.name:
         from app.exceptions import BusinessError
         raise BusinessError(ERR_VALIDATION, "确认名称不匹配")
 
@@ -121,7 +122,9 @@ async def transfer_team(db: AsyncSession, team_id: int, user_id: int, new_owner_
 
 
 async def get_members(db: AsyncSession, team_id: int, role_id: int | None = None) -> list[dict]:
-    from app.models.role import MemberRole
+    from app.models.role import MemberRole, Role as RoleModel, RolePermission
+    team = await _get_team_or_fail(db, team_id)
+
     if role_id is not None:
         stmt = (
             select(TeamMember)
@@ -144,12 +147,30 @@ async def get_members(db: AsyncSession, team_id: int, role_id: int | None = None
     items = []
     for m in members:
         user = await _get_user(db, m.user_id)
+
+        mr_stmt = select(MemberRole).where(MemberRole.member_id == m.id)
+        mr_result = await db.execute(mr_stmt)
+        member_roles = mr_result.scalars().all()
+
+        role_ids = []
+        role_names = []
+        for mr in member_roles:
+            role_stmt = select(RoleModel).where(RoleModel.id == mr.role_id, RoleModel.is_deleted == False)
+            role_result = await db.execute(role_stmt)
+            role = role_result.scalar_one_or_none()
+            if role:
+                role_ids.append(role.id)
+                role_names.append(role.name)
+
         items.append({
             "id": m.id,
             "team_id": m.team_id,
             "user_id": m.user_id,
             "joined_at": m.joined_at.isoformat() if m.joined_at else None,
             "user": _user_to_dict(user) if user else None,
+            "is_owner": m.user_id == team.owner_id,
+            "role_ids": role_ids,
+            "role_names": role_names,
         })
     return items
 
@@ -237,6 +258,7 @@ async def assign_roles(db: AsyncSession, team_id: int, user_id: int, role_ids: l
     existing = result.scalars().all()
     for mr in existing:
         await db.delete(mr)
+    await db.flush()
 
     for rid in role_ids:
         db.add(MemberRole(member_id=member.id, role_id=rid))

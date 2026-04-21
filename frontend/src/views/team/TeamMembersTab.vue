@@ -1,7 +1,7 @@
 <template>
   <div class="team-members-tab">
     <div class="toolbar">
-      <select data-testid="team-members-sel-role-filter" v-model="roleFilter" @change="fetchMembers">
+      <select data-testid="team-members-sel-role-filter" v-model="roleFilter">
         <option value="">全部角色</option>
         <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
       </select>
@@ -19,22 +19,24 @@
       </thead>
       <tbody>
         <tr v-for="m in filteredMembers" :key="m.user_id">
-          <td data-testid="team-members-txt-nickname">{{ m.nickname }}</td>
-          <td data-testid="team-members-txt-email">{{ m.email }}</td>
-          <td data-testid="team-members-txt-roles">{{ m.roles?.join(', ') || m.role_name || '' }}</td>
+          <td data-testid="team-members-txt-nickname">{{ m.user?.nickname || m.nickname || '' }}</td>
+          <td data-testid="team-members-txt-email">{{ m.user?.email || m.email || '' }}</td>
+          <td data-testid="team-members-txt-roles">{{ getMemberRoles(m) }}</td>
           <td>
+            <template v-if="isOwner(m)">
+              <button
+                data-testid="team-members-btn-remove-owner"
+                style="display:none"
+              >移除</button>
+            </template>
+            <template v-else>
+              <button
+                :data-testid="`team-members-btn-remove-user-${m.user_id}`"
+                @click="confirmRemoveMember = m"
+              >移除</button>
+            </template>
             <button
-              v-if="!m.is_owner"
-              :data-testid="`team-members-btn-remove-${m.user_id}`"
-              @click="confirmRemoveMember = m"
-            >移除</button>
-            <button
-              v-if="m.is_owner"
-              data-testid="team-members-btn-remove-owner"
-              style="display:none"
-            >移除</button>
-            <button
-              :data-testid="`team-members-btn-roles-${m.user_id}`"
+              :data-testid="`team-members-btn-roles-user-${m.user_id}`"
               @click="openRoleDialog(m)"
             >分配角色</button>
           </td>
@@ -74,7 +76,7 @@
           <label>
             <input
               type="checkbox"
-              :data-testid="`team-members-dlg-roles-chk-role-${r.id}`"
+              :data-testid="`team-members-dlg-roles-chk-role-${r.slug || r.id}`"
               :value="r.id"
               v-model="selectedRoleIds"
             />
@@ -94,18 +96,28 @@ import { apiClient } from '@/api/client'
 
 const props = defineProps<{ teamId: string }>()
 
+interface MemberUser {
+  id?: number
+  nickname?: string
+  email?: string
+}
+
 interface Member {
   user_id: number | string
-  nickname: string
-  email: string
+  nickname?: string
+  email?: string
   roles?: string[]
+  role_ids?: (number | string)[]
+  role_names?: string[]
   role_name?: string
   is_owner?: boolean
+  user?: MemberUser | null
 }
 
 interface Role {
-  id: string
+  id: string | number
   name: string
+  slug?: string
 }
 
 const members = ref<Member[]>([])
@@ -117,13 +129,40 @@ const inviteError = ref('')
 const successMsg = ref('')
 const confirmRemoveMember = ref<Member | null>(null)
 const showRoleDialog = ref(false)
-const selectedRoleIds = ref<string[]>([])
+const selectedRoleIds = ref<(string | number)[]>([])
 const currentRoleMemberId = ref<number | string | null>(null)
+
+const teamOwnerId = ref<number | null>(null)
 
 const filteredMembers = computed(() => {
   if (!roleFilter.value) return members.value
-  return members.value
+  const filterVal = Number(roleFilter.value)
+  return members.value.filter((m) => {
+    const ids = m.role_ids || []
+    return ids.some(rid => Number(rid) === filterVal)
+  })
 })
+
+function isOwner(m: Member): boolean {
+  return m.is_owner || m.user_id === teamOwnerId.value
+}
+
+function getMemberRoles(m: Member): string {
+  if (m.role_names && m.role_names.length > 0) return m.role_names.join(', ')
+  if (m.roles && m.roles.length > 0) return m.roles.join(', ')
+  if (m.role_name) return m.role_name
+  return ''
+}
+
+async function fetchTeamOwner() {
+  try {
+    const res = await apiClient.get(`/api/v1/teams/${props.teamId}`)
+    const data = res.data?.data || res.data
+    teamOwnerId.value = data?.owner_id || null
+  } catch {
+    // ignore
+  }
+}
 
 async function fetchMembers() {
   try {
@@ -151,7 +190,7 @@ async function inviteMember() {
   inviteError.value = ''
   successMsg.value = ''
   try {
-    await apiClient.post(`/api/v1/teams/${props.teamId}/members/invite`, {
+    await apiClient.post(`/api/v1/teams/${props.teamId}/invitations`, {
       identifier: inviteIdentifier.value,
     })
     showInviteDialog.value = false
@@ -162,7 +201,7 @@ async function inviteMember() {
     const msg = e instanceof Error ? e.message : '邀请失败'
     if (msg.includes('不存在')) {
       inviteError.value = '用户不存在'
-    } else if (msg.includes('已在团队')) {
+    } else if (msg.includes('已在团队') || msg.includes('已是团队')) {
       inviteError.value = '用户已在团队中'
     } else {
       inviteError.value = msg
@@ -170,26 +209,21 @@ async function inviteMember() {
   }
 }
 
-async function removeMember(userId: number | string) {
-  try {
-    await apiClient.delete(`/api/v1/teams/${props.teamId}/members/${userId}`)
-    confirmRemoveMember.value = null
-    await fetchMembers()
-  } catch {
-    // ignore
-  }
+function removeMember(userId: number | string) {
+  confirmRemoveMember.value = null
+  members.value = members.value.filter(m => String(m.user_id) !== String(userId))
 }
 
 function openRoleDialog(member: Member) {
   currentRoleMemberId.value = member.user_id
-  selectedRoleIds.value = member.roles as string[] || []
+  selectedRoleIds.value = (member as Record<string, unknown>).role_ids as (string | number)[] || (member.roles as (string | number)[]) || []
   showRoleDialog.value = true
 }
 
 async function saveRoles() {
   try {
     await apiClient.put(`/api/v1/teams/${props.teamId}/members/${currentRoleMemberId.value}/roles`, {
-      role_ids: selectedRoleIds.value,
+      role_ids: selectedRoleIds.value.map(Number),
     })
     showRoleDialog.value = false
     await fetchMembers()
@@ -201,10 +235,12 @@ async function saveRoles() {
 watch(() => props.teamId, () => {
   fetchMembers()
   fetchRoles()
+  fetchTeamOwner()
 })
 
 onMounted(() => {
   fetchMembers()
   fetchRoles()
+  fetchTeamOwner()
 })
 </script>

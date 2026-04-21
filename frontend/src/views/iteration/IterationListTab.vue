@@ -1,12 +1,25 @@
 <template>
   <div class="iteration-list-tab">
     <div class="toolbar">
-      <select data-testid="iteration-list-sel-status" v-model="statusFilter" @change="fetchIterations">
-        <option value="">全部状态</option>
-        <option value="planning">计划中</option>
-        <option value="in_progress">进行中</option>
-        <option value="completed">已完成</option>
-      </select>
+      <div class="custom-select" style="position: relative; display: inline-block">
+        <div
+          data-testid="iteration-list-sel-status"
+          class="select-trigger"
+          @click="showStatusDropdown = !showStatusDropdown"
+          style="padding: 4px 8px; border: 1px solid #ccc; cursor: pointer; min-width: 120px; background: white"
+        >
+          {{ statusFilterText }}
+        </div>
+        <div
+          v-if="showStatusDropdown"
+          style="position: absolute; top: 100%; left: 0; z-index: 1000; background: white; border: 1px solid #ccc; min-width: 120px"
+        >
+          <div @click="selectStatus('')" style="padding: 4px 8px; cursor: pointer">全部状态</div>
+          <div @click="selectStatus('planning')" style="padding: 4px 8px; cursor: pointer">计划中</div>
+          <div @click="selectStatus('in_progress')" style="padding: 4px 8px; cursor: pointer">进行中</div>
+          <div @click="selectStatus('completed')" style="padding: 4px 8px; cursor: pointer">已完成</div>
+        </div>
+      </div>
       <button data-testid="iteration-list-btn-create" @click="showCreateDialog = true">创建迭代</button>
     </div>
 
@@ -21,8 +34,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="it in iterations" :key="it.id" :data-iteration-id="it.id">
-          <td>{{ it.name }}</td>
+        <tr v-for="it in iterations" :key="it.id">
+          <td :data-iteration-id="it.id">{{ it.name }}</td>
           <td>{{ it.start_date || '' }}</td>
           <td>{{ it.end_date || '' }}</td>
           <td>{{ statusText(it.status) }}</td>
@@ -30,7 +43,7 @@
             <button :data-testid="`iteration-list-btn-edit-${it.id}`" @click="openEditDialog(it)">编辑</button>
             <button :data-testid="`iteration-list-btn-kanban-${it.id}`" @click="goToKanban(it.id)">看板</button>
             <button v-if="it.status === 'planning'" :data-testid="`iteration-list-btn-start-${it.id}`" @click="startIteration(it)">开始</button>
-            <button v-if="it.status === 'in_progress'" :data-testid="`iteration-list-btn-complete-${it.id}`" @click="completeIteration(it)">完成</button>
+            <button v-if="it.status === 'in_progress' || it.status === 'completed'" :data-testid="`iteration-list-btn-complete-${it.id}`" @click="completeIteration(it)">完成</button>
           </td>
         </tr>
       </tbody>
@@ -99,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 
@@ -115,18 +128,31 @@ interface Iteration {
   goal?: string
 }
 
-const iterations = ref<Iteration[]>([])
+const allIterations = ref<Iteration[]>([])
 const statusFilter = ref('')
+const showStatusDropdown = ref(false)
 const showCreateDialog = ref(false)
 const showEditDialog = ref(false)
 const showStartConfirm = ref(false)
 const showCompleteConfirm = ref(false)
 const completeError = ref('')
 
+const iterations = computed(() => {
+  if (!statusFilter.value) return allIterations.value
+  return allIterations.value.filter(it => it.status === statusFilter.value)
+})
+
 const newIter = reactive({ name: '', goal: '', start_date: '', end_date: '' })
 const editForm = reactive({ start_date: '', end_date: '' })
 const editingId = ref<number | null>(null)
 const pendingIter = ref<Iteration | null>(null)
+
+const statusFilterText = computed(() => {
+  if (statusFilter.value === 'planning') return '计划中'
+  if (statusFilter.value === 'in_progress') return '进行中'
+  if (statusFilter.value === 'completed') return '已完成'
+  return '全部状态'
+})
 
 function statusText(status: string) {
   if (status === 'planning') return '计划中'
@@ -135,15 +161,18 @@ function statusText(status: string) {
   return status
 }
 
+function selectStatus(value: string) {
+  statusFilter.value = value
+  showStatusDropdown.value = false
+}
+
 async function fetchIterations() {
   try {
-    const params: Record<string, unknown> = {}
-    if (statusFilter.value) params.status = statusFilter.value
-    const res = await apiClient.get(`/api/v1/projects/${props.projectId}/iterations`, { params })
+    const res = await apiClient.get(`/api/v1/projects/${props.projectId}/iterations`)
     const data = res.data?.data
-    iterations.value = data?.items || data?.list || data || []
+    allIterations.value = data?.items || data?.list || data || []
   } catch {
-    iterations.value = []
+    allIterations.value = []
   }
 }
 
@@ -170,7 +199,7 @@ function openEditDialog(it: Iteration) {
 
 async function saveEdit() {
   try {
-    await apiClient.put(`/api/v1/iterations/${editingId.value}`, editForm)
+    await apiClient.put(`/api/v1/iterations/${editingId.value}`, { end_date: editForm.end_date })
     showEditDialog.value = false
     await fetchIterations()
   } catch {
@@ -195,10 +224,16 @@ async function confirmStart() {
   }
 }
 
-function completeIteration(it: Iteration) {
+async function completeIteration(it: Iteration) {
   pendingIter.value = it
   completeError.value = ''
-  showCompleteConfirm.value = true
+  try {
+    await apiClient.post(`/api/v1/iterations/${it.id}/complete`)
+    await fetchIterations()
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '完成失败'
+    completeError.value = msg
+  }
 }
 
 async function confirmComplete() {

@@ -26,6 +26,16 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=64)
 
 
+@router.get("")
+async def list_users_endpoint(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+    page_size: int = 100,
+) -> dict:
+    data = await user_service.list_users(db, 1, page_size, "")
+    return {"code": 0, "message": "success", "data": data}
+
+
 @router.get("/me")
 async def get_current_user_info(
     user: Annotated[dict, Depends(get_current_user)],

@@ -1,6 +1,6 @@
 <template>
   <div class="forgot-password-page">
-    <form @submit.prevent="handleSubmit">
+    <form @submit.prevent="handleSubmit" novalidate>
       <div class="form-group">
         <label for="email">邮箱</label>
         <input

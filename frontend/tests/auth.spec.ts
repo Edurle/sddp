@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Registration Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/register');

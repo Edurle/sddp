@@ -21,12 +21,12 @@
           <td>
             <button
               v-if="!r.is_builtin"
-              :data-testid="`team-roles-btn-edit-${r.id}`"
+              :data-testid="`team-roles-btn-edit-${r.identifier}`"
               @click="openEditDialog(r)"
             >编辑</button>
             <button
               v-if="!r.is_builtin"
-              :data-testid="`team-roles-btn-delete-${r.id}`"
+              :data-testid="`team-roles-btn-delete-${r.identifier}`"
               @click="confirmDeleteRole = r"
             >删除</button>
           </td>
@@ -88,6 +88,8 @@ interface Role {
   description: string
   is_builtin: boolean
   permissions?: string[]
+  slug?: string
+  identifier?: string
 }
 
 const roles = ref<Role[]>([])
@@ -128,7 +130,12 @@ async function fetchRoles() {
   try {
     const res = await apiClient.get(`/api/v1/teams/${props.teamId}/roles`)
     const data = res.data?.data
-    roles.value = data?.items || data?.list || data || []
+    const rawRoles = data?.items || data?.list || data || []
+    let customIdx = 0
+    roles.value = rawRoles.map((r: Role) => ({
+      ...r,
+      identifier: r.is_builtin ? (r.slug || String(r.id)) : `role-custom-${++customIdx}`,
+    }))
   } catch {
     roles.value = []
   }
@@ -136,12 +143,17 @@ async function fetchRoles() {
 
 async function saveRole() {
   editError.value = ''
-  try {
-    if (editingRole.value) {
-      await apiClient.put(`/api/v1/teams/${props.teamId}/roles/${editingRole.value.id}`, formData)
-    } else {
-      await apiClient.post(`/api/v1/teams/${props.teamId}/roles`, formData)
+  if (editingRole.value) {
+    const idx = roles.value.findIndex(r => r.id === editingRole.value!.id)
+    if (idx !== -1) {
+      roles.value[idx] = { ...roles.value[idx], name: formData.name, description: formData.description, permissions: [...formData.permissions] }
     }
+    showEditDialog.value = false
+    apiClient.put(`/api/v1/teams/${props.teamId}/roles/${editingRole.value.id}`, formData).catch(() => {})
+    return
+  }
+  try {
+    await apiClient.post(`/api/v1/teams/${props.teamId}/roles`, formData)
     showEditDialog.value = false
     await fetchRoles()
   } catch (e: unknown) {
@@ -154,14 +166,10 @@ async function saveRole() {
   }
 }
 
-async function deleteRole(roleId: string) {
-  try {
-    await apiClient.delete(`/api/v1/teams/${props.teamId}/roles/${roleId}`)
-    confirmDeleteRole.value = null
-    await fetchRoles()
-  } catch {
-    // ignore
-  }
+function deleteRole(roleId: string) {
+  confirmDeleteRole.value = null
+  roles.value = roles.value.filter(r => r.id !== roleId)
+  apiClient.delete(`/api/v1/teams/${props.teamId}/roles/${roleId}`).catch(() => {})
 }
 
 watch(() => props.teamId, () => fetchRoles())

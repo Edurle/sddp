@@ -50,19 +50,12 @@ const pendingInvitations = ref<Array<{ id: number; team_name?: string; name?: st
 
 async function fetchData() {
   try {
-    const [reviewsRes, tasksRes, invitationsRes] = await Promise.allSettled([
-      apiClient.get('/api/v1/dashboard/pending-reviews'),
-      apiClient.get('/api/v1/dashboard/pending-tasks'),
-      apiClient.get('/api/v1/dashboard/pending-invitations'),
-    ])
-    if (reviewsRes.status === 'fulfilled') {
-      pendingReviews.value = reviewsRes.value.data?.data?.items || reviewsRes.value.data?.data || []
-    }
-    if (tasksRes.status === 'fulfilled') {
-      pendingTasks.value = tasksRes.value.data?.data?.items || tasksRes.value.data?.data || []
-    }
-    if (invitationsRes.status === 'fulfilled') {
-      pendingInvitations.value = invitationsRes.value.data?.data?.items || invitationsRes.value.data?.data || []
+    const res = await apiClient.get('/api/v1/users/me/pending')
+    const data = res.data?.data
+    if (data) {
+      pendingReviews.value = data.pending_reviews || []
+      pendingTasks.value = data.pending_tasks || []
+      pendingInvitations.value = data.pending_invitations || []
     }
   } catch {
     // ignore fetch errors

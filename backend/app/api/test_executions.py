@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session
 from app.services.test_execution import get_execution_records, update_execution_record
 
 router = APIRouter()
@@ -32,7 +32,7 @@ records_router = APIRouter()
 async def update_record(
     id: int,
     body: UpdateExecutionRecordRequest,
-    user: Annotated[dict, Depends(require_permission("task:test"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated = Depends(get_db_session),
 ) -> dict:
     data = await update_execution_record(

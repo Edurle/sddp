@@ -12,12 +12,12 @@ test.describe('Admin Users Page', () => {
   });
 
   test('should search users by keyword', async ({ authenticatedPage: page }) => {
-    await page.getByTestId('user-mgmt-inp-search').fill('test@example');
-    await page.waitForTimeout(500);
+    await page.getByTestId('user-mgmt-inp-search').fill('exist@');
+    await page.waitForTimeout(1000);
     const rows = page.getByTestId('user-mgmt-tbl-users').locator('tbody tr');
     const count = await rows.count();
     for (let i = 0; i < count; i++) {
-      await expect(rows.nth(i)).toContainText('test@example');
+      await expect(rows.nth(i)).toContainText('exist@');
     }
   });
 
@@ -27,7 +27,9 @@ test.describe('Admin Users Page', () => {
       const nextBtn = pagination.getByText(/下一页|Next/);
       if (await nextBtn.isVisible()) {
         await nextBtn.click();
-        await expect(page.getByTestId('user-mgmt-tbl-users').locator('tbody tr')).toHaveCountGreaterThan(0);
+        const rows = page.getByTestId('user-mgmt-tbl-users').locator('tbody tr');
+        const count = await rows.count();
+        expect(count).toBeGreaterThan(0);
       }
     }
   });
@@ -97,6 +99,7 @@ test.describe('Admin Users Page - Access Control', () => {
     await page.getByTestId('login-inp-email').fill(testEmail);
     await page.getByTestId('login-inp-password').fill(testPassword);
     await page.getByTestId('login-btn-submit').click();
+    await page.waitForURL(/.*dashboard/);
     await page.goto('/admin/users');
     const body = page.locator('body');
     const hasForbidden = await body.getByText(/无权限|403|forbidden/i).isVisible().catch(() => false);

@@ -10,7 +10,7 @@ async function createRequirement(page: import('@playwright/test').Page, override
   }
   const resp = await page.request.post('/api/v1/requirements', { data: payload })
   const body = await resp.json()
-  return body
+  return body.data || body
 }
 
 async function createIteration(page: import('@playwright/test').Page) {
@@ -22,7 +22,7 @@ async function createIteration(page: import('@playwright/test').Page) {
     },
   })
   const body = await resp.json()
-  return body
+  return body.data || body
 }
 
 async function createReviewer(page: import('@playwright/test').Page) {
@@ -31,7 +31,7 @@ async function createReviewer(page: import('@playwright/test').Page) {
     data: { email, password: 'Test1234!', nickname: `reviewer_${Date.now()}` },
   })
   const body = await resp.json()
-  return body
+  return body.data || body
 }
 
 test.describe('需求详情页', () => {
@@ -154,8 +154,9 @@ test.describe('需求详情页', () => {
       const loginResp = await authenticatedPage.request.post('/api/v1/auth/login', {
         data: { email: reviewer.email, password: 'Test1234!' },
       })
-      const { access_token } = await loginResp.json()
-      await authenticatedPage.evaluate((t) => localStorage.setItem('token', t), access_token)
+      const loginData = await loginResp.json()
+      const token = loginData.data.token
+      await authenticatedPage.evaluate((t) => localStorage.setItem('token', t), token)
 
       await authenticatedPage.goto(`/requirements/${req.id}`)
 
@@ -177,8 +178,9 @@ test.describe('需求详情页', () => {
       const loginResp = await authenticatedPage.request.post('/api/v1/auth/login', {
         data: { email: reviewer.email, password: 'Test1234!' },
       })
-      const { access_token } = await loginResp.json()
-      await authenticatedPage.evaluate((t) => localStorage.setItem('token', t), access_token)
+      const loginData = await loginResp.json()
+      const token = loginData.data.token
+      await authenticatedPage.evaluate((t) => localStorage.setItem('token', t), token)
 
       await authenticatedPage.goto(`/requirements/${req.id}`)
 
@@ -203,8 +205,9 @@ test.describe('需求详情页', () => {
       const loginResp = await authenticatedPage.request.post('/api/v1/auth/login', {
         data: { email: reviewer.email, password: 'Test1234!' },
       })
-      const { access_token } = await loginResp.json()
-      await authenticatedPage.evaluate((t) => localStorage.setItem('token', t), access_token)
+      const loginData = await loginResp.json()
+      const token = loginData.data.token
+      await authenticatedPage.evaluate((t) => localStorage.setItem('token', t), token)
 
       await authenticatedPage.goto(`/requirements/${req.id}`)
 

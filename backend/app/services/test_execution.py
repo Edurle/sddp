@@ -25,6 +25,7 @@ async def list_execution_rounds(db: AsyncSession, task_id: int) -> list[dict]:
         records = rec_result.scalars().all()
 
         items.append({
+            "id": r.id,
             "round_id": r.id,
             "total": len(records),
             "passed": sum(1 for rec in records if rec.status == "passed"),
@@ -49,7 +50,7 @@ async def get_execution_records(db: AsyncSession, round_id: int) -> list[dict]:
 
         items.append({
             "id": rec.id,
-            "test_case": {"id": rec.test_case_id} if tc else None,
+            "test_case": {"id": rec.test_case_id, "title": tc.title} if tc else None,
             "status": rec.status,
             "actual_result": rec.actual_result,
             "failure_reason": rec.failure_reason,

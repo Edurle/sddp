@@ -117,6 +117,7 @@ async def list_spec_versions(
     return [
         {
             "version": v["version"],
+            "content": v.get("content"),
             "created_by": v.get("created_by"),
             "created_at": v.get("created_at").isoformat() if v.get("created_at") else None,
         }

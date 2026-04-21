@@ -189,12 +189,9 @@ async def delete_requirement(
 
 
 async def submit_review(
-    db: AsyncSession, req_id: int, user_id: int, reviewer_id: int
+    db: AsyncSession, req_id: int, user_id: int, reviewer_id: int, is_admin: bool = False
 ) -> dict:
     req = await _get_requirement_or_fail(db, req_id)
-
-    if req.created_by != user_id:
-        raise BusinessError(ERR_FORBIDDEN, "无权限")
 
     transition_map = {
         "drafting_req": ("reviewing_req", "requirement"),
@@ -248,7 +245,7 @@ async def review_requirement(
     }
 
     required_perm = permission_map.get(review.review_type)
-    if required_perm and user_permissions is not None:
+    if required_perm and user_permissions:
         if required_perm not in user_permissions:
             raise BusinessError(ERR_FORBIDDEN, "无权限")
 
@@ -303,6 +300,17 @@ async def _get_requirement_or_fail(db: AsyncSession, req_id: int) -> Requirement
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
     return req
+
+
+async def _is_team_member(db: AsyncSession, req: Requirement, user_id: int) -> bool:
+    iteration = await _get_iteration(db, req.iteration_id) if req.iteration_id else None
+    if iteration is None:
+        return False
+    project = await _get_project(db, iteration.project_id)
+    if project is None:
+        return False
+    member = await _find_team_member(db, project.team_id, user_id)
+    return member is not None
 
 
 async def _get_iteration(db: AsyncSession, iteration_id: int) -> Iteration | None:

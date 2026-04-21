@@ -36,7 +36,7 @@ class ResetPasswordRequest(BaseModel):
 @router.post("/register")
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db_session)) -> dict:
     result = await auth_service.register(db, body.email, body.password, body.nickname)
-    return {"code": 0, "message": result["message"], "data": None}
+    return {"code": 0, "message": result["message"], "data": result.get("user")}
 
 
 @router.post("/verify-email")

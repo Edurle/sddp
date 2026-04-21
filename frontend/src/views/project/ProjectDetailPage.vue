@@ -5,7 +5,7 @@
       <h2 data-testid="project-detail-txt-name">{{ project.name }}</h2>
       <p data-testid="project-detail-txt-desc">{{ project.description || '' }}</p>
       <p data-testid="project-detail-txt-start-date">开始日期: {{ project.start_date || '' }}</p>
-      <p data-testid="project-detail-txt-status">{{ statusText(project.status) }}</p>
+      <p v-if="!activeTab" data-testid="project-detail-txt-status">{{ statusText(project.status) }}</p>
 
       <div class="stats">
         <span data-testid="project-detail-txt-stat-req">需求数: {{ project.req_count ?? 0 }}</span>
@@ -122,7 +122,7 @@ async function saveEdit() {
 
 async function archiveProject() {
   try {
-    await apiClient.patch(`/api/v1/projects/${projectId.value}`, { status: 'archived' })
+    await apiClient.put(`/api/v1/projects/${projectId.value}/archive`)
     showArchiveConfirm.value = false
     await fetchProject()
   } catch {

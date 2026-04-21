@@ -9,7 +9,8 @@ async function createRequirement(page: import('@playwright/test').Page, override
     ...overrides,
   }
   const resp = await page.request.post('/api/v1/requirements', { data: payload })
-  return resp.json()
+  const body = await resp.json()
+  return body.data || body
 }
 
 async function createReviewer(page: import('@playwright/test').Page) {
@@ -17,7 +18,8 @@ async function createReviewer(page: import('@playwright/test').Page) {
   const resp = await page.request.post('/api/v1/auth/register', {
     data: { email, password: 'Test1234!', nickname: `reviewer_${Date.now()}` },
   })
-  return resp.json()
+  const body = await resp.json()
+  return body.data || body
 }
 
 async function setupRequirementWithTests(page: import('@playwright/test').Page) {
@@ -31,8 +33,9 @@ async function setupRequirementWithTests(page: import('@playwright/test').Page) 
   const loginResp = await page.request.post('/api/v1/auth/login', {
     data: { email: reviewer.email, password: 'Test1234!' },
   })
-  const { access_token } = await loginResp.json()
-  await page.evaluate((t) => localStorage.setItem('token', t), access_token)
+  const loginData = await loginResp.json()
+  const token = loginData.data.token
+  await page.evaluate((t) => localStorage.setItem('token', t), token)
   await page.request.post(`/api/v1/requirements/${req.id}/approve`)
 
   const specReviewer = await createReviewer(page)
@@ -46,8 +49,8 @@ async function setupRequirementWithTests(page: import('@playwright/test').Page) 
   const specLogin = await page.request.post('/api/v1/auth/login', {
     data: { email: specReviewer.email, password: 'Test1234!' },
   })
-  const specToken = await specLogin.json()
-  await page.evaluate((t) => localStorage.setItem('token', t), specToken.access_token)
+  const specTokenBody = await specLogin.json()
+  await page.evaluate((t) => localStorage.setItem('token', t), specTokenBody.data.token)
   await page.request.post(`/api/v1/requirements/${req.id}/approve-spec`)
 
   await page.request.patch(`/api/v1/requirements/${req.id}`, {
@@ -317,14 +320,15 @@ test.describe('测试执行', () => {
     const assigneeLogin = await page.request.post('/api/v1/auth/login', {
       data: { email: assigneeEmail, password: 'Test1234!' },
     })
-    const assignee = await assigneeLogin.json()
+    const assigneeBody = await assigneeLogin.json()
+    const assignee = assigneeBody.data.user
 
     const taskResp = await page.request.post('/api/v1/tasks', {
       data: {
         title: '执行测试任务',
         description: '任务描述',
         requirement_id: req.id,
-        assignee_id: assignee.id || assignee.user_id,
+        assignee_id: assignee.id,
       },
     })
     const task = await taskResp.json()

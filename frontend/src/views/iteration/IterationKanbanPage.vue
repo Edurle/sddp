@@ -30,7 +30,7 @@
             style="cursor: pointer"
           >
             <div data-testid="iteration-kanban-card-req-title">{{ req.title }}</div>
-            <div data-testid="iteration-kanban-card-req-type">{{ req.type }}</div>
+            <div data-testid="iteration-kanban-card-req-type">{{ req.req_type }}</div>
             <div data-testid="iteration-kanban-card-req-priority">{{ req.priority }}</div>
           </div>
         </div>
@@ -88,9 +88,11 @@ interface IterationData {
 interface Requirement {
   id: number
   title: string
-  type: string
+  req_type: string
+  type?: string
   priority: string | number
   status: string
+  mappedStatus: string
   description?: string
 }
 
@@ -114,16 +116,28 @@ const columns = [
   { status: 'completed', label: '已完成' },
 ]
 
+const statusMap: Record<string, string> = {
+  'drafting_req': 'draft',
+  'reviewing_req': 'in_review',
+  'drafting_spec': 'draft',
+  'reviewing_spec': 'in_review',
+  'drafting_tests': 'draft',
+  'reviewing_tests': 'in_review',
+  'approved': 'approved',
+  'in_progress': 'in_progress',
+  'completed': 'completed',
+}
+
 const statusSummary = computed(() => {
   const counts: Record<string, number> = {}
   requirements.value.forEach(r => {
-    counts[r.status] = (counts[r.status] || 0) + 1
+    counts[r.mappedStatus] = (counts[r.mappedStatus] || 0) + 1
   })
   return Object.entries(counts).map(([k, v]) => `${k}: ${v}`).join(', ') || '无'
 })
 
 function getReqsByStatus(status: string) {
-  return requirements.value.filter(r => r.status === status)
+  return requirements.value.filter(r => r.mappedStatus === status)
 }
 
 async function fetchData() {
@@ -137,7 +151,12 @@ async function fetchData() {
     }
     if (reqRes.status === 'fulfilled') {
       const data = reqRes.value.data?.data
-      requirements.value = data?.items || data?.list || data || []
+      const rawReqs = data?.items || data?.list || data || []
+      requirements.value = rawReqs.map((r: Record<string, unknown>) => ({
+        ...r,
+        req_type: r.req_type || r.type || '',
+        mappedStatus: statusMap[r.status as string] || (r.status as string),
+      }))
     }
   } catch {
     // ignore
@@ -147,7 +166,11 @@ async function fetchData() {
 async function createRequirement() {
   try {
     await apiClient.post('/api/v1/requirements', {
-      ...newReq,
+      title: newReq.title,
+      type: newReq.type,
+      priority: newReq.priority,
+      description: newReq.description,
+      type_detail: newReq.type_detail ? { text: newReq.type_detail } : null,
       iteration_id: iterationId.value,
     })
     showCreateReqDialog.value = false

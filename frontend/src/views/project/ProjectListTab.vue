@@ -1,11 +1,24 @@
 <template>
   <div class="project-list-tab">
     <div class="toolbar">
-      <select data-testid="project-list-sel-status" v-model="statusFilter" @change="fetchProjects">
-        <option value="">全部状态</option>
-        <option value="active">进行中</option>
-        <option value="archived">已归档</option>
-      </select>
+      <div class="custom-select" style="position: relative; display: inline-block">
+        <div
+          data-testid="project-list-sel-status"
+          class="select-trigger"
+          @click="showStatusDropdown = !showStatusDropdown"
+          style="padding: 4px 8px; border: 1px solid #ccc; cursor: pointer; min-width: 120px; background: white"
+        >
+          {{ statusFilterText }}
+        </div>
+        <div
+          v-if="showStatusDropdown"
+          style="position: absolute; top: 100%; left: 0; z-index: 1000; background: white; border: 1px solid #ccc; min-width: 120px"
+        >
+          <div @click="selectStatus('')" style="padding: 4px 8px; cursor: pointer">全部状态</div>
+          <div @click="selectStatus('active')" style="padding: 4px 8px; cursor: pointer">进行中</div>
+          <div @click="selectStatus('archived')" style="padding: 4px 8px; cursor: pointer">已归档</div>
+        </div>
+      </div>
       <button data-testid="project-list-btn-create" @click="showCreateDialog = true">创建项目</button>
     </div>
 
@@ -18,10 +31,25 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="p in projects" :key="p.id" @click="goToProject(p.id)" style="cursor: pointer">
-          <td>{{ p.name }}</td>
-          <td>{{ p.description || '' }}</td>
-          <td>{{ statusText(p.status) }}</td>
+        <tr v-for="p in projects" :key="p.id" style="cursor: pointer">
+          <td>
+            <a
+              :href="`/projects/${p.id}`"
+              style="color: inherit; text-decoration: none; display: block; width: 100%"
+            >{{ p.name }}</a>
+          </td>
+          <td>
+            <a
+              :href="`/projects/${p.id}`"
+              style="color: inherit; text-decoration: none; display: block; width: 100%"
+            >{{ p.description || '' }}</a>
+          </td>
+          <td>
+            <a
+              :href="`/projects/${p.id}`"
+              style="color: inherit; text-decoration: none; display: block; width: 100%"
+            >{{ statusText(p.status) }}</a>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -49,12 +77,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
 
 const props = defineProps<{ teamId: string }>()
-const router = useRouter()
 
 interface Project {
   id: number
@@ -63,10 +89,22 @@ interface Project {
   status: string
 }
 
-const projects = ref<Project[]>([])
+const allProjects = ref<Project[]>([])
 const statusFilter = ref('')
+const showStatusDropdown = ref(false)
 const showCreateDialog = ref(false)
 const newProject = reactive({ name: '', description: '', start_date: '' })
+
+const projects = computed(() => {
+  if (!statusFilter.value) return allProjects.value
+  return allProjects.value.filter(p => p.status === statusFilter.value)
+})
+
+const statusFilterText = computed(() => {
+  if (statusFilter.value === 'active') return '进行中'
+  if (statusFilter.value === 'archived') return '已归档'
+  return '全部状态'
+})
 
 function statusText(status: string) {
   if (status === 'active') return '进行中'
@@ -74,15 +112,18 @@ function statusText(status: string) {
   return status
 }
 
+function selectStatus(value: string) {
+  statusFilter.value = value
+  showStatusDropdown.value = false
+}
+
 async function fetchProjects() {
   try {
-    const params: Record<string, unknown> = {}
-    if (statusFilter.value) params.status = statusFilter.value
-    const res = await apiClient.get(`/api/v1/teams/${props.teamId}/projects`, { params })
+    const res = await apiClient.get(`/api/v1/teams/${props.teamId}/projects`)
     const data = res.data?.data
-    projects.value = data?.items || data?.list || data || []
+    allProjects.value = data?.items || data?.list || data || []
   } catch {
-    projects.value = []
+    allProjects.value = []
   }
 }
 
@@ -97,10 +138,6 @@ async function createProject() {
   } catch {
     // ignore
   }
-}
-
-function goToProject(id: number) {
-  router.push(`/projects/${id}`)
 }
 
 onMounted(() => fetchProjects())

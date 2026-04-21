@@ -28,6 +28,7 @@ async def list_roles(db: AsyncSession, team_id: int) -> list[dict]:
             "id": role.id,
             "team_id": role.team_id,
             "name": role.name,
+            "slug": role.slug,
             "is_builtin": role.is_builtin,
             "description": role.description,
             "permissions": [p.permission for p in perms],
@@ -52,7 +53,22 @@ async def create_role(db: AsyncSession, team_id: int, name: str, description: st
         Role.is_deleted == False,
     )
     result = await db.execute(stmt)
-    if result.scalar_one_or_none() is not None:
+    existing = result.scalar_one_or_none()
+    if existing is not None:
+        perm_stmt = select(RolePermission).where(RolePermission.role_id == existing.id)
+        perm_result = await db.execute(perm_stmt)
+        existing_perms = [p.permission for p in perm_result.scalars().all()]
+        if (existing.description or "") == (description or "") and set(permissions) == set(existing_perms):
+            return {
+                "id": existing.id,
+                "team_id": existing.team_id,
+                "name": existing.name,
+                "slug": existing.slug,
+                "is_builtin": existing.is_builtin,
+                "description": existing.description,
+                "permissions": existing_perms,
+                "created_at": existing.created_at.isoformat() if existing.created_at else None,
+            }
         from app.exceptions import BusinessError
         raise BusinessError(ERR_ROLE_NAME_EXISTS, "角色名称已存在")
 
@@ -69,6 +85,7 @@ async def create_role(db: AsyncSession, team_id: int, name: str, description: st
         "id": role.id,
         "team_id": role.team_id,
         "name": role.name,
+        "slug": role.slug,
         "is_builtin": role.is_builtin,
         "description": role.description,
         "permissions": permissions,

@@ -27,7 +27,7 @@
         <h3>转让团队所有权</h3>
         <select data-testid="team-settings-dlg-transfer-sel-owner" v-model="transferTarget">
           <option value="">选择新所有者</option>
-          <option v-for="m in members" :key="m.user_id" :value="m.user_id">{{ m.nickname }}</option>
+          <option v-for="m in members.filter(m => m.user_id !== currentUserId)" :key="m.user_id" :value="m.user_id">{{ m.nickname }}</option>
         </select>
         <button data-testid="team-settings-dlg-transfer-btn-confirm" @click="transferOwnership">确认转让</button>
         <button @click="showTransferDialog = false">取消</button>
@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
@@ -72,7 +72,28 @@ interface Member {
 }
 
 const teamData = computed(() => props.team as TeamData | null)
-const isOwner = computed(() => teamData.value?.owner_id === authStore.user?.id)
+function _getUserIdFromToken(): number | null {
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    if (!token) return null
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1]))
+    return parseInt(payload.sub, 10)
+  } catch {
+    return null
+  }
+}
+
+const isOwner = computed(() => {
+  if (!teamData.value) return false
+  const userId = authStore.user?.id || _getUserIdFromToken()
+  return teamData.value.owner_id === userId
+})
+
+const currentUserId = computed(() => {
+  return authStore.user?.id || _getUserIdFromToken()
+})
 
 const form = reactive({ name: '', description: '' })
 const successMsg = ref('')
@@ -130,7 +151,8 @@ async function dissolveTeam() {
 }
 
 onMounted(() => {
-  initForm()
   fetchMembers()
 })
+
+watch(() => props.team, () => initForm(), { deep: true })
 </script>

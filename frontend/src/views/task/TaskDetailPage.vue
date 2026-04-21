@@ -7,7 +7,7 @@
           <h2 data-testid="task-detail-txt-title">{{ task.title }}</h2>
           <p data-testid="task-detail-txt-description">{{ task.description }}</p>
           <p data-testid="task-detail-txt-status">{{ statusLabel(task.status) }}</p>
-          <p data-testid="task-detail-txt-assignee">{{ task.assignee?.nickname || task.assignee?.email || '' }}</p>
+          <p data-testid="task-detail-txt-assignee">{{ assigneeName }}</p>
           <p data-testid="task-detail-txt-linked-requirement">{{ task.requirement?.title || '' }}</p>
         </template>
         <template v-else>
@@ -28,12 +28,13 @@
         <button v-if="!editing" data-testid="task-detail-btn-edit" @click="startEdit">编辑</button>
         <button v-if="!editing" data-testid="task-detail-btn-delete" @click="deleteTask">删除</button>
         <button v-if="editing" data-testid="task-detail-btn-save" @click="saveEdit">保存</button>
-        <button v-if="task.status === 'testing' && allTestsPassed" data-testid="task-detail-btn-complete" @click="completeTask">完成任务</button>
+        <button v-if="task.status === 'testing'" data-testid="task-detail-btn-complete" @click="completeTask">完成任务</button>
+        <p v-if="completeError" class="error">{{ completeError }}</p>
       </div>
 
       <div class="tabs-section">
         <button data-testid="task-detail-tab-spec" :class="{ active: activeTab === 'spec' }" @click="activeTab = 'spec'">规范</button>
-        <button data-testid="task-detail-tab-test-exec" :class="{ active: activeTab === 'test-exec' }" @click="activeTab = 'test-exec'">测试执行</button>
+        <button v-if="task.status === 'testing' || task.status === 'completed'" data-testid="task-detail-tab-test-exec" :class="{ active: activeTab === 'test-exec' }" @click="activeTab = 'test-exec'; fetchTestExecutions()">测试执行</button>
 
         <div v-if="activeTab === 'spec'" class="tab-content">
           <div data-testid="task-detail-txt-spec-content">{{ specContent }}</div>
@@ -52,7 +53,7 @@
             <tbody>
               <tr v-for="rec in testRecords" :key="rec.id">
                 <td>{{ rec.test_case?.title || '' }}</td>
-                <td><span :data-testid="`task-detail-txt-record-status-${rec.id}`">{{ rec.status || 'pending' }}</span></td>
+                <td><span :data-testid="`task-detail-txt-record-status-${rec.id}`">{{ recStatusLabel(rec.status) }}</span></td>
                 <td><button :data-testid="`task-detail-btn-record-${rec.id}`" @click="openRecordDialog(rec)">更新</button></td>
               </tr>
             </tbody>
@@ -60,21 +61,22 @@
 
           <div v-if="execHistory.length" class="exec-history">
             <h3>执行历史</h3>
-            <div data-testid="task-detail-list-exec-history">
-              <div v-for="(round, idx) in execHistory" :key="round.id || idx">
-                <button :data-testid="`task-detail-btn-exec-round-${round.id || idx + 1}`" @click="viewRound(round)">
-                  第 {{ idx + 1 }} 轮
-                </button>
+            <div data-testid="task-detail-list-exec-rounds">
+              <div data-testid="task-detail-list-exec-history">
+                <div v-for="(round, idx) in execHistory" :key="round.id || idx">
+                  <button :data-testid="`task-detail-btn-exec-round-${round.id || idx + 1}`" @click="viewRound(round)">
+                    第 {{ idx + 1 }} 轮
+                  </button>
+                </div>
               </div>
             </div>
             <div v-if="roundRecords.length" data-testid="task-detail-tbl-round-records">
               <table>
-                <thead><tr><th>用例</th><th>状态</th><th>结果</th></tr></thead>
+                <thead><tr><th>用例</th><th>状态</th></tr></thead>
                 <tbody>
-                  <tr v-for="r in roundRecords" :key="r.id">
+                  <tr v-for="r in roundRecords" :key="r.id" :data-testid="`task-detail-row-record-${r.id}`">
                     <td>{{ r.test_case?.title || '' }}</td>
-                    <td>{{ r.status === 'pass' ? '通过' : r.status === 'fail' ? '失败' : r.status }}</td>
-                    <td>{{ r.actual_result || '' }}</td>
+                    <td>{{ recStatusLabel(r.status) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -140,10 +142,16 @@ interface TestRecord {
   failure_reason?: string
   test_case?: TestCase
   test_case_id?: number
+  round_id?: number
 }
 
 interface TestRound {
   id?: number
+  round_id?: number
+  total?: number
+  passed?: number
+  failed?: number
+  skipped?: number
   records?: TestRecord[]
 }
 
@@ -152,10 +160,12 @@ interface TaskData {
   title: string
   description: string
   status: string
+  assignee_id?: number
   assignee?: Assignee | null
   requirement?: Requirement | null
   requirement_id?: number
   test_records?: TestRecord[]
+  test_cases?: TestCase[]
   latest_execution?: TestRound | null
 }
 
@@ -166,19 +176,27 @@ const activeTab = ref('spec')
 const specContent = ref('')
 const testRecords = ref<TestRecord[]>([])
 const execHistory = ref<TestRound[]>([])
+const execRounds = ref<TestRound[]>([])
 const roundRecords = ref<TestRecord[]>([])
 const showRecordDialog = ref(false)
 const recordForm = reactive({ id: 0, status: 'pass', actual_result: '', failure_reason: '' })
 const recordError = ref('')
+const completeError = ref('')
+
+const assigneeName = computed(() => {
+  if (task.value?.assignee?.nickname) return task.value.assignee.nickname
+  if (task.value?.assignee?.email) return task.value.assignee.email
+  return ''
+})
 
 const allTestsPassed = computed(() => {
   if (testRecords.value.length === 0) return false
-  return testRecords.value.every((r) => r.status === 'pass')
+  return testRecords.value.every((r) => r.status === 'pass' || r.status === 'passed')
 })
 
 const testSummary = computed(() => {
   if (testRecords.value.length === 0) return '无测试记录'
-  const passed = testRecords.value.filter((r) => r.status === 'pass').length
+  const passed = testRecords.value.filter((r) => r.status === 'pass' || r.status === 'passed').length
   if (passed === testRecords.value.length) return '全部通过'
   return `${passed}/${testRecords.value.length} 通过`
 })
@@ -193,17 +211,53 @@ function statusLabel(status: string) {
   return map[status] || status
 }
 
+function recStatusLabel(status: string) {
+  const map: Record<string, string> = {
+    pending: 'pending',
+    pass: '通过',
+    passed: '通过',
+    fail: '失败',
+    failed: '失败',
+    skip: '跳过',
+    skipped: '跳过',
+  }
+  return map[status] || status
+}
+
 async function fetchTask() {
   try {
     const res = await apiClient.get(`/api/v1/tasks/${taskId.value}`)
     const data = res.data?.data || res.data
     task.value = data
-    testRecords.value = data.test_records || data.latest_execution?.records || []
-    if (data.latest_execution) {
-      execHistory.value = [data.latest_execution]
-    }
     if (data.requirement_id) {
       fetchSpec(data.requirement_id)
+    }
+    if (data.status === 'testing' || data.status === 'completed') {
+      activeTab.value = 'test-exec'
+      await fetchTestExecutions()
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function fetchTestExecutions() {
+  try {
+    const res = await apiClient.get(`/api/v1/tasks/${taskId.value}/test-executions`)
+    const data = res.data?.data
+    const rounds = data?.items || data?.list || data || []
+    execRounds.value = rounds
+
+    if (rounds.length > 0) {
+      const latestRound = rounds[rounds.length - 1]
+      const recRes = await apiClient.get(`/api/v1/test-executions/${latestRound.id || latestRound.round_id}/records`)
+      const recData = recRes.data?.data
+      const records = recData?.items || recData?.list || recData || []
+      testRecords.value = records
+      execHistory.value = rounds.map((r: TestRound) => ({
+        ...r,
+        id: r.id || r.round_id,
+      }))
     }
   } catch {
     // ignore
@@ -214,7 +268,9 @@ async function fetchSpec(reqId: number) {
   try {
     const res = await apiClient.get(`/api/v1/requirements/${reqId}/specification`)
     const data = res.data?.data || res.data
-    specContent.value = data?.content || ''
+    if (data?.content) {
+      specContent.value = typeof data.content === 'string' ? data.content : data.content.text || JSON.stringify(data.content, null, 2)
+    }
   } catch {
     // ignore
   }
@@ -262,24 +318,25 @@ async function startTesting() {
     await apiClient.post(`/api/v1/tasks/${taskId.value}/start-testing`)
     await fetchTask()
     activeTab.value = 'test-exec'
+    await fetchTestExecutions()
   } catch {
     // ignore
   }
 }
 
 async function completeTask() {
-  if (!allTestsPassed.value) return
+  completeError.value = ''
   try {
     await apiClient.post(`/api/v1/tasks/${taskId.value}/complete`)
     await fetchTask()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    completeError.value = e?.message || e?.response?.data?.message || '操作失败'
   }
 }
 
 function openRecordDialog(rec: TestRecord) {
   recordForm.id = rec.id
-  recordForm.status = rec.status || 'pass'
+  recordForm.status = rec.status === 'passed' ? 'pass' : rec.status === 'failed' ? 'fail' : rec.status
   recordForm.actual_result = rec.actual_result || ''
   recordForm.failure_reason = rec.failure_reason || ''
   recordError.value = ''
@@ -293,22 +350,48 @@ async function saveRecord() {
   }
   try {
     await apiClient.put(`/api/v1/test-execution-records/${recordForm.id}`, {
-      status: recordForm.status,
+      status: recordForm.status === 'pass' ? 'passed' : recordForm.status === 'fail' ? 'failed' : recordForm.status === 'skip' ? 'skipped' : recordForm.status,
       actual_result: recordForm.actual_result,
       failure_reason: recordForm.failure_reason,
     })
     showRecordDialog.value = false
-    await fetchTask()
+    await fetchTestExecutions()
   } catch {
     // ignore
   }
 }
 
-function viewRound(round: TestRound) {
-  roundRecords.value = round.records || []
+async function viewRound(round: TestRound) {
+  try {
+    const roundId = round.id || round.round_id
+    if (!roundId) return
+    const recRes = await apiClient.get(`/api/v1/test-executions/${roundId}/records`)
+    const recData = recRes.data?.data
+    roundRecords.value = recData?.items || recData?.list || recData || []
+  } catch {
+    roundRecords.value = []
+  }
 }
 
-onMounted(() => fetchTask())
+async function viewRoundFromList(round: TestRound) {
+  try {
+    const roundId = round.id || round.round_id
+    if (!roundId) return
+    const recRes = await apiClient.get(`/api/v1/test-executions/${roundId}/records`)
+    const recData = recRes.data?.data
+    roundRecords.value = recData?.items || recData?.list || recData || []
+  } catch {
+    roundRecords.value = []
+  }
+}
+
+onMounted(async () => {
+  await fetchTask()
+  if (task.value && (task.value.status === 'testing' || task.value.status === 'completed')) {
+    activeTab.value = 'test-exec'
+    await fetchTestExecutions()
+  }
+})
 </script>
 
 <style scoped>

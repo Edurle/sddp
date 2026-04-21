@@ -86,7 +86,7 @@ async def create_iteration(
         goal=goal,
         start_date=sd,
         end_date=ed,
-        status="planned",
+        status="planning",
     )
     db.add(iteration)
     await db.commit()
@@ -151,7 +151,7 @@ async def start_iteration(
     project = await _get_project_or_fail(db, iteration.project_id)
     await _check_member_by_project(db, project, user_id)
 
-    if iteration.status != "planned":
+    if iteration.status != "planning":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "迭代状态不允许启动")
 
     iteration.status = "in_progress"

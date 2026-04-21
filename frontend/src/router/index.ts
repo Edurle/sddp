@@ -63,4 +63,28 @@ const router = createRouter({
   routes,
 })
 
+function decodeTokenPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    return JSON.parse(atob(parts[1]))
+  } catch {
+    return null
+  }
+}
+
+router.beforeEach((to, from, next) => {
+  if (to.path.startsWith('/admin')) {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    if (!token) {
+      return next('/login')
+    }
+    const payload = decodeTokenPayload(token)
+    if (!payload?.is_admin) {
+      return next('/dashboard')
+    }
+  }
+  next()
+})
+
 export default router

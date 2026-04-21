@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <form @submit.prevent="handleLogin">
+    <form @submit.prevent="handleLogin" novalidate>
       <div class="form-group">
         <label for="email">邮箱</label>
         <input

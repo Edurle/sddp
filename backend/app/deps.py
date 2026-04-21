@@ -1,18 +1,26 @@
 from typing import Annotated
 
-from fastapi import Depends, Header
+from fastapi import Cookie, Depends, Header, Request
 
 from app.database import get_db
 from app.exceptions import BusinessError, ERR_UNAUTHORIZED, ERR_TOKEN_EXPIRED, ERR_FORBIDDEN
 from app.utils.security import decode_access_token, TokenExpired, TokenInvalid
 
 
-async def get_current_user(authorization: Annotated[str, Header()]) -> dict:
-    if not authorization.startswith("Bearer "):
+async def get_current_user(
+    request: Request,
+    authorization: str | None = Header(default=None),
+    token: str | None = Cookie(default=None),
+) -> dict:
+    auth_token = None
+    if authorization and authorization.startswith("Bearer "):
+        auth_token = authorization[7:]
+    elif token:
+        auth_token = token
+    else:
         raise BusinessError(ERR_UNAUTHORIZED, "未登录")
-    token = authorization[7:]
     try:
-        payload = decode_access_token(token)
+        payload = decode_access_token(auth_token)
     except TokenExpired:
         raise BusinessError(ERR_TOKEN_EXPIRED, "Token 已过期")
     except TokenInvalid:

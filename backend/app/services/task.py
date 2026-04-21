@@ -78,6 +78,7 @@ async def create_task(
 
 
 async def get_task_detail(db: AsyncSession, task_id: int) -> dict:
+    from app.models import User
     task = await _get_task_or_fail(db, task_id)
 
     req_stmt = select(Requirement).where(Requirement.id == task.requirement_id, Requirement.is_deleted == False)
@@ -93,12 +94,21 @@ async def get_task_detail(db: AsyncSession, task_id: int) -> dict:
 
     latest_execution = await _get_latest_execution_stats(db, task_id)
 
+    assignee = None
+    if task.assignee_id:
+        user_stmt = select(User).where(User.id == task.assignee_id)
+        user_result = await db.execute(user_stmt)
+        user = user_result.scalar_one_or_none()
+        if user:
+            assignee = {"id": user.id, "nickname": user.nickname, "email": user.email}
+
     result = _task_to_dict(task)
     result["requirement"] = {
         "id": req.id,
         "title": req.title,
         "status": req.status,
     } if req else None
+    result["assignee"] = assignee
     result["test_cases"] = [
         {"id": tc.id, "title": tc.title, "case_type": tc.case_type}
         for tc in test_cases
@@ -212,7 +222,7 @@ async def complete_task(db: AsyncSession, task_id: int) -> dict:
         raise BusinessError(ERR_NO_EXECUTION, "没有测试执行记录")
 
     for rec in records:
-        if rec.status == "failed":
+        if rec.status in ("failed", "fail"):
             raise BusinessError(ERR_TEST_NOT_PASSED, "存在未通过的测试用例")
 
     task.status = "completed"

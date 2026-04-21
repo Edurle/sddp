@@ -18,6 +18,7 @@ class Role(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     team_id: Mapped[int] = mapped_column(nullable=False)  # FK -> teams.id
     name: Mapped[str] = mapped_column(String(50), nullable=False)
+    slug: Mapped[str | None] = mapped_column(String(50), default=None)
     is_builtin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     description: Mapped[str | None] = mapped_column(String(255), default=None)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
