@@ -11,8 +11,8 @@ from app.database import Base
 class RequirementReview(Base):
     __tablename__ = "requirement_reviews"
     __table_args__ = (
-        Index("idx_requirement", "requirement_id"),
-        Index("idx_type", "review_type"),
+        Index("idx_review_req", "requirement_id"),
+        Index("idx_review_type", "review_type"),
         Index("idx_reviewer", "reviewer_id"),
     )
 

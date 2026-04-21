@@ -26,7 +26,7 @@ class TestExecutionRecord(Base):
     __table_args__ = (
         Index("idx_round", "round_id"),
         Index("idx_case", "test_case_id"),
-        Index("idx_status", "status"),
+        Index("idx_ter_status", "status"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

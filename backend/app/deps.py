@@ -1,21 +1,22 @@
 from typing import Annotated
 
 from fastapi import Depends, Header
-from jose import JWTError, jwt
 
-from app import config
 from app.database import get_db
 from app.exceptions import BusinessError, ERR_UNAUTHORIZED, ERR_TOKEN_EXPIRED, ERR_FORBIDDEN
-from app.utils.security import decode_access_token
+from app.utils.security import decode_access_token, TokenExpired, TokenInvalid
 
 
 async def get_current_user(authorization: Annotated[str, Header()]) -> dict:
     if not authorization.startswith("Bearer "):
         raise BusinessError(ERR_UNAUTHORIZED, "未登录")
     token = authorization[7:]
-    payload = decode_access_token(token)
-    if payload is None:
+    try:
+        payload = decode_access_token(token)
+    except TokenExpired:
         raise BusinessError(ERR_TOKEN_EXPIRED, "Token 已过期")
+    except TokenInvalid:
+        raise BusinessError(ERR_UNAUTHORIZED, "未登录")
     return payload
 
 

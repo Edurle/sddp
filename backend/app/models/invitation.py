@@ -11,9 +11,9 @@ from app.database import Base
 class Invitation(Base):
     __tablename__ = "invitations"
     __table_args__ = (
-        Index("idx_team", "team_id"),
-        Index("idx_inviter", "inviter_id"),
-        Index("idx_invitee", "invitee_id"),
+        Index("idx_inv_team", "team_id"),
+        Index("idx_inv_inviter", "inviter_id"),
+        Index("idx_inv_invitee", "invitee_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

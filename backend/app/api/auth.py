@@ -1,17 +1,21 @@
-from fastapi import APIRouter
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.deps import get_db_session
+from app.services import auth as auth_service
 
 router = APIRouter()
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str
-    nickname: str
+    password: str = Field(min_length=8, max_length=64)
+    nickname: str = Field(min_length=2, max_length=32)
 
 
 class VerifyEmailRequest(BaseModel):
-    token: str
+    token: str = Field(min_length=1)
 
 
 class LoginRequest(BaseModel):
@@ -25,30 +29,35 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str
-    new_password: str
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=8, max_length=64)
 
 
 @router.post("/register")
-async def register(body: RegisterRequest) -> dict:
-    raise NotImplementedError("Not implemented yet")
+async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db_session)) -> dict:
+    result = await auth_service.register(db, body.email, body.password, body.nickname)
+    return {"code": 0, "message": result["message"], "data": None}
 
 
 @router.post("/verify-email")
-async def verify_email(body: VerifyEmailRequest) -> dict:
-    raise NotImplementedError("Not implemented yet")
+async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_db_session)) -> dict:
+    result = await auth_service.verify_email(db, body.token)
+    return {"code": 0, "message": result["message"], "data": None}
 
 
 @router.post("/login")
-async def login(body: LoginRequest) -> dict:
-    raise NotImplementedError("Not implemented yet")
+async def login(body: LoginRequest, db: AsyncSession = Depends(get_db_session)) -> dict:
+    result = await auth_service.login(db, body.email, body.password, body.remember)
+    return {"code": 0, "message": "success", "data": result}
 
 
 @router.post("/forgot-password")
-async def forgot_password(body: ForgotPasswordRequest) -> dict:
-    raise NotImplementedError("Not implemented yet")
+async def forgot_password(body: ForgotPasswordRequest, db: AsyncSession = Depends(get_db_session)) -> dict:
+    result = await auth_service.forgot_password(db, body.email)
+    return {"code": 0, "message": result["message"], "data": None}
 
 
 @router.post("/reset-password")
-async def reset_password(body: ResetPasswordRequest) -> dict:
-    raise NotImplementedError("Not implemented yet")
+async def reset_password(body: ResetPasswordRequest, db: AsyncSession = Depends(get_db_session)) -> dict:
+    result = await auth_service.reset_password(db, body.token, body.new_password)
+    return {"code": 0, "message": result["message"], "data": None}

@@ -1,7 +1,23 @@
+from datetime import date
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from httpx._models import _normalize_header_value as _orig_normalize
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+
+def _normalize_header_value_utf8(value, encoding=None):
+    try:
+        return _orig_normalize(value, encoding)
+    except UnicodeEncodeError:
+        if isinstance(value, bytes):
+            return value
+        return value.encode("utf-8")
+
+
+import httpx._models as _httpx_models
+_httpx_models._normalize_header_value = _normalize_header_value_utf8
 
 from app.database import Base
 from app.models import (
@@ -237,8 +253,8 @@ async def sample_iteration(db, sample_project):
         project_id=sample_project.id,
         name="Sprint 1",
         goal="第一个迭代",
-        start_date="2026-04-01",
-        end_date="2026-04-15",
+        start_date=date(2026, 4, 1),
+        end_date=date(2026, 4, 15),
         status="planned",
     )
     db.add(iteration)

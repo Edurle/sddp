@@ -12,7 +12,7 @@ class Role(Base):
     __tablename__ = "roles"
     __table_args__ = (
         UniqueConstraint("team_id", "name", name="uniq_team_role_name"),
-        Index("idx_team", "team_id"),
+        Index("idx_role_team", "team_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -29,7 +29,7 @@ class RolePermission(Base):
     __tablename__ = "role_permissions"
     __table_args__ = (
         UniqueConstraint("role_id", "permission", name="uniq_role_permission"),
-        Index("idx_role", "role_id"),
+        Index("idx_rp_role", "role_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

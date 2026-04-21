@@ -27,8 +27,8 @@ class TeamMember(Base):
     __tablename__ = "team_members"
     __table_args__ = (
         UniqueConstraint("team_id", "user_id", name="uniq_team_user"),
-        Index("idx_team", "team_id"),
-        Index("idx_user", "user_id"),
+        Index("idx_tm_team", "team_id"),
+        Index("idx_tm_user", "user_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

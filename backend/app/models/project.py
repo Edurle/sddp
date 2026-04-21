@@ -11,7 +11,7 @@ from app.database import Base
 class Project(Base):
     __tablename__ = "projects"
     __table_args__ = (
-        Index("idx_team", "team_id"),
+        Index("idx_proj_team", "team_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

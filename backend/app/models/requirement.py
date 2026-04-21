@@ -11,10 +11,10 @@ from app.database import Base
 class Requirement(Base):
     __tablename__ = "requirements"
     __table_args__ = (
-        Index("idx_iteration", "iteration_id"),
-        Index("idx_type", "req_type"),
-        Index("idx_status", "status"),
-        Index("idx_creator", "created_by"),
+        Index("idx_req_iter", "iteration_id"),
+        Index("idx_req_type", "req_type"),
+        Index("idx_req_status", "status"),
+        Index("idx_req_creator", "created_by"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

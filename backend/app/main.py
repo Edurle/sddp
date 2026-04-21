@@ -1,10 +1,11 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.database import init_db
-from app.exceptions import BusinessError
+from app.exceptions import BusinessError, ERR_UNAUTHORIZED, ERR_VALIDATION
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,23 @@ async def on_startup():
 @app.exception_handler(BusinessError)
 async def business_error_handler(request: Request, exc: BusinessError):
     return JSONResponse(
-        status_code=400,
+        status_code=200,
         content={"code": exc.code, "message": exc.message, "data": None},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    for err in exc.errors():
+        loc = err.get("loc", ())
+        if "authorization" in [str(l).lower() for l in loc]:
+            return JSONResponse(
+                status_code=200,
+                content={"code": ERR_UNAUTHORIZED, "message": "未登录", "data": None},
+            )
+    return JSONResponse(
+        status_code=200,
+        content={"code": ERR_VALIDATION, "message": "参数校验失败", "data": None},
     )
 
 

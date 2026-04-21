@@ -11,8 +11,8 @@ from app.database import Base
 class TestCase(Base):
     __tablename__ = "test_cases"
     __table_args__ = (
-        Index("idx_requirement", "requirement_id"),
-        Index("idx_type", "case_type"),
+        Index("idx_tc_req", "requirement_id"),
+        Index("idx_tc_type", "case_type"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

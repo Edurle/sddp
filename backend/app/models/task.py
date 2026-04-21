@@ -11,10 +11,10 @@ from app.database import Base
 class Task(Base):
     __tablename__ = "tasks"
     __table_args__ = (
-        Index("idx_requirement", "requirement_id"),
+        Index("idx_task_req", "requirement_id"),
         Index("idx_assignee", "assignee_id"),
-        Index("idx_status", "status"),
-        Index("idx_creator", "created_by"),
+        Index("idx_task_status", "status"),
+        Index("idx_task_creator", "created_by"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

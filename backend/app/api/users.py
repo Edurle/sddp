@@ -1,48 +1,68 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.deps import get_current_user
+from app.deps import get_current_user, get_db_session
+from app.services import user as user_service
 
 router = APIRouter()
 
 
 class UpdateProfileRequest(BaseModel):
-    nickname: str | None = None
+    nickname: str | None = Field(default=None, min_length=2, max_length=32)
     avatar: str | None = None
+
+    @model_validator(mode="after")
+    def at_least_one_field(self) -> "UpdateProfileRequest":
+        if self.nickname is None and self.avatar is None:
+            raise ValueError("At least one of nickname or avatar must be provided")
+        return self
 
 
 class ChangePasswordRequest(BaseModel):
     old_password: str
-    new_password: str
+    new_password: str = Field(min_length=8, max_length=64)
 
 
 @router.get("/me")
 async def get_current_user_info(
     user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict:
-    raise NotImplementedError("Not implemented yet")
+    user_id = int(user["sub"])
+    data = await user_service.get_user_info(db, user_id)
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.put("/me")
 async def update_profile(
     body: UpdateProfileRequest,
     user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict:
-    raise NotImplementedError("Not implemented yet")
+    user_id = int(user["sub"])
+    data = await user_service.update_profile(db, user_id, body.nickname, body.avatar)
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.put("/me/password")
 async def change_password(
     body: ChangePasswordRequest,
     user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict:
-    raise NotImplementedError("Not implemented yet")
+    user_id = int(user["sub"])
+    result = await user_service.change_password(db, user_id, body.old_password, body.new_password)
+    return {"code": 0, "message": result["message"], "data": None}
 
 
 @router.get("/me/pending")
 async def get_pending_items(
     user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict:
-    raise NotImplementedError("Not implemented yet")
+    user_id = int(user["sub"])
+    data = await user_service.get_pending_items(db, user_id)
+    return {"code": 0, "message": "success", "data": data}

@@ -335,6 +335,126 @@ frontend/
 | 路由路径 | 短横线命名 | `/forgot-password`, `/admin/users` |
 | 路由名称 | 大驼峰 | `TeamDetail`, `IterationKanban` |
 
+### 5.5 通用组件 data-testid 透传规范
+
+通用组件（AppButton、AppInput、AppTable 等）通过 `testId` 可选 prop 接收元素编码，绑定到根元素或主交互元素的 `data-testid` 属性上。页面组件在使用时传入具体编码值。
+
+**通用组件模板：**
+
+```vue
+<!-- components/common/AppButton.vue -->
+<template>
+  <button :data-testid="testId" v-bind="$attrs">
+    <slot />
+  </button>
+</template>
+
+<script setup lang="ts">
+defineProps<{ testId?: string }>()
+</script>
+```
+
+```vue
+<!-- components/common/AppInput.vue -->
+<template>
+  <div>
+    <label v-if="label" :for="inputId">{{ label }}</label>
+    <input :id="inputId" :data-testid="testId" v-bind="$attrs" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useId } from 'vue'
+
+defineOptions({ inheritAttrs: false })
+defineProps<{ testId?: string; label?: string }>()
+
+const inputId = useId()
+</script>
+```
+
+**页面组件使用：**
+
+```vue
+<template>
+  <form @submit.prevent="handleLogin">
+    <AppInput test-id="login-inp-email" label="邮箱" v-model="email" type="email" />
+    <AppInput test-id="login-inp-password" label="密码" v-model="password" type="password" />
+    <AppButton test-id="login-btn-submit">登录</AppButton>
+  </form>
+</template>
+```
+
+> Vue 自动将模板中的 `test-id="xxx"`（短横线）映射到 prop `testId`（驼峰），无需特殊处理。
+
+**各组件类型的 testid 绑定规则：**
+
+| 组件类型 | testid 绑定位置 | 示例 |
+|----------|----------------|------|
+| AppButton | `<button>` 元素 | `login-btn-submit` |
+| AppInput | `<input>` 元素 | `login-inp-email` |
+| AppSelect | `<select>` 元素 | `req-detail-sel-priority` |
+| AppDialog | `<dialog>` / 根容器 | `req-detail-dlg-review` |
+| AppTable | `<table>` 元素 | `user-mgmt-tbl-users` |
+| AppPagination | 根 `<nav>` 元素 | `user-mgmt-pag-list` |
+| AppTabs | 各 `<button>` 标签 | `team-detail-tab-members` |
+| AppUpload | `<input type="file">` | `avatar-upload-avatar` |
+| AppForm | `<form>` 元素 | `project-frm-create` |
+
+**列表/表格中动态 testid：**
+
+表格行、列表项等动态元素，拼接 `${testId}-${item.id}` 或 `${testId}-${index}` 保证唯一：
+
+```vue
+<!-- AppTable.vue -->
+<template>
+  <table :data-testid="testId">
+    <tbody>
+      <tr v-for="row in rows" :key="row.id" :data-testid="`${testId}-row-${row.id}`">
+        <slot name="row" :row="row" />
+      </tr>
+    </tbody>
+  </table>
+</template>
+```
+
+**业务组件：**
+
+业务组件（RequirementCard、TaskStatusTag 等）内部元素如果需要 testid，通过 prop 从页面组件传入，或由业务组件自行拼接：
+
+```vue
+<!-- components/business/RequirementCard.vue -->
+<template>
+  <div :data-testid="`${testId}-${requirement.id}`" class="card">
+    <span :data-testid="`${testId}-${requirement.id}-txt-title`">{{ requirement.title }}</span>
+    <span :data-testid="`${testId}-${requirement.id}-badge-status`">{{ requirement.status }}</span>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineProps<{ testId: string; requirement: { id: number; title: string; status: string } }>()
+</script>
+```
+
+```vue
+<!-- 页面中使用 -->
+<RequirementCard
+  v-for="req in requirements"
+  :key="req.id"
+  test-id="kanban-card"
+  :requirement="req"
+/>
+```
+
+生成的 testid：`kanban-card-1`、`kanban-card-1-txt-title`、`kanban-card-1-badge-status`。
+
+**封装原则：**
+
+1. 通用组件的 `testId` prop 始终为**可选**（`testId?: string`），不传则不渲染 `data-testid`
+2. 需要透传原生属性（如 input 的 type、placeholder）的组件，使用 `inheritAttrs: false` + `v-bind="$attrs"`，避免 testid 和原生属性冲突
+3. 页面组件负责传入完整的元素编码，编码格式遵循 `05-frontend-pages.md` 的 `{页面编码}-{元素类型}-{名称}` 规范
+4. 动态列表中优先使用 `${testId}-${item.id}`，无 id 时使用 `${testId}-${index}`
+
 ---
 
 ## 6. 数据库命名规范

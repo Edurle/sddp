@@ -85,6 +85,25 @@ class SpecTemplate:
         ],
     )
 
+    @staticmethod
+    def _section_from_dict(data: dict[str, Any]) -> SpecTemplateSection:
+        fields = [
+            SpecTemplateField(
+                name=f.get("name", ""),
+                display_name=f.get("display_name", ""),
+                type=f.get("type", "text"),
+                required=f.get("required", False),
+                description=f.get("description"),
+            )
+            for f in data.get("fields", [])
+        ]
+        return SpecTemplateSection(
+            name=data.get("name", ""),
+            display_name=data.get("display_name", ""),
+            required=data.get("required", True),
+            fields=fields,
+        )
+
     def to_document(self) -> dict[str, Any]:
         return {
             "team_id": self.team_id,
