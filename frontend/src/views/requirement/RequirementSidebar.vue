@@ -2,7 +2,7 @@
   <aside class="req-sidebar" data-testid="req-detail-sidebar">
     <div class="sidebar-section">
       <div class="sidebar-label">进度</div>
-      <div class="step-list">
+      <div class="step-list" data-testid="req-detail-step-nav">
         <div
           v-for="step in steps"
           :key="step.key"

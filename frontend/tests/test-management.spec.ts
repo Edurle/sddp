@@ -310,7 +310,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.getByText(testReviewer.nickname || testReviewer.email).click()
       await authenticatedPage.getByTestId('req-detail-dlg-submit-tests-review-btn-confirm').click()
 
-      await expect(authenticatedPage.getByTestId('req-detail-step-nav')).toContainText(/test.*review|审核/i)
+      await expect(authenticatedPage.getByTestId('req-detail-sidebar')).toContainText(/测试.*审核|审核/i)
     })
   })
 })
@@ -503,7 +503,6 @@ test.describe('测试执行', () => {
       }
 
       await authenticatedPage.goto(`/requirements/${req.id}`)
-      await authenticatedPage.getByTestId('req-detail-tab-test-stats').click()
 
       await expect(authenticatedPage.getByTestId('req-detail-txt-test-stats')).toBeVisible()
       await expect(authenticatedPage.getByTestId('req-detail-txt-test-stats')).toContainText(/通过率|pass rate/i)
