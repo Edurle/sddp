@@ -9,6 +9,16 @@
       <router-link to="/change-password" data-testid="dashboard-link-change-password">修改密码</router-link>
       <router-link to="/edit-profile" data-testid="dashboard-link-edit-profile">编辑资料</router-link>
     </div>
+    <div data-testid="dashboard-list-my-teams">
+      <h3>我的团队</h3>
+      <div v-if="myTeams.length === 0" class="empty-state">
+        暂无团队
+        <router-link to="/teams">创建团队</router-link>
+      </div>
+      <div v-for="team in myTeams" :key="team.id">
+        <router-link :to="`/teams/${team.id}`" :data-testid="`dashboard-link-team-${team.id}`">{{ team.name }}</router-link>
+      </div>
+    </div>
     <div>
       <div data-testid="dashboard-list-pending-reviews">
         <h3>待审核列表</h3>
@@ -43,6 +53,7 @@ import { apiClient } from '@/api/client'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
+const myTeams = computed(() => (user.value as any)?.teams || [])
 
 const pendingReviews = ref<Array<{ id: number; title: string }>>([])
 const pendingTasks = ref<Array<{ id: number; title: string }>>([])

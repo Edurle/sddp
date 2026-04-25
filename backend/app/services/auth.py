@@ -10,9 +10,34 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import config
 from app.exceptions import BusinessError, ERR_EMAIL_EXISTS, ERR_CREDENTIALS, ERR_EMAIL_UNVERIFIED, ERR_NOT_FOUND
 from app.models.password_reset_token import PasswordResetToken
+from app.models.role import MemberRole, Role, RolePermission
+from app.models.team import TeamMember
 from app.models.user import User
 from app.utils.email import send_verification_email, send_password_reset_email
 from app.utils.security import hash_password, verify_password, create_access_token
+
+
+async def _collect_user_permissions(db: AsyncSession, user_id: int) -> list[str]:
+    stmt = select(TeamMember).where(
+        TeamMember.user_id == user_id, TeamMember.is_deleted == False,
+    )
+    result = await db.execute(stmt)
+    members = result.scalars().all()
+
+    all_perms: set[str] = set()
+    for member in members:
+        mr_stmt = select(MemberRole).where(MemberRole.member_id == member.id)
+        mr_result = await db.execute(mr_stmt)
+        member_roles = mr_result.scalars().all()
+
+        for mr in member_roles:
+            rp_stmt = select(RolePermission).where(RolePermission.role_id == mr.role_id)
+            rp_result = await db.execute(rp_stmt)
+            role_perms = rp_result.scalars().all()
+            for rp in role_perms:
+                all_perms.add(rp.permission)
+
+    return sorted(all_perms)
 
 
 async def register(db: AsyncSession, email: str, password: str, nickname: str) -> dict:
@@ -86,13 +111,15 @@ async def login(db: AsyncSession, email: str, password: str, remember: bool = Fa
     if not user.email_verified:
         raise BusinessError(ERR_EMAIL_UNVERIFIED, "邮箱未验证")
 
+    permissions = await _collect_user_permissions(db, user.id)
+
     if remember:
         expires_delta = timedelta(days=config.REMEMBER_TOKEN_EXPIRE_DAYS)
     else:
         expires_delta = timedelta(hours=config.ACCESS_TOKEN_EXPIRE_HOURS)
 
     token = create_access_token(
-        {"sub": str(user.id), "is_admin": user.is_admin, "permissions": []},
+        {"sub": str(user.id), "is_admin": user.is_admin, "permissions": permissions},
         expires_delta=expires_delta,
     )
 

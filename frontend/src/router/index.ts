@@ -22,39 +22,54 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/ResetPasswordPage.vue'),
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/dashboard/DashboardPage.vue'),
-  },
-  {
-    path: '/admin/users',
-    name: 'AdminUsers',
-    component: () => import('@/views/admin/AdminUsersPage.vue'),
-  },
-  {
-    path: '/teams/:id',
-    name: 'TeamDetail',
-    component: () => import('@/views/team/TeamDetailPage.vue'),
-  },
-  {
-    path: '/projects/:id',
-    name: 'ProjectDetail',
-    component: () => import('@/views/project/ProjectDetailPage.vue'),
-  },
-  {
-    path: '/iterations/:id/kanban',
-    name: 'IterationKanban',
-    component: () => import('@/views/iteration/IterationKanbanPage.vue'),
-  },
-  {
-    path: '/requirements/:id',
-    name: 'RequirementDetail',
-    component: () => import('@/views/requirement/RequirementDetailPage.vue'),
-  },
-  {
-    path: '/tasks/:id',
-    name: 'TaskDetail',
-    component: () => import('@/views/task/TaskDetailPage.vue'),
+    path: '/',
+    component: () => import('@/components/layout/AppLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/dashboard',
+      },
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/DashboardPage.vue'),
+      },
+      {
+        path: 'teams',
+        name: 'TeamList',
+        component: () => import('@/views/team/TeamListPage.vue'),
+      },
+      {
+        path: 'teams/:id',
+        name: 'TeamDetail',
+        component: () => import('@/views/team/TeamDetailPage.vue'),
+      },
+      {
+        path: 'projects/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/views/project/ProjectDetailPage.vue'),
+      },
+      {
+        path: 'iterations/:id/kanban',
+        name: 'IterationKanban',
+        component: () => import('@/views/iteration/IterationKanbanPage.vue'),
+      },
+      {
+        path: 'requirements/:id',
+        name: 'RequirementDetail',
+        component: () => import('@/views/requirement/RequirementDetailPage.vue'),
+      },
+      {
+        path: 'tasks/:id',
+        name: 'TaskDetail',
+        component: () => import('@/views/task/TaskDetailPage.vue'),
+      },
+      {
+        path: 'admin/users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/AdminUsersPage.vue'),
+      },
+    ],
   },
 ]
 
