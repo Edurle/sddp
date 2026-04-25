@@ -225,6 +225,7 @@ onMounted(() => fetchData())
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   background: white;
+  color: #333;
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.2s;
