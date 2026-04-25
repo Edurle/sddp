@@ -76,10 +76,12 @@ test.describe('任务详情页', () => {
       const { task } = await createTask(authenticatedPage)
       await authenticatedPage.goto(`/tasks/${task.id}`)
 
+      await expect(authenticatedPage.getByTestId('task-detail-sidebar')).toBeVisible()
       await expect(authenticatedPage.getByTestId('task-detail-txt-status')).toContainText(/pending|未开始/)
       await expect(authenticatedPage.getByTestId('task-detail-btn-start')).toBeVisible()
       await expect(authenticatedPage.getByTestId('task-detail-btn-edit')).toBeVisible()
       await expect(authenticatedPage.getByTestId('task-detail-btn-delete')).toBeVisible()
+      await expect(authenticatedPage.getByTestId('task-detail-step-progress-step-pending')).toBeVisible()
     })
 
     test('显示任务标题和描述', async ({ authenticatedPage }) => {
@@ -145,6 +147,8 @@ test.describe('任务详情页', () => {
       await authenticatedPage.getByTestId('task-detail-btn-start').click()
 
       await expect(authenticatedPage.getByTestId('task-detail-txt-status')).toContainText(/coding|编码中/)
+      await expect(authenticatedPage.getByTestId('task-detail-step-progress-step-pending')).toHaveClass(/done/)
+      await expect(authenticatedPage.getByTestId('task-detail-step-progress-step-coding')).toHaveClass(/current/)
     })
   })
 

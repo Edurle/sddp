@@ -157,6 +157,8 @@
 
 ## 2. 任务详情页 /tasks/:taskId
 
+> 页面采用双栏布局：左侧 `task-detail-sidebar` 侧边栏（进度条、基本信息、操作按钮），右侧主内容区（标签栏 + 规范/测试执行面板）。
+
 ### 查看任务详情（pending 状态）
 
 | 项目       | 值                                                                                                       |
@@ -164,7 +166,7 @@
 | 用例编号   | E2E-TASK-001                                                                                             |
 | 前置条件   | 任务 status=pending                                                                                       |
 | 测试步骤   | 1. 访问任务详情页                                                                                         |
-| 验证方式   | `task-detail-txt-status` 显示"未开始"；`task-detail-btn-start` 可见；`task-detail-btn-edit` 可见；`task-detail-btn-delete` 可见 |
+| 验证方式   | `task-detail-sidebar` 可见；`task-detail-txt-status` 显示"未开始"；`task-detail-btn-start` 可见；`task-detail-btn-edit` 可见；`task-detail-btn-delete` 可见；`task-detail-step-progress-step-pending` 为当前步骤 |
 
 ### 编辑任务（pending 状态）
 
@@ -172,7 +174,7 @@
 | ---------- | -------------------------------------------------------------------------------------------------------- |
 | 用例编号   | E2E-TASK-002                                                                                             |
 | 前置条件   | 任务 status=pending                                                                                       |
-| 测试步骤   | 1. 点击 `task-detail-btn-edit`<br>2. 修改标题和描述<br>3. 保存                                            |
+| 测试步骤   | 1. 点击 `task-detail-btn-edit`<br>2. 侧边栏切换为编辑表单，修改标题和描述<br>3. 点击 `task-detail-btn-save` |
 | 验证方式   | 任务信息更新                                                                                             |
 
 ### 查看规范文档（只读）
@@ -191,7 +193,7 @@
 | 用例编号   | E2E-TASK-004                                                                                             |
 | 前置条件   | 任务 status=pending                                                                                       |
 | 测试步骤   | 1. 点击 `task-detail-btn-start`                                                                           |
-| 验证方式   | `task-detail-txt-status` 变为"编码中"                                                                     |
+| 验证方式   | `task-detail-txt-status` 变为"编码中"；`task-detail-step-progress-step-pending` 变为已完成；`task-detail-step-progress-step-coding` 变为当前步骤 |
 
 ### 开始测试（coding → testing）
 
@@ -232,7 +234,6 @@
 ### 完成任务（全部通过）
 
 | 项目       | 值                                                                                                       |
-| ---------- | -------------------------------------------------------------------------------------------------------- |
 | 用例编号   | E2E-TASK-009                                                                                             |
 | 前置条件   | 任务 status=testing，所有测试用例最近一轮全部通过                                                          |
 | 测试步骤   | 1. 查看 `task-detail-txt-test-summary` 确认全部通过<br>2. 点击 `task-detail-btn-complete`                 |

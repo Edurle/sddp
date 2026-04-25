@@ -1,48 +1,51 @@
 <template>
   <div class="task-detail-page">
-    <h1>任务详情</h1>
-    <div v-if="task">
-      <div class="main-info">
-        <template v-if="!editing">
-          <h2 data-testid="task-detail-txt-title">{{ task.title }}</h2>
-          <p data-testid="task-detail-txt-description">{{ task.description }}</p>
-          <p data-testid="task-detail-txt-status">{{ statusLabel(task.status) }}</p>
-          <p data-testid="task-detail-txt-assignee">{{ assigneeName }}</p>
-          <p data-testid="task-detail-txt-linked-requirement">{{ task.requirement?.title || '' }}</p>
-        </template>
-        <template v-else>
-          <div class="form-group">
-            <label>标题</label>
-            <input v-model="editForm.title" data-testid="task-detail-inp-title" />
-          </div>
-          <div class="form-group">
-            <label>描述</label>
-            <textarea v-model="editForm.description" data-testid="task-detail-txtarea-description"></textarea>
-          </div>
-        </template>
-      </div>
+    <div v-if="task" class="detail-layout">
+      <TaskSidebar
+        :task="task"
+        :editing="editing"
+        :edit-form="editForm"
+        @edit="startEdit"
+        @save="saveEdit"
+        @delete="deleteTask"
+        @start-coding="startCoding"
+        @start-testing="startTesting"
+        @complete="completeTask"
+      />
 
-      <div class="actions">
-        <button v-if="task.status === 'pending' && !editing" data-testid="task-detail-btn-start" @click="startCoding">开始编码</button>
-        <button v-if="task.status === 'coding'" data-testid="task-detail-btn-start-testing" @click="startTesting">开始测试</button>
-        <button v-if="!editing" data-testid="task-detail-btn-edit" @click="startEdit">编辑</button>
-        <button v-if="!editing" data-testid="task-detail-btn-delete" @click="deleteTask">删除</button>
-        <button v-if="editing" data-testid="task-detail-btn-save" @click="saveEdit">保存</button>
-        <button v-if="task.status === 'testing'" data-testid="task-detail-btn-complete" @click="completeTask">完成任务</button>
-        <p v-if="completeError" class="error">{{ completeError }}</p>
-      </div>
-
-      <div class="tabs-section">
-        <button data-testid="task-detail-tab-spec" :class="{ active: activeTab === 'spec' }" @click="activeTab = 'spec'">规范</button>
-        <button v-if="task.status === 'testing' || task.status === 'completed'" data-testid="task-detail-tab-test-exec" :class="{ active: activeTab === 'test-exec' }" @click="activeTab = 'test-exec'; fetchTestExecutions()">测试执行</button>
-
-        <div v-if="activeTab === 'spec'" class="tab-content">
-          <div data-testid="task-detail-txt-spec-content">{{ specContent }}</div>
+      <div class="detail-main">
+        <div class="detail-tabs">
+          <button data-testid="task-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
+          <button v-if="task.status === 'testing' || task.status === 'completed'" data-testid="task-detail-tab-test-exec" :class="['tab-btn', { active: activeTab === 'test-exec' }]" @click="activeTab = 'test-exec'; fetchTestExecutions()">测试执行</button>
         </div>
 
-        <div v-if="activeTab === 'test-exec'" class="tab-content">
-          <p data-testid="task-detail-txt-test-summary">{{ testSummary }}</p>
-          <table data-testid="task-detail-tbl-test-records">
+        <div v-if="activeTab === 'spec'" class="tab-panel">
+          <div class="spec-content" data-testid="task-detail-txt-spec-content">{{ specContent }}</div>
+        </div>
+
+        <div v-if="activeTab === 'test-exec'" class="tab-panel">
+          <div class="test-summary-cards">
+            <div class="summary-card">
+              <div class="summary-num num-total">{{ testRecords.length }}</div>
+              <div class="summary-label">总用例</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-num num-pass">{{ testRecords.filter(r => r.status === 'pass' || r.status === 'passed').length }}</div>
+              <div class="summary-label">通过</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-num num-fail">{{ testRecords.filter(r => r.status === 'fail' || r.status === 'failed').length }}</div>
+              <div class="summary-label">失败</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-num num-skip">{{ testRecords.filter(r => r.status === 'skip' || r.status === 'skipped').length }}</div>
+              <div class="summary-label">跳过</div>
+            </div>
+          </div>
+
+          <p data-testid="task-detail-txt-test-summary" class="test-summary-text">{{ testSummary }}</p>
+
+          <table data-testid="task-detail-tbl-test-records" class="test-table">
             <thead>
               <tr>
                 <th>用例</th>
@@ -53,25 +56,29 @@
             <tbody>
               <tr v-for="rec in testRecords" :key="rec.id">
                 <td>{{ rec.test_case?.title || '' }}</td>
-                <td><span :data-testid="`task-detail-txt-record-status-${rec.id}`">{{ recStatusLabel(rec.status) }}</span></td>
-                <td><button :data-testid="`task-detail-btn-record-${rec.id}`" @click="openRecordDialog(rec)">更新</button></td>
+                <td><span :data-testid="`task-detail-txt-record-status-${rec.id}`" :class="['rec-status', `rec-${rec.status}`]">{{ recStatusLabel(rec.status) }}</span></td>
+                <td><button :data-testid="`task-detail-btn-record-${rec.id}`" class="update-btn" @click="openRecordDialog(rec)">更新</button></td>
               </tr>
             </tbody>
           </table>
 
           <div v-if="execHistory.length" class="exec-history">
-            <h3>执行历史</h3>
-            <div data-testid="task-detail-list-exec-rounds">
+            <h3 class="exec-title">执行历史</h3>
+            <div data-testid="task-detail-list-exec-rounds" class="round-bar">
               <div data-testid="task-detail-list-exec-history">
-                <div v-for="(round, idx) in execHistory" :key="round.id || idx">
-                  <button :data-testid="`task-detail-btn-exec-round-${round.id || idx + 1}`" @click="viewRound(round)">
-                    第 {{ idx + 1 }} 轮
-                  </button>
-                </div>
+                <button
+                  v-for="(round, idx) in execHistory"
+                  :key="round.id || idx"
+                  :data-testid="`task-detail-btn-exec-round-${round.id || idx + 1}`"
+                  class="round-btn"
+                  @click="viewRound(round)"
+                >
+                  第 {{ idx + 1 }} 轮
+                </button>
               </div>
             </div>
             <div v-if="roundRecords.length" data-testid="task-detail-tbl-round-records">
-              <table>
+              <table class="test-table">
                 <thead><tr><th>用例</th><th>状态</th></tr></thead>
                 <tbody>
                   <tr v-for="r in roundRecords" :key="r.id" :data-testid="`task-detail-row-record-${r.id}`">
@@ -114,21 +121,11 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
+import TaskSidebar from './TaskSidebar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const taskId = computed(() => route.params.id as string)
-
-interface Assignee {
-  id?: number
-  nickname?: string
-  email?: string
-}
-
-interface Requirement {
-  id: number
-  title: string
-}
 
 interface TestCase {
   id?: number
@@ -161,8 +158,8 @@ interface TaskData {
   description: string
   status: string
   assignee_id?: number
-  assignee?: Assignee | null
-  requirement?: Requirement | null
+  assignee?: { id?: number; nickname?: string; email?: string } | null
+  requirement?: { id: number; title: string } | null
   requirement_id?: number
   test_records?: TestRecord[]
   test_cases?: TestCase[]
@@ -183,33 +180,12 @@ const recordForm = reactive({ id: 0, status: 'pass', actual_result: '', failure_
 const recordError = ref('')
 const completeError = ref('')
 
-const assigneeName = computed(() => {
-  if (task.value?.assignee?.nickname) return task.value.assignee.nickname
-  if (task.value?.assignee?.email) return task.value.assignee.email
-  return ''
-})
-
-const allTestsPassed = computed(() => {
-  if (testRecords.value.length === 0) return false
-  return testRecords.value.every((r) => r.status === 'pass' || r.status === 'passed')
-})
-
 const testSummary = computed(() => {
   if (testRecords.value.length === 0) return '无测试记录'
   const passed = testRecords.value.filter((r) => r.status === 'pass' || r.status === 'passed').length
   if (passed === testRecords.value.length) return '全部通过'
   return `${passed}/${testRecords.value.length} 通过`
 })
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: '未开始',
-    coding: '编码中',
-    testing: '测试中',
-    completed: '已完成',
-  }
-  return map[status] || status
-}
 
 function recStatusLabel(status: string) {
   const map: Record<string, string> = {
@@ -373,18 +349,6 @@ async function viewRound(round: TestRound) {
   }
 }
 
-async function viewRoundFromList(round: TestRound) {
-  try {
-    const roundId = round.id || round.round_id
-    if (!roundId) return
-    const recRes = await apiClient.get(`/api/v1/test-executions/${roundId}/records`)
-    const recData = recRes.data?.data
-    roundRecords.value = recData?.items || recData?.list || recData || []
-  } catch {
-    roundRecords.value = []
-  }
-}
-
 onMounted(async () => {
   await fetchTask()
   if (task.value && (task.value.status === 'testing' || task.value.status === 'completed')) {
@@ -396,11 +360,195 @@ onMounted(async () => {
 
 <style scoped>
 .task-detail-page {
-  padding: 1.5rem;
+  height: 100vh;
+  overflow: hidden;
+}
+.detail-layout {
+  display: flex;
+  height: 100%;
+}
+.detail-main {
+  flex: 1;
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.detail-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+}
+.tab-btn {
+  padding: 8px 18px;
+  font-size: 13px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.tab-btn:hover {
+  color: #333;
+}
+.tab-btn.active {
+  color: #111;
+  border-bottom-color: #111;
+  font-weight: 600;
+}
+.tab-panel {
+  flex: 1;
+}
+.spec-content {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  color: #333;
+}
+.test-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.summary-card {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: center;
+}
+.summary-num {
+  font-size: 22px;
+  font-weight: 700;
+}
+.summary-label {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+.num-total { color: #111; }
+.num-pass { color: #52c41a; }
+.num-fail { color: #ff4d4f; }
+.num-skip { color: #faad14; }
+.test-summary-text {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+.test-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1.25rem;
+}
+.test-table th, .test-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  text-align: left;
+  font-size: 13px;
+}
+.test-table th {
+  background: rgba(0, 0, 0, 0.02);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #666;
+}
+.test-table tr:last-child td {
+  border-bottom: none;
+}
+.rec-status {
+  font-weight: 500;
+}
+.rec-pass, .rec-passed {
+  color: #52c41a;
+}
+.rec-fail, .rec-failed {
+  color: #ff4d4f;
+}
+.rec-skip, .rec-skipped {
+  color: #faad14;
+}
+.rec-pending {
+  color: #bbb;
+}
+.update-btn {
+  padding: 3px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  color: #1677ff;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  margin: 0;
+  transition: all 0.15s;
+}
+.update-btn:hover {
+  border-color: #1677ff;
+  background: rgba(22, 119, 255, 0.04);
 }
 .exec-history {
-  margin-top: 1rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 1rem;
+}
+.exec-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.75rem;
+}
+.round-bar {
+  margin-bottom: 1rem;
+}
+.round-bar button, .round-btn {
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin: 0 4px 4px 0;
+}
+.round-bar button:hover, .round-btn:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+@media (max-width: 768px) {
+  .detail-layout {
+    flex-direction: column;
+  }
+  .detail-main {
+    padding: 1rem;
+  }
+  .test-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
