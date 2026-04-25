@@ -1,99 +1,57 @@
 <template>
   <div class="requirement-detail-page">
-    <h1>需求详情</h1>
-    <div v-if="req">
-      <div class="step-nav" data-testid="req-detail-step-nav">
-        <span data-testid="req-detail-step-nav-step-req" class="step" :class="stepClass('req')">需求</span>
-        <span data-testid="req-detail-step-nav-step-spec" class="step" :class="stepClass('spec')">规范</span>
-        <span data-testid="req-detail-step-nav-step-tests" class="step" :class="stepClass('tests')">测试</span>
-        <span data-testid="req-detail-step-nav-step-approved" class="step" :class="stepClass('approved')">已通过</span>
-        <span class="step-status">{{ statusLabel(req.status) }}</span>
-      </div>
+    <div v-if="req" class="detail-layout">
+      <RequirementSidebar
+        :req="req"
+        :editing="editingReq"
+        :edit-form="editForm"
+        @edit="startEditReq"
+        @save="saveReq"
+        @delete="deleteReq"
+        @submit-review="openSubmitReviewDialog"
+        @approve="approveReview"
+        @reject="showRejectDialog = true"
+      />
 
-      <div class="main-info">
-        <template v-if="!editingReq">
-          <h2 data-testid="req-detail-txt-title">{{ req.title }}</h2>
-          <AppBadge data-testid="req-detail-tag-type" :text="typeLabel(req.type)" />
-          <p data-testid="req-detail-txt-priority">{{ req.priority }}</p>
-          <p data-testid="req-detail-txt-description">{{ req.description }}</p>
-          <span data-testid="req-detail-tag-status">{{ statusLabel(req.status) }}</span>
-          <p data-testid="req-detail-txt-review-status">{{ statusLabel(req.status) }}</p>
-        </template>
-        <template v-else>
-          <div class="form-group">
-            <label>标题</label>
-            <input v-model="editForm.title" data-testid="req-detail-inp-title" />
-          </div>
-          <div class="form-group">
-            <label>描述</label>
-            <textarea v-model="editForm.description" data-testid="req-detail-txtarea-description"></textarea>
-          </div>
-        </template>
-      </div>
-
-      <div v-if="req.type === 'bug' && req.type_detail" class="type-detail">
-        <p data-testid="req-detail-txt-reproduce-steps">{{ req.type_detail.reproduce_steps }}</p>
-        <p data-testid="req-detail-txt-environment">{{ req.type_detail.environment }}</p>
-        <p data-testid="req-detail-txt-severity">{{ req.type_detail.severity }}</p>
-      </div>
-
-      <div v-if="req.type === 'optimization' && req.type_detail" class="type-detail">
-        <p data-testid="req-detail-txt-optimization-issue">{{ req.type_detail.current_issue }}</p>
-        <p data-testid="req-detail-txt-optimization-expected">{{ req.type_detail.expected_improvement }}</p>
-      </div>
-
-      <div v-if="rejectReason" class="reject-info">
-        <p data-testid="req-detail-txt-reject-reason">{{ rejectReason }}</p>
-      </div>
-
-      <div class="actions">
-        <button v-if="canEdit" data-testid="req-detail-btn-edit-req" @click="startEditReq">编辑</button>
-        <button v-if="editingReq" data-testid="req-detail-btn-save-req" @click="saveReq">保存</button>
-        <button v-if="canEdit" data-testid="req-detail-btn-delete-req" @click="deleteReq">删除</button>
-        <button v-if="canEdit" data-testid="req-detail-btn-submit-req-review" @click="openSubmitReviewDialog">提交审核</button>
-        <button v-if="canReview" data-testid="req-detail-btn-approve" @click="approveReview">通过</button>
-        <button v-if="canReview" data-testid="req-detail-btn-reject" @click="showRejectDialog = true">驳回</button>
-      </div>
-
-      <div v-if="reviewHistory.length" class="review-history">
-        <h3>审核历史</h3>
-        <div data-testid="req-detail-list-review-history">
-          <div v-for="(review, idx) in reviewHistory" :key="idx">
-            <span>{{ review.action === 'approve' ? '通过' : '驳回' }}</span>
-            <span v-if="review.comment"> - {{ review.comment }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="tabs-section" style="margin-top: 1rem;">
-        <button data-testid="req-detail-tab-spec" :class="{ active: activeTab === 'spec' }" @click="activeTab = 'spec'">规范</button>
-        <button data-testid="req-detail-tab-spec-versions" :class="{ active: activeTab === 'spec-versions' }" @click="activeTab = 'spec-versions'; fetchSpecVersions()">规范版本</button>
-        <button data-testid="req-detail-tab-tasks" :class="{ active: activeTab === 'tasks' }" @click="activeTab = 'tasks'; fetchTasks()">任务</button>
-        <button data-testid="req-detail-tab-test-cases" :class="{ active: activeTab === 'test-cases' }" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例</button>
-        <button data-testid="req-detail-tab-test-stats" :class="{ active: activeTab === 'test-stats' }" @click="activeTab = 'test-stats'; fetchTestStats()">测试统计</button>
-
-        <div v-if="activeTab === 'spec'" class="tab-content">
-          <p v-if="saveSuccessMsg" style="color: green;">{{ saveSuccessMsg }}</p>
-          <textarea v-model="specContent" data-testid="req-detail-txtarea-spec-content"></textarea>
-          <button data-testid="req-detail-btn-save-spec" @click="saveSpec">保存规范</button>
-          <button v-if="req.status === 'drafting_spec'" data-testid="req-detail-btn-submit-spec-review" @click="openSubmitSpecReviewDialog">提交规范审核</button>
+      <div class="detail-main">
+        <div class="detail-tabs">
+          <button data-testid="req-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
+          <button data-testid="req-detail-tab-spec-versions" :class="['tab-btn', { active: activeTab === 'spec-versions' }]" @click="activeTab = 'spec-versions'; fetchSpecVersions()">版本历史 ({{ specVersions.length || 0 }})</button>
+          <button data-testid="req-detail-tab-tasks" :class="['tab-btn', { active: activeTab === 'tasks' }]" @click="activeTab = 'tasks'; fetchTasks()">任务 ({{ tasks.length || 0 }})</button>
+          <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例 ({{ testCases.length || 0 }})</button>
         </div>
 
-        <div v-if="activeTab === 'spec-versions'" class="tab-content">
-          <div data-testid="req-detail-list-spec-versions">
-            <div v-for="(ver, idx) in specVersions" :key="idx">
-              <button :data-testid="`req-detail-btn-spec-version-${ver.version || idx + 1}`" @click="viewSpecVersion(ver)">
-                v{{ ver.version || idx + 1 }}
-              </button>
+        <div v-if="activeTab === 'spec'" class="tab-panel">
+          <div class="spec-toolbar">
+            <span v-if="saveSuccessMsg" class="save-msg">{{ saveSuccessMsg }}</span>
+            <span v-else class="spec-hint">在下方编辑规范文档</span>
+            <div class="spec-actions">
+              <button data-testid="req-detail-btn-save-spec" @click="saveSpec">保存规范</button>
+              <button v-if="req.status === 'drafting_spec'" data-testid="req-detail-btn-submit-spec-review" @click="openSubmitSpecReviewDialog">提交规范审核</button>
             </div>
           </div>
-          <div v-if="selectedVersionContent" data-testid="req-detail-txt-spec-version-content">
+          <textarea v-model="specContent" data-testid="req-detail-txtarea-spec-content" class="spec-editor"></textarea>
+        </div>
+
+        <div v-if="activeTab === 'spec-versions'" class="tab-panel">
+          <div data-testid="req-detail-list-spec-versions" class="version-list">
+            <div v-for="(ver, idx) in specVersions" :key="idx" class="version-card" :class="{ selected: selectedVersionContent === getVersionText(ver) }" @click="viewSpecVersion(ver)">
+              <div class="version-header">
+                <span class="version-num">v{{ ver.version || idx + 1 }}</span>
+              </div>
+              <div class="version-preview">{{ getVersionText(ver).slice(0, 100) }}{{ getVersionText(ver).length > 100 ? '...' : '' }}</div>
+              <button :data-testid="`req-detail-btn-spec-version-${ver.version || idx + 1}`" class="version-view-btn">查看</button>
+            </div>
+          </div>
+          <div v-if="selectedVersionContent" data-testid="req-detail-txt-spec-version-content" class="version-content">
             {{ selectedVersionContent }}
           </div>
         </div>
 
-        <div v-if="activeTab === 'tasks'" class="tab-content">
-          <button data-testid="req-detail-btn-add-task" @click="fetchReviewers(); showAddTaskDialog = true">添加任务</button>
+        <div v-if="activeTab === 'tasks'" class="tab-panel">
+          <div class="tab-toolbar">
+            <button data-testid="req-detail-btn-add-task" @click="fetchReviewers(); showAddTaskDialog = true">添加任务</button>
+          </div>
           <table data-testid="req-detail-tbl-tasks">
             <thead>
               <tr><th>标题</th><th>状态</th></tr>
@@ -107,16 +65,16 @@
           </table>
         </div>
 
-        <div v-if="activeTab === 'test-cases'" class="tab-content">
-          <div style="margin-bottom: 0.5rem; display: flex; gap: 0.5rem; align-items: center;">
+        <div v-if="activeTab === 'test-cases'" class="tab-panel">
+          <div class="tab-toolbar">
             <button data-testid="req-detail-btn-add-test-case" @click="showTestCaseDialog = true">添加测试用例</button>
             <select data-testid="req-detail-sel-filter-case-type" v-model="testCaseTypeFilter" @change="fetchTestCases">
               <option value="">全部</option>
               <option value="api">API</option>
               <option value="e2e">E2E</option>
             </select>
+            <button data-testid="req-detail-btn-submit-tests-review" @click="openSubmitTestsReviewDialog">提交测试审核</button>
           </div>
-          <button data-testid="req-detail-btn-submit-tests-review" @click="openSubmitTestsReviewDialog">提交测试审核</button>
           <table data-testid="req-detail-tbl-test-cases">
             <thead>
               <tr><th>编号</th><th>标题</th><th>类型</th><th>操作</th></tr>
@@ -135,31 +93,45 @@
           </table>
         </div>
 
-        <div v-if="activeTab === 'test-stats'" class="tab-content">
-          <div data-testid="req-detail-txt-test-stats">
-            <p>总用例数: <span data-testid="req-detail-txt-test-total-count">{{ testStats.total_cases ?? 0 }}</span></p>
-            <p>通过数: <span data-testid="req-detail-txt-test-pass-count">{{ testStats.latest_results?.passed ?? 0 }}</span></p>
-            <p>失败数: <span data-testid="req-detail-txt-test-fail-count">{{ testStats.latest_results?.failed ?? 0 }}</span></p>
-            <p>跳过数: <span data-testid="req-detail-txt-test-skip-count">{{ testStats.latest_results?.skipped ?? 0 }}</span></p>
-            <p>通过率: {{ testStats.pass_rate != null ? (testStats.pass_rate * 100).toFixed(0) + '%' : 'N/A' }}</p>
+        <div class="stat-cards" data-testid="req-detail-txt-test-stats">
+          <span data-testid="req-detail-tab-test-stats" style="display: none;"></span>
+          <div class="stat-card">
+            <div class="stat-num">{{ testStats.total_cases ?? 0 }}</div>
+            <div class="stat-label">总用例</div>
+          </div>
+          <div class="stat-card stat-pass">
+            <div class="stat-num" data-testid="req-detail-txt-test-pass-count">{{ testStats.latest_results?.passed ?? 0 }}</div>
+            <div class="stat-label">通过</div>
+          </div>
+          <div class="stat-card stat-fail">
+            <div class="stat-num" data-testid="req-detail-txt-test-fail-count">{{ testStats.latest_results?.failed ?? 0 }}</div>
+            <div class="stat-label">失败</div>
+          </div>
+          <div class="stat-card stat-skip">
+            <div class="stat-num" data-testid="req-detail-txt-test-skip-count">{{ testStats.latest_results?.skipped ?? 0 }}</div>
+            <div class="stat-label">跳过</div>
+          </div>
+          <div class="stat-card stat-rate">
+            <div class="stat-num" data-testid="req-detail-txt-test-total-count">{{ testStats.pass_rate != null ? (testStats.pass_rate * 100).toFixed(0) + '%' : 'N/A' }}</div>
+            <div class="stat-label">通过率</div>
           </div>
         </div>
       </div>
     </div>
 
-     <div v-if="showSubmitReviewDialog" class="dialog-overlay" @click.self="showSubmitReviewDialog = false">
-       <div data-testid="req-detail-dlg-submit-review" class="dialog">
-         <h3>提交审核</h3>
-         <div class="custom-select" data-testid="req-detail-dlg-submit-review-sel-reviewer" @click="toggleDropdown('submitReview')">
-           <span>{{ getSelectedReviewerName(submitReviewForm.reviewer_id) || '请选择审核人' }}</span>
-           <div v-if="dropdownOpen === 'submitReview'" class="dropdown-options">
-              <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-            </div>
+    <div v-if="showSubmitReviewDialog" class="dialog-overlay" @click.self="showSubmitReviewDialog = false">
+      <div data-testid="req-detail-dlg-submit-review" class="dialog">
+        <h3>提交审核</h3>
+        <div class="custom-select" data-testid="req-detail-dlg-submit-review-sel-reviewer" @click="toggleDropdown('submitReview')">
+          <span>{{ getSelectedReviewerName(submitReviewForm.reviewer_id) || '请选择审核人' }}</span>
+          <div v-if="dropdownOpen === 'submitReview'" class="dropdown-options">
+            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
           </div>
-          <button data-testid="req-detail-dlg-submit-review-btn-confirm" @click="submitReview">确认</button>
-         <button @click="showSubmitReviewDialog = false">取消</button>
-       </div>
-     </div>
+        </div>
+        <button data-testid="req-detail-dlg-submit-review-btn-confirm" @click="submitReview">确认</button>
+        <button @click="showSubmitReviewDialog = false">取消</button>
+      </div>
+    </div>
 
     <div v-if="showRejectDialog" class="dialog-overlay" @click.self="showRejectDialog = false">
       <div data-testid="req-detail-dlg-reject" class="dialog">
@@ -170,31 +142,31 @@
       </div>
     </div>
 
-     <div v-if="showSubmitSpecReviewDialog" class="dialog-overlay" @click.self="showSubmitSpecReviewDialog = false">
-       <div data-testid="req-detail-dlg-submit-spec-review" class="dialog">
-         <h3>提交规范审核</h3>
-         <div class="custom-select" data-testid="req-detail-dlg-submit-spec-review-sel-reviewer" @click="toggleDropdown('submitSpecReview')">
-           <span>{{ getSelectedReviewerName(submitSpecReviewForm.reviewer_id) || '请选择审核人' }}</span>
-           <div v-if="dropdownOpen === 'submitSpecReview'" class="dropdown-options">
-              <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitSpecReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-           </div>
-         </div>
-         <button data-testid="req-detail-dlg-submit-spec-review-btn-confirm" @click="submitSpecReview">确认</button>
-         <button @click="showSubmitSpecReviewDialog = false">取消</button>
+    <div v-if="showSubmitSpecReviewDialog" class="dialog-overlay" @click.self="showSubmitSpecReviewDialog = false">
+      <div data-testid="req-detail-dlg-submit-spec-review" class="dialog">
+        <h3>提交规范审核</h3>
+        <div class="custom-select" data-testid="req-detail-dlg-submit-spec-review-sel-reviewer" @click="toggleDropdown('submitSpecReview')">
+          <span>{{ getSelectedReviewerName(submitSpecReviewForm.reviewer_id) || '请选择审核人' }}</span>
+          <div v-if="dropdownOpen === 'submitSpecReview'" class="dropdown-options">
+            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitSpecReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+          </div>
+        </div>
+        <button data-testid="req-detail-dlg-submit-spec-review-btn-confirm" @click="submitSpecReview">确认</button>
+        <button @click="showSubmitSpecReviewDialog = false">取消</button>
       </div>
     </div>
 
-     <div v-if="showSubmitTestsReviewDialog" class="dialog-overlay" @click.self="showSubmitTestsReviewDialog = false">
-       <div data-testid="req-detail-dlg-submit-tests-review" class="dialog">
-         <h3>提交测试审核</h3>
-         <div class="custom-select" data-testid="req-detail-dlg-submit-tests-review-sel-reviewer" @click="toggleDropdown('submitTestsReview')">
-           <span>{{ getSelectedReviewerName(submitTestsReviewForm.reviewer_id) || '请选择审核人' }}</span>
-           <div v-if="dropdownOpen === 'submitTestsReview'" class="dropdown-options">
-              <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitTestsReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-           </div>
-         </div>
-         <button data-testid="req-detail-dlg-submit-tests-review-btn-confirm" @click="submitTestsReview">确认</button>
-         <button @click="showSubmitTestsReviewDialog = false">取消</button>
+    <div v-if="showSubmitTestsReviewDialog" class="dialog-overlay" @click.self="showSubmitTestsReviewDialog = false">
+      <div data-testid="req-detail-dlg-submit-tests-review" class="dialog">
+        <h3>提交测试审核</h3>
+        <div class="custom-select" data-testid="req-detail-dlg-submit-tests-review-sel-reviewer" @click="toggleDropdown('submitTestsReview')">
+          <span>{{ getSelectedReviewerName(submitTestsReviewForm.reviewer_id) || '请选择审核人' }}</span>
+          <div v-if="dropdownOpen === 'submitTestsReview'" class="dropdown-options">
+            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitTestsReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+          </div>
+        </div>
+        <button data-testid="req-detail-dlg-submit-tests-review-btn-confirm" @click="submitTestsReview">确认</button>
+        <button @click="showSubmitTestsReviewDialog = false">取消</button>
       </div>
     </div>
 
@@ -209,15 +181,15 @@
           <label>描述</label>
           <textarea v-model="addTaskForm.description" data-testid="req-detail-dlg-add-task-txtarea-desc"></textarea>
         </div>
-         <div class="form-group">
-           <label>指派人</label>
-           <div class="custom-select" data-testid="req-detail-dlg-add-task-sel-assignee" @click="toggleDropdown('addTask')">
-             <span>{{ getSelectedReviewerName(addTaskForm.assignee_id) || '请选择' }}</span>
-             <div v-if="dropdownOpen === 'addTask'" class="dropdown-options">
-               <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="addTaskForm.assignee_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-             </div>
-           </div>
-         </div>
+        <div class="form-group">
+          <label>指派人</label>
+          <div class="custom-select" data-testid="req-detail-dlg-add-task-sel-assignee" @click="toggleDropdown('addTask')">
+            <span>{{ getSelectedReviewerName(addTaskForm.assignee_id) || '请选择' }}</span>
+            <div v-if="dropdownOpen === 'addTask'" class="dropdown-options">
+              <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="addTaskForm.assignee_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+            </div>
+          </div>
+        </div>
         <button data-testid="req-detail-dlg-add-task-btn-submit" @click="createTask">提交</button>
         <button @click="showAddTaskDialog = false">取消</button>
       </div>
@@ -264,7 +236,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
-import AppBadge from '@/components/common/AppBadge.vue'
+import RequirementSidebar from './RequirementSidebar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -388,72 +360,14 @@ function getSelectedReviewerName(id: string | number) {
   return r?.nickname || r?.email || ''
 }
 
-const reviewHistory = computed(() => {
-  return (req.value?.reviews || []).map((r) => ({
-    ...r,
-    action: r.action || (r.status === 'approved' ? 'approve' : r.status === 'rejected' ? 'reject' : r.status),
-  }))
-})
-
-const rejectReason = computed(() => {
-  const lastReject = [...reviewHistory.value].reverse().find((r) => r.action === 'reject')
-  return lastReject?.comment || ''
-})
-
-const canEdit = computed(() => {
-  return req.value?.status === 'drafting_req'
-})
-
-const canReview = computed(() => {
-  return req.value?.status === 'reviewing_req' || req.value?.status === 'reviewing_spec' || req.value?.status === 'reviewing_tests'
-})
-
 const filteredTestCases = computed(() => {
   if (!testCaseTypeFilter.value) return testCases.value
   return testCases.value.filter((tc) => tc.case_type === testCaseTypeFilter.value)
 })
 
-function typeLabel(type: string) {
-  if (type === 'feature') return '功能需求'
-  if (type === 'bug') return 'Bug'
-  if (type === 'optimization') return '优化'
-  return type
-}
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    drafting_req: '草稿',
-    reviewing_req: '审核中',
-    drafting_spec: '编写规范',
-    reviewing_spec: '规范审核中',
-    drafting_tests: '编写测试用例',
-    reviewing_tests: '测试审核中',
-    approved: '已通过',
-    spec_approved: '规范已通过',
-  }
-  return map[status] || status
-}
-
-function stepClass(step: string) {
-  const s = req.value?.status || ''
-  if (step === 'req') {
-    if (s === 'drafting_req') return 'active'
-    if (s === 'reviewing_req') return 'active review'
-    if (['drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved', 'spec_approved'].includes(s)) return 'completed'
-  }
-  if (step === 'spec') {
-    if (s === 'drafting_spec') return 'active'
-    if (s === 'reviewing_spec') return 'active review'
-    if (s === 'drafting_tests' || s === 'reviewing_tests' || s === 'approved' || s === 'spec_approved') return 'completed'
-  }
-  if (step === 'tests') {
-    if (s === 'drafting_tests') return 'active'
-    if (s === 'reviewing_tests') return 'active review'
-    if (s === 'approved' || s === 'spec_approved') return 'completed'
-  }
-  if (step === 'approved') {
-    if (s === 'approved' || s === 'spec_approved') return 'active completed done'
-  }
+function getVersionText(ver: SpecVersion): string {
+  if (typeof ver.content === 'string') return ver.content
+  if (ver.content && typeof ver.content === 'object') return (ver.content as Record<string, string>).text || JSON.stringify(ver.content)
   return ''
 }
 
@@ -643,13 +557,7 @@ async function fetchSpecVersions() {
 }
 
 function viewSpecVersion(ver: SpecVersion) {
-  if (typeof ver.content === 'string') {
-    selectedVersionContent.value = ver.content
-  } else if (ver.content && typeof ver.content === 'object') {
-    selectedVersionContent.value = (ver.content as Record<string, string>).text || JSON.stringify(ver.content)
-  } else {
-    selectedVersionContent.value = ''
-  }
+  selectedVersionContent.value = getVersionText(ver)
 }
 
 async function fetchTasks() {
@@ -752,35 +660,194 @@ async function fetchTestStats() {
 
 onMounted(async () => {
   await fetchReq()
+  await fetchTestStats()
 })
 </script>
 
 <style scoped>
 .requirement-detail-page {
-  padding: 1.5rem;
+  height: 100vh;
+  overflow: hidden;
 }
-.type-detail {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: #f9f9f9;
+.detail-layout {
+  display: flex;
+  height: 100%;
+}
+.detail-main {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.detail-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+.tab-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.tab-btn:hover {
+  color: #333;
+}
+.tab-btn.active {
+  color: #111;
+  border-bottom-color: #111;
+  font-weight: 600;
+}
+.tab-panel {
+  flex: 1;
+}
+.tab-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.spec-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+.spec-hint {
+  font-size: 12px;
+  color: #999;
+}
+.save-msg {
+  color: #52c41a;
+  font-size: 13px;
+  font-weight: 500;
+}
+.spec-actions {
+  display: flex;
+  gap: 6px;
+}
+.spec-editor {
+  width: 100%;
+  min-height: 400px;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  resize: vertical;
+}
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.version-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.version-card:hover {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.version-card.selected {
+  border-color: #1677ff;
+  background: rgba(22, 119, 255, 0.04);
+}
+.version-num {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111;
+  min-width: 40px;
+}
+.version-preview {
+  flex: 1;
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.version-view-btn {
+  background: transparent;
+  color: #1677ff;
+  border: 1px solid #1677ff;
+  padding: 2px 10px;
   border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  margin: 0;
 }
-.reject-info {
+.version-content {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 1rem;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
   margin-top: 1rem;
+  flex-shrink: 0;
+}
+.stat-card {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
   padding: 0.75rem;
-  background: #fff2f0;
-  border: 1px solid #ffccc7;
-  border-radius: 4px;
-  color: #cf1322;
+  text-align: center;
 }
-.review-history {
-  margin-top: 1rem;
+.stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
 }
-.review-history h3 {
-  margin-bottom: 0.5rem;
+.stat-label {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
 }
-.step-status {
-  font-size: 0.85rem;
-  color: #666;
+.stat-pass .stat-num { color: #52c41a; }
+.stat-fail .stat-num { color: #ff4d4f; }
+.stat-skip .stat-num { color: #faad14; }
+.stat-rate .stat-num { color: #1677ff; }
+
+@media (max-width: 768px) {
+  .detail-layout {
+    flex-direction: column;
+  }
+  .detail-main {
+    padding: 1rem;
+  }
+  .stat-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>
