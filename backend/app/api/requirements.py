@@ -91,7 +91,7 @@ async def direct_create_requirement(
     iteration_id = body.iteration_id
     if iteration_id is None:
         user_id = int(user["sub"])
-        stmt = select(TeamMember).where(TeamMember.user_id == user_id, TeamMember.is_deleted == False)
+        stmt = select(TeamMember).where(TeamMember.user_id == user_id, TeamMember.is_deleted == False).limit(1)
         result = await db.execute(stmt)
         membership = result.scalar_one_or_none()
         if membership is None:

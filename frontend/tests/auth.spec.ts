@@ -15,9 +15,11 @@ test.describe('Registration Page', () => {
   });
 
   test('should register successfully and redirect to login', async ({ page }) => {
-    await page.getByTestId('register-inp-email').fill('test@example.com');
+    const email = `reg_${Date.now()}@example.com`;
+    await page.getByTestId('register-inp-email').fill(email);
     await page.getByTestId('register-inp-nickname').fill('测试用户');
     await page.getByTestId('register-inp-password').fill('Password123');
+    await page.getByTestId('register-inp-confirm-password').fill('Password123');
     await page.getByTestId('register-btn-submit').click();
     await expect(page).toHaveURL(/.*login/);
   });
@@ -38,6 +40,15 @@ test.describe('Registration Page', () => {
     await expect(page.getByText(/密码.*[短少]/)).toBeVisible();
   });
 
+  test('E2E-AUTH-003: should show validation error when passwords do not match', async ({ page }) => {
+    await page.getByTestId('register-inp-email').fill('test@example.com')
+    await page.getByTestId('register-inp-nickname').fill('测试用户')
+    await page.getByTestId('register-inp-password').fill('Password123')
+    await page.getByTestId('register-inp-confirm-password').fill('Different456')
+    await page.getByTestId('register-btn-submit').click()
+    await expect(page.getByText(/密码.*一致|密码.*相同/)).toBeVisible()
+  })
+
   test('should show validation error for short nickname', async ({ page }) => {
     await page.getByTestId('register-inp-email').fill('test@example.com');
     await page.getByTestId('register-inp-nickname').fill('a');
@@ -50,6 +61,7 @@ test.describe('Registration Page', () => {
     await page.getByTestId('register-inp-email').fill('exist@example.com');
     await page.getByTestId('register-inp-nickname').fill('用户');
     await page.getByTestId('register-inp-password').fill('Password123');
+    await page.getByTestId('register-inp-confirm-password').fill('Password123');
     await page.getByTestId('register-btn-submit').click();
     await expect(page.getByText(/邮箱已注册/)).toBeVisible();
   });
@@ -73,14 +85,14 @@ test.describe('Login Page', () => {
   });
 
   test('should login successfully and redirect to dashboard', async ({ page }) => {
-    await page.getByTestId('login-inp-email').fill('test@example.com');
+    await page.getByTestId('login-inp-email').fill('exist@example.com');
     await page.getByTestId('login-inp-password').fill('Password123');
     await page.getByTestId('login-btn-submit').click();
     await expect(page).toHaveURL(/.*dashboard/);
   });
 
   test('should show error for wrong credentials', async ({ page }) => {
-    await page.getByTestId('login-inp-email').fill('test@example.com');
+    await page.getByTestId('login-inp-email').fill('exist@example.com');
     await page.getByTestId('login-inp-password').fill('WrongPassword');
     await page.getByTestId('login-btn-submit').click();
     await expect(page.getByText(/邮箱或密码错误/)).toBeVisible();
@@ -94,7 +106,7 @@ test.describe('Login Page', () => {
   });
 
   test('should remember login state when checkbox is checked', async ({ context, page }) => {
-    await page.getByTestId('login-inp-email').fill('test@example.com');
+    await page.getByTestId('login-inp-email').fill('exist@example.com');
     await page.getByTestId('login-inp-password').fill('Password123');
     await page.getByTestId('login-chk-remember').check();
     await page.getByTestId('login-btn-submit').click();

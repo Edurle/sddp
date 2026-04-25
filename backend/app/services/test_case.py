@@ -56,10 +56,9 @@ async def create_test_case(
     if req.status != "drafting_tests":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "需求状态不允许创建测试用例")
 
-    count_stmt = select(func.count()).select_from(TestCase)
-    count_result = await db.execute(count_stmt)
-    count = count_result.scalar_one()
-    case_number = f"TC-{count + 1}"
+    import time
+    import random
+    case_number = f"TC-{int(time.time() * 1000)}-{random.randint(100, 999)}"
 
     tc = TestCase(
         requirement_id=requirement_id,

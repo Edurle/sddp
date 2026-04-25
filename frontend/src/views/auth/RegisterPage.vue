@@ -22,6 +22,16 @@
         <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
       </div>
       <div class="form-group">
+        <label for="confirm-password">确认密码</label>
+        <input
+          id="confirm-password"
+          v-model="confirmPassword"
+          type="password"
+          data-testid="register-inp-confirm-password"
+        />
+        <div v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</div>
+      </div>
+      <div class="form-group">
         <label for="nickname">昵称</label>
         <input
           id="nickname"
@@ -47,13 +57,15 @@ const router = useRouter()
 
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const nickname = ref('')
-const errors = reactive({ email: '', password: '', nickname: '', general: '' })
+const errors = reactive({ email: '', password: '', confirmPassword: '', nickname: '', general: '' })
 
 function validate(): boolean {
   let valid = true
   errors.email = ''
   errors.password = ''
+  errors.confirmPassword = ''
   errors.nickname = ''
   errors.general = ''
 
@@ -63,6 +75,10 @@ function validate(): boolean {
   }
   if (!password.value || password.value.length < 8) {
     errors.password = '密码太短，至少需要8个字符'
+    valid = false
+  }
+  if (password.value !== confirmPassword.value) {
+    errors.confirmPassword = '两次输入的密码不一致'
     valid = false
   }
   if (!nickname.value || nickname.value.length < 2) {

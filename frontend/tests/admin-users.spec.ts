@@ -69,12 +69,16 @@ test.describe('Admin Users Page', () => {
   });
 
   test('should toggle user active status', async ({ authenticatedPage: page }) => {
-    const toggleBtn = page.getByTestId(/user-mgmt-btn-toggle-status-/).first();
-    if (await toggleBtn.isVisible()) {
-      const currentText = await toggleBtn.textContent();
-      await toggleBtn.click();
-      const newText = await toggleBtn.textContent();
-      expect(newText).not.toBe(currentText);
+    const allToggleBtns = page.getByTestId(/user-mgmt-btn-toggle-status-/)
+    const count = await allToggleBtns.count()
+    for (let i = 0; i < count; i++) {
+      const btn = allToggleBtns.nth(i)
+      const text = await btn.textContent()
+      if (text === '禁用') {
+        await btn.click()
+        await expect(btn).toContainText('启用')
+        return
+      }
     }
   });
 

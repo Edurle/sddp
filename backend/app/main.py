@@ -208,6 +208,15 @@ async def business_error_handler(request: Request, exc: BusinessError):
     )
 
 
+@app.exception_handler(Exception)
+async def generic_error_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception")
+    return JSONResponse(
+        status_code=500,
+        content={"code": -1, "message": f"Internal Server Error: {exc}", "data": None},
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request: Request, exc: RequestValidationError):
     for err in exc.errors():

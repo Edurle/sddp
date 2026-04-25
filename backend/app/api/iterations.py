@@ -25,7 +25,7 @@ async def direct_create_iteration(
     from sqlalchemy import select as sel
 
     user_id = int(user["sub"])
-    stmt = sel(TeamMember).where(TeamMember.user_id == user_id, TeamMember.is_deleted == False)
+    stmt = sel(TeamMember).where(TeamMember.user_id == user_id, TeamMember.is_deleted == False).limit(1)
     result = await db.execute(stmt)
     membership = result.scalar_one_or_none()
     if membership is None:

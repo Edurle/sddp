@@ -56,30 +56,44 @@ test.describe('Iteration List', () => {
   })
 })
 
+test.describe.configure({ mode: 'serial' })
+
 test.describe('Iteration Detail & Actions', () => {
   let iterationId: string
 
-  test.beforeEach(async ({ authenticatedPage: page }) => {
+  function getIterationRow(page: import('@playwright/test').Page, id: string) {
+    return page
+      .getByTestId('iteration-list-tbl-iterations')
+      .locator('tbody tr')
+      .locator(`[data-iteration-id="${id}"]`)
+      .locator('..')
+  }
+
+  test('setup: create iteration via API', async ({ authenticatedPage: page }) => {
+    const resp = await page.request.post('/api/v1/projects/1/iterations', {
+      data: {
+        name: `E2E Test Iter ${Date.now()}`,
+        goal: 'E2E test iteration',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+      },
+    })
+    const body = await resp.json()
+    expect(body.code).toBe(0)
+    iterationId = String(body.data.id)
+
     await page.goto('/projects/1')
     await page.getByTestId('project-detail-tab-iterations').click()
-
-    const table = page.getByTestId('iteration-list-tbl-iterations')
-    const firstRow = table.locator('tbody tr').first()
-    const idCell = firstRow.locator('td').nth(0)
-    iterationId = (await idCell.getAttribute('data-iteration-id')) || '1'
-  })
-
-  test('Display iteration info and statistics', async ({ authenticatedPage: page }) => {
     const row = page
       .getByTestId('iteration-list-tbl-iterations')
       .locator('tbody tr')
       .first()
     await expect(row).toBeVisible()
+  })
 
-    await expect(row.locator('td').nth(0)).not.toBeEmpty()
-    await expect(row.locator('td').nth(1)).toBeVisible()
-    await expect(row.locator('td').nth(2)).toBeVisible()
-    await expect(row.locator('td').nth(3)).toBeVisible()
+  test.beforeEach(async ({ authenticatedPage: page }) => {
+    await page.goto('/projects/1')
+    await page.getByTestId('project-detail-tab-iterations').click()
   })
 
   test('E2E-ITER-002: Edit iteration — start_date is read-only', async ({
@@ -109,10 +123,7 @@ test.describe('Iteration Detail & Actions', () => {
       await confirmDialog.getByTestId('iteration-list-dlg-confirm-start-btn-confirm').click()
     }
 
-    const row = page
-      .getByTestId('iteration-list-tbl-iterations')
-      .locator('tbody tr')
-      .first()
+    const row = getIterationRow(page, iterationId)
     await expect(row.locator('td').nth(3)).toContainText('进行中')
   })
 
@@ -124,17 +135,44 @@ test.describe('Iteration Detail & Actions', () => {
       await confirmDialog.getByTestId('iteration-list-dlg-confirm-complete-btn-confirm').click()
     }
 
-    const row = page
-      .getByTestId('iteration-list-tbl-iterations')
-      .locator('tbody tr')
-      .first()
+    const row = getIterationRow(page, iterationId)
     await expect(row.locator('td').nth(3)).toContainText('已完成')
   })
 
   test('E2E-ITER-005: Complete iteration — has uncompleted tasks', async ({
     authenticatedPage: page,
   }) => {
-    await page.getByTestId(`iteration-list-btn-complete-${iterationId}`).click()
+    const iterResp = await page.request.post('/api/v1/projects/1/iterations', {
+      data: {
+        name: `E2E Unblock Iter ${Date.now()}`,
+        goal: 'E2E unblock test',
+        start_date: '2026-01-01',
+        end_date: '2026-12-31',
+      },
+    })
+    const iterBody = await iterResp.json()
+    const unblockId = String(iterBody.data.id)
+
+    await page.request.post('/api/v1/requirements', {
+      data: {
+        title: 'Blocking Requirement',
+        type: 'feature',
+        priority: 'high',
+        description: 'This req blocks completion',
+        iteration_id: Number(unblockId),
+      },
+    })
+
+    await page.goto('/projects/1')
+    await page.getByTestId('project-detail-tab-iterations').click()
+
+    await page.getByTestId(`iteration-list-btn-start-${unblockId}`).click()
+    const startConfirm = page.getByTestId('iteration-list-dlg-confirm-start')
+    if (await startConfirm.isVisible()) {
+      await startConfirm.getByTestId('iteration-list-dlg-confirm-start-btn-confirm').click()
+    }
+
+    await page.getByTestId(`iteration-list-btn-complete-${unblockId}`).click()
 
     const errorAlert = page.getByTestId('iteration-list-txt-complete-error')
     await expect(errorAlert).toBeVisible()

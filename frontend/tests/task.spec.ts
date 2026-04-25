@@ -1,5 +1,17 @@
 import { test, expect } from './fixtures/auth'
 
+async function registerWithRetry(page: import('@playwright/test').Page, email: string, password: string, nickname: string) {
+  for (let i = 0; i < 3; i++) {
+    const resp = await page.request.post('/api/v1/auth/register', {
+      data: { email, password, nickname },
+    })
+    const body = await resp.json()
+    if (body.code === 0 || body.code === 40901) return body
+    if (i === 2) return body
+    await new Promise((r) => setTimeout(r, 500))
+  }
+}
+
 async function createRequirement(page: import('@playwright/test').Page, overrides: Record<string, unknown> = {}) {
   const payload = {
     title: '测试需求标题',
@@ -15,10 +27,7 @@ async function createRequirement(page: import('@playwright/test').Page, override
 
 async function createApprovedRequirement(page: import('@playwright/test').Page) {
   const email = `reviewer_${Date.now()}@test.com`
-  const reviewerResp = await page.request.post('/api/v1/auth/register', {
-    data: { email, password: 'Test1234!', nickname: `reviewer_${Date.now()}` },
-  })
-  const reviewerBody = await reviewerResp.json()
+  const reviewerBody = await registerWithRetry(page, email, 'Test1234!', `reviewer_${Date.now()}`)
   const reviewer = reviewerBody.data || reviewerBody
 
   const req = await createRequirement(page)

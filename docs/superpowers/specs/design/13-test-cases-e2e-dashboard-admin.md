@@ -21,10 +21,12 @@
 - **前置条件**: 用户已登录
 - **测试步骤**:
   1. 访问 /dashboard
-  2. 点击 `dashboard-tab-teams`
-  3. 点击 `dashboard-btn-create-team`
-  4. 在弹窗中填写团队名称和描述
-  5. 点击确认
+  2. 从 Dashboard 导航到 /teams 页面
+  3. 点击 `team-list-btn-create`
+  4. 在 `team-list-dlg-create` 弹窗中：
+     - `team-list-dlg-create-inp-name` 输入团队名称
+     - `team-list-dlg-create-txtarea-desc` 输入描述
+  5. 点击 `team-list-dlg-create-btn-submit`
 - **验证方式**: 团队列表中出现新创建的团队，用户角色为"团队所有者"
 
 ### 查看待审核事项

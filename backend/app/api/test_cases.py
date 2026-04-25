@@ -26,17 +26,15 @@ async def direct_create_test_case(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    import time
+    import random
     from app.models import TestCase as TCModel
-    from sqlalchemy import func, select
 
     if not body.title or not body.title.strip():
         from app.exceptions import BusinessError, ERR_VALIDATION
         raise BusinessError(ERR_VALIDATION, "用例标题不能为空")
 
-    count_stmt = select(func.count()).select_from(TCModel)
-    count_result = await db.execute(count_stmt)
-    count = count_result.scalar_one()
-    case_number = f"TC-{count + 1}"
+    case_number = f"TC-{int(time.time() * 1000)}-{random.randint(100, 999)}"
 
     tc = TCModel(
         requirement_id=body.requirement_id,

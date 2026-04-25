@@ -1,5 +1,17 @@
 import { test, expect } from './fixtures/auth'
 
+async function registerWithRetry(page: import('@playwright/test').Page, email: string, password: string, nickname: string) {
+  for (let i = 0; i < 3; i++) {
+    const resp = await page.request.post('/api/v1/auth/register', {
+      data: { email, password, nickname },
+    })
+    const body = await resp.json()
+    if (body.code === 0 || body.code === 40901) return body
+    if (i === 2) return body
+    await new Promise((r) => setTimeout(r, 500))
+  }
+}
+
 async function createRequirement(page: import('@playwright/test').Page, overrides: Record<string, unknown> = {}) {
   const payload = {
     title: '测试需求标题',
@@ -15,11 +27,11 @@ async function createRequirement(page: import('@playwright/test').Page, override
 
 async function createReviewer(page: import('@playwright/test').Page) {
   const email = `reviewer_${Date.now()}@test.com`
-  const resp = await page.request.post('/api/v1/auth/register', {
-    data: { email, password: 'Test1234!', nickname: `reviewer_${Date.now()}` },
-  })
-  const body = await resp.json()
-  return body.data || body
+  const body = await registerWithRetry(page, email, 'Test1234!', `reviewer_${Date.now()}`)
+  if (!body.data) {
+    throw new Error(`Register failed: ${JSON.stringify(body)}`)
+  }
+  return body.data
 }
 
 async function setupRequirementWithTests(page: import('@playwright/test').Page) {
@@ -34,6 +46,9 @@ async function setupRequirementWithTests(page: import('@playwright/test').Page) 
     data: { email: reviewer.email, password: 'Test1234!' },
   })
   const loginData = await loginResp.json()
+  if (!loginData.data || !loginData.data.token) {
+    throw new Error(`Login failed for reviewer: ${JSON.stringify(loginData)}`)
+  }
   const token = loginData.data.token
   await page.evaluate((t) => localStorage.setItem('token', t), token)
   await page.request.post(`/api/v1/requirements/${req.id}/approve`)
@@ -50,6 +65,9 @@ async function setupRequirementWithTests(page: import('@playwright/test').Page) 
     data: { email: specReviewer.email, password: 'Test1234!' },
   })
   const specTokenBody = await specLogin.json()
+  if (!specTokenBody.data || !specTokenBody.data.token) {
+    throw new Error(`Login failed for specReviewer: ${JSON.stringify(specTokenBody)}`)
+  }
   await page.evaluate((t) => localStorage.setItem('token', t), specTokenBody.data.token)
   await page.request.post(`/api/v1/requirements/${req.id}/approve-spec`)
 
@@ -139,7 +157,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-btn-save').click()
 
       await expect(
-        authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText(/^TC-\d+$/)
+        authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText(/^TC-\d+(-\d+)?$/)
       ).toBeVisible()
     })
   })
@@ -314,9 +332,7 @@ test.describe('测试执行', () => {
     const tc = await tcResp.json()
 
     const assigneeEmail = `assignee_${Date.now()}@test.com`
-    await page.request.post('/api/v1/auth/register', {
-      data: { email: assigneeEmail, password: 'Test1234!', nickname: `assignee_${Date.now()}` },
-    })
+    await registerWithRetry(page, assigneeEmail, 'Test1234!', `assignee_${Date.now()}`)
     const assigneeLogin = await page.request.post('/api/v1/auth/login', {
       data: { email: assigneeEmail, password: 'Test1234!' },
     })

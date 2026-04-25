@@ -68,6 +68,8 @@ test.describe('Project List', () => {
 })
 
 test.describe('Project Detail', () => {
+  test.describe.configure({ mode: 'serial' })
+
   let projectId: string
 
   test.beforeEach(async ({ authenticatedPage: page }) => {
