@@ -58,7 +58,7 @@
             </thead>
             <tbody>
               <tr v-for="task in tasks" :key="task.id">
-                <td>{{ task.title }}</td>
+                <td><router-link :to="`/tasks/${task.id}`" class="task-link">{{ task.title }}</router-link></td>
                 <td>{{ task.status }}</td>
               </tr>
             </tbody>
@@ -838,6 +838,14 @@ onMounted(async () => {
 .stat-fail .stat-num { color: #ff4d4f; }
 .stat-skip .stat-num { color: #faad14; }
 .stat-rate .stat-num { color: #1677ff; }
+.task-link {
+  color: #1677ff;
+  text-decoration: none;
+  font-weight: 500;
+}
+.task-link:hover {
+  text-decoration: underline;
+}
 
 @media (max-width: 768px) {
   .detail-layout {
