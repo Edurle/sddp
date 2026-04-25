@@ -147,7 +147,7 @@
 | 用例编号   | E2E-KANBAN-001                                                                                           |
 | 前置条件   | 迭代内有多个状态的需求                                                                                    |
 | 测试步骤   | 1. 点击 `iteration-list-btn-kanban-{id}`<br>2. 查看看板页面                                               |
-| 验证方式   | - `iteration-kanban-txt-name` 显示迭代名称<br>- 多列看板按状态分组显示需求卡片<br>- 每个需求卡片 `iteration-kanban-card-req-{id}` 显示标题、类型标签、优先级 |
+| 验证方式   | - `iteration-kanban-txt-name` 显示迭代名称<br>- 所有需求以卡片形式在统一网格区域 `iteration-kanban-grid` 中展示<br>- 每个需求卡片 `iteration-kanban-card-req-{id}` 显示标题、类型标签、优先级<br>- 每张卡片右上角有彩色状态标签 `iteration-kanban-card-req-badge-status` |
 
 ### 看板上创建需求
 
@@ -156,7 +156,7 @@
 | 用例编号   | E2E-KANBAN-002                                                                                           |
 | 前置条件   | 有 `requirement:create` 权限                                                                             |
 | 测试步骤   | 1. 点击 `iteration-kanban-btn-add-req`<br>2. 在 `iteration-kanban-dlg-create-req` 弹窗中：<br>&emsp;- `iteration-kanban-dlg-create-req-inp-title` 输入需求标题<br>&emsp;- `iteration-kanban-dlg-create-req-sel-type` 选择类型<br>&emsp;- `iteration-kanban-dlg-create-req-inp-priority` 输入优先级<br>&emsp;- `iteration-kanban-dlg-create-req-txtarea-desc` 输入描述<br>&emsp;- `iteration-kanban-dlg-create-req-txtarea-type-detail` 输入类型详情<br>3. 点击 `iteration-kanban-dlg-create-req-btn-submit` |
-| 验证方式   | "编写需求"列出现新的需求卡片                                                                              |
+| 验证方式   | 网格区域出现新的需求卡片，卡片带有「草稿」状态标签                                                        |
 
 ### 从看板进入需求详情
 
@@ -174,4 +174,13 @@
 | 用例编号   | E2E-KANBAN-004                                                                                           |
 | 前置条件   | 迭代有数据                                                                                                |
 | 测试步骤   | 1. 查看 `iteration-kanban-txt-stat`                                                                      |
-| 验证方式   | 显示需求数、任务数、测试通过率                                                                             |
+| 验证方式   | 显示需求数、状态统计                                                                                      |
+
+### 按状态筛选需求卡片
+
+| 项目       | 值                                                                                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| 用例编号   | E2E-KANBAN-005                                                                                           |
+| 前置条件   | 迭代内有多个不同状态的需求                                                                                |
+| 测试步骤   | 1. 点击 `iteration-kanban-filter-draft` 状态筛选按钮<br>2. 查看网格区域                                  |
+| 验证方式   | 网格区域仅显示「草稿」状态的卡片；点击 `iteration-kanban-filter-all` 恢复显示全部                          |

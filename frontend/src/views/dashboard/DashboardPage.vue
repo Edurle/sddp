@@ -200,97 +200,11 @@ onMounted(async () => {
 .dashboard-page {
   padding: 1.5rem;
 }
-.dashboard-page h1 {
-  margin: 0 0 1rem;
-}
 .user-info {
   margin-bottom: 1rem;
-}
-.user-info span {
-  margin-right: 1rem;
-}
-.tabs {
   display: flex;
-  gap: 0;
-  border-bottom: 2px solid #e0e0e0;
-  margin-bottom: 1.5rem;
-}
-.tabs button {
-  padding: 8px 20px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 14px;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-}
-.tabs button.active {
-  border-bottom-color: #1890ff;
-  color: #1890ff;
-}
-.sub-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 1rem;
-}
-.sub-tabs button {
-  padding: 6px 16px;
-  border: none;
-  background: none;
-  cursor: pointer;
+  gap: 1rem;
   font-size: 13px;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-.sub-tabs button.active {
-  border-bottom-color: #1890ff;
-  color: #1890ff;
-}
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-.form-group input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-}
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.dialog {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  min-width: 400px;
-  max-width: 600px;
-}
-.dialog h3 {
-  margin: 0 0 1rem;
-}
-.error-message {
-  color: red;
-  margin-bottom: 0.5rem;
-}
-.success-message {
-  color: green;
-  margin-bottom: 0.5rem;
-}
-.empty-state {
-  text-align: center;
-  padding: 2rem 1rem;
-  color: #999;
+  color: #666;
 }
 </style>

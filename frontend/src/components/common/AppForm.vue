@@ -8,3 +8,11 @@
 defineProps<{ testId?: string }>()
 defineEmits(['submit'])
 </script>
+
+<style scoped>
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+</style>

@@ -10,17 +10,29 @@ defineProps<{ testId?: string; active?: boolean; completed?: boolean }>()
 
 <style scoped>
 .app-step {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 4px;
-  background: #f0f0f0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #666;
+  transition: all 0.2s ease;
 }
+
 .app-step.active {
-  background: #1890ff;
-  color: white;
+  background: rgba(0, 0, 0, 0.04);
+  border-color: #111;
+  color: #111;
+  font-weight: 600;
 }
+
 .app-step.completed {
-  background: #52c41a;
-  color: white;
+  background: #111;
+  border-color: #111;
+  color: #fff;
 }
 </style>

@@ -7,3 +7,44 @@
 <script setup lang="ts">
 defineProps<{ testId?: string; type?: 'button' | 'submit'; disabled?: boolean }>()
 </script>
+
+<style scoped>
+button {
+  font-family: inherit;
+  font-size: inherit;
+  transition: all 0.2s ease;
+}
+
+button[type="submit"] {
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button[type="submit"]:hover {
+  background: #333;
+}
+
+button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button[type="button"] {
+  background: rgba(0, 0, 0, 0.04);
+  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 9px 20px;
+  cursor: pointer;
+}
+
+button[type="button"]:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+</style>

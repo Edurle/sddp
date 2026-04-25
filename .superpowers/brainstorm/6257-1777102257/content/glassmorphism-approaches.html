@@ -1,0 +1,93 @@
+<h2>玻璃质感设计方案</h2>
+<p class="subtitle">选择你喜欢的玻璃拟态（Glassmorphism）风格方向</p>
+
+<div class="cards">
+  <div class="card" data-choice="frost" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 8px; min-height: 220px;">
+        <div style="background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+          <div style="font-weight: 600; color: #fff; font-size: 14px; margin-bottom: 8px;">SDD Platform</div>
+          <div style="display: flex; gap: 8px;">
+            <div style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 11px;">仪表盘</div>
+            <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 12px; color: rgba(255,255,255,0.7); font-size: 11px;">我的团队</div>
+          </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.2); border-radius: 12px; padding: 16px;">
+          <div style="color: rgba(255,255,255,0.5); font-size: 11px; margin-bottom: 6px;">Label</div>
+          <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 12px; margin-bottom: 10px;">Input field</div>
+          <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 12px; margin-bottom: 10px;">Input field</div>
+          <div style="background: rgba(255,255,255,0.35); border-radius: 8px; padding: 8px 16px; color: #fff; font-size: 12px; text-align: center; font-weight: 500;">Submit</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 深色霜冻（Frost Noir）</h3>
+      <p>深色渐变背景 + 半透明白色毛玻璃。高对比度，科技感强，适合专业工具。</p>
+      <ul style="font-size: 0.85em; color: #666; margin-top: 8px; padding-left: 1em;">
+        <li>紫蓝渐变深色背景</li>
+        <li>白色半透明毛玻璃面板</li>
+        <li>柔和发光边框</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" data-choice="aurora" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); padding: 24px; border-radius: 8px; min-height: 220px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(0,255,136,0.3), transparent 70%); border-radius: 50%;"></div>
+        <div style="position: absolute; bottom: -10px; left: 10px; width: 80px; height: 80px; background: radial-gradient(circle, rgba(0,200,255,0.25), transparent 70%); border-radius: 50%;"></div>
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; margin-bottom: 12px; position: relative;">
+          <div style="font-weight: 600; color: #fff; font-size: 14px; margin-bottom: 8px;">SDD Platform</div>
+          <div style="display: flex; gap: 8px;">
+            <div style="background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); border-radius: 8px; padding: 6px 12px; color: #00ff88; font-size: 11px;">仪表盘</div>
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 12px; color: rgba(255,255,255,0.5); font-size: 11px;">我的团队</div>
+          </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.06); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; position: relative;">
+          <div style="color: rgba(255,255,255,0.4); font-size: 11px; margin-bottom: 6px;">Label</div>
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(0,255,136,0.2); border-radius: 8px; padding: 8px 12px; color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 10px;">Input field</div>
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(0,200,255,0.2); border-radius: 8px; padding: 8px 12px; color: rgba(255,255,255,0.6); font-size: 12px; margin-bottom: 10px;">Input field</div>
+          <div style="background: linear-gradient(135deg, rgba(0,255,136,0.3), rgba(0,200,255,0.3)); border: 1px solid rgba(0,255,136,0.4); border-radius: 8px; padding: 8px 16px; color: #fff; font-size: 12px; text-align: center; font-weight: 500;">Submit</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 极光暗夜（Aurora Dark）</h3>
+      <p>深邃暗色背景 + 彩色光晕 + 超透明玻璃。神秘高级感，视觉冲击力强。</p>
+      <ul style="font-size: 0.85em; color: #666; margin-top: 8px; padding-left: 1em;">
+        <li>暗黑基底 + 绿/蓝极光光晕</li>
+        <li>超低透明度玻璃面板</li>
+        <li>渐变色交互元素</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" data-choice="daylight" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 50%, #e8cbc0 100%); padding: 24px; border-radius: 8px; min-height: 220px;">
+        <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 8px 32px rgba(31,38,135,0.1);">
+          <div style="font-weight: 600; color: #2c3e50; font-size: 14px; margin-bottom: 8px;">SDD Platform</div>
+          <div style="display: flex; gap: 8px;">
+            <div style="background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.8); border-radius: 8px; padding: 6px 12px; color: #2c3e50; font-size: 11px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">仪表盘</div>
+            <div style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 8px; padding: 6px 12px; color: rgba(44,62,80,0.5); font-size: 11px;">我的团队</div>
+          </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.35); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.5); border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(31,38,135,0.08);">
+          <div style="color: rgba(44,62,80,0.6); font-size: 11px; margin-bottom: 6px;">Label</div>
+          <div style="background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7); border-radius: 8px; padding: 8px 12px; color: #2c3e50; font-size: 12px; margin-bottom: 10px;">Input field</div>
+          <div style="background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7); border-radius: 8px; padding: 8px 12px; color: #2c3e50; font-size: 12px; margin-bottom: 10px;">Input field</div>
+          <div style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; padding: 8px 16px; color: #fff; font-size: 12px; text-align: center; font-weight: 500;">Submit</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 日光轻透（Daylight Glass）</h3>
+      <p>浅色渐变背景 + 白色毛玻璃。明亮通透，专业优雅，可读性最佳。</p>
+      <ul style="font-size: 0.85em; color: #666; margin-top: 8px; padding-left: 1em;">
+        <li>蓝粉渐变浅色背景</li>
+        <li>高透明度白色玻璃</li>
+        <li>柔和阴影 + 渐变色按钮</li>
+      </ul>
+    </div>
+  </div>
+</div>

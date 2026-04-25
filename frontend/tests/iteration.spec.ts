@@ -196,14 +196,12 @@ test.describe('Kanban Board', () => {
     await expect(page).toHaveURL(/\/iterations\/\d+\/kanban/)
   })
 
-  test('E2E-KANBAN-001: Display kanban columns and requirement cards', async ({
+  test('E2E-KANBAN-001: Display card grid with status badges', async ({
     authenticatedPage: page,
   }) => {
     await expect(page.getByTestId('iteration-kanban-txt-name')).not.toBeEmpty()
 
-    const columns = page.locator('[data-testid^="iteration-kanban-col-"]')
-    const colCount = await columns.count()
-    expect(colCount).toBeGreaterThanOrEqual(1)
+    await expect(page.getByTestId('iteration-kanban-grid')).toBeVisible()
 
     const cards = page.locator('[data-testid^="iteration-kanban-card-req-"]')
     const cardCount = await cards.count()
@@ -212,6 +210,7 @@ test.describe('Kanban Board', () => {
       await expect(firstCard.getByTestId('iteration-kanban-card-req-title')).not.toBeEmpty()
       await expect(firstCard.getByTestId('iteration-kanban-card-req-type')).toBeVisible()
       await expect(firstCard.getByTestId('iteration-kanban-card-req-priority')).toBeVisible()
+      await expect(firstCard.getByTestId('iteration-kanban-card-req-badge-status')).toBeVisible()
     }
   })
 
@@ -231,10 +230,12 @@ test.describe('Kanban Board', () => {
     await dialog.getByTestId('iteration-kanban-dlg-create-req-btn-submit').click()
     await expect(dialog).not.toBeVisible()
 
-    const draftColumn = page.getByTestId('iteration-kanban-col-draft')
-    if (await draftColumn.isVisible()) {
-      await expect(draftColumn).toContainText(reqTitle)
-    }
+    const grid = page.getByTestId('iteration-kanban-grid')
+    await expect(grid).toContainText(reqTitle)
+
+    const cards = grid.locator('[data-testid^="iteration-kanban-card-req-"]')
+    const newCard = cards.filter({ hasText: reqTitle })
+    await expect(newCard.getByTestId('iteration-kanban-card-req-badge-status')).toContainText('草稿')
   })
 
   test('E2E-KANBAN-003: Click card to view requirement detail', async ({ authenticatedPage: page }) => {
@@ -254,5 +255,23 @@ test.describe('Kanban Board', () => {
     const statElement = page.getByTestId('iteration-kanban-txt-stat')
     await expect(statElement).toBeVisible()
     await expect(statElement).not.toBeEmpty()
+  })
+
+  test('E2E-KANBAN-005: Filter cards by status', async ({ authenticatedPage: page }) => {
+    await expect(page.getByTestId('iteration-kanban-filter-all')).toBeVisible()
+    await expect(page.getByTestId('iteration-kanban-filter-draft')).toBeVisible()
+
+    await page.getByTestId('iteration-kanban-filter-draft').click()
+
+    const cards = page.locator('[data-testid^="iteration-kanban-card-req-"]')
+    const cardCount = await cards.count()
+    for (let i = 0; i < cardCount; i++) {
+      await expect(cards.nth(i).getByTestId('iteration-kanban-card-req-badge-status')).toContainText('草稿')
+    }
+
+    await page.getByTestId('iteration-kanban-filter-all').click()
+    const allCards = page.locator('[data-testid^="iteration-kanban-card-req-"]')
+    const allCount = await allCards.count()
+    expect(allCount).toBeGreaterThanOrEqual(cardCount)
   })
 })

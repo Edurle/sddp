@@ -395,53 +395,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.dialog {
-  background: white;
+.task-detail-page {
   padding: 1.5rem;
-  border-radius: 8px;
-  min-width: 400px;
-  max-width: 600px;
 }
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-.actions {
-  margin: 1rem 0;
-  display: flex;
-  gap: 0.5rem;
-}
-.tabs-section {
+.exec-history {
   margin-top: 1rem;
-}
-.tab-content {
-  margin-top: 0.5rem;
-}
-textarea {
-  width: 100%;
-  min-height: 80px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  border: 1px solid #e8e8e8;
-  padding: 0.5rem;
-}
-.error {
-  color: red;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
 }
 </style>

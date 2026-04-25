@@ -1,0 +1,79 @@
+<h2>纯色高对比度背景 + 玻璃质感</h2>
+<p class="subtitle">保留毛玻璃组件，换成纯色深色背景以获得更高对比度</p>
+
+<div class="cards">
+  <div class="card" data-choice="slate" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #1e293b; padding: 24px; border-radius: 8px; min-height: 240px;">
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.3);">
+          <div style="font-weight: 600; color: #e2e8f0; font-size: 14px; margin-bottom: 10px;">SDD Platform</div>
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <div style="background: rgba(148,163,184,0.15); border: 1px solid rgba(148,163,184,0.25); border-radius: 8px; padding: 5px 12px; color: #94a3b8; font-size: 11px;">仪表盘</div>
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 12px; color: rgba(255,255,255,0.4); font-size: 11px;">我的团队</div>
+          </div>
+          <div style="color: rgba(148,163,184,0.6); font-size: 11px; margin-bottom: 4px;">团队名称</div>
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 12px; color: rgba(255,255,255,0.4); font-size: 12px; margin-bottom: 8px;">输入名称...</div>
+          <div style="background: rgba(99,102,241,0.25); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; padding: 8px 16px; color: #a5b4fc; font-size: 12px; text-align: center;">提交</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #818cf8; padding: 3px 10px; border-radius: 20px; font-size: 11px;">进行中</span>
+          <span style="background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3); color: #34d399; padding: 3px 10px; border-radius: 20px; font-size: 11px;">已完成</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 石板深蓝（Slate）</h3>
+      <p>#1e293b 纯色背景，冷色调专业感，对比度清晰。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="midnight" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #0f172a; padding: 24px; border-radius: 8px; min-height: 240px;">
+        <div style="background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.4);">
+          <div style="font-weight: 600; color: #e2e8f0; font-size: 14px; margin-bottom: 10px;">SDD Platform</div>
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <div style="background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 5px 12px; color: #38bdf8; font-size: 11px;">仪表盘</div>
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 5px 12px; color: rgba(255,255,255,0.35); font-size: 11px;">我的团队</div>
+          </div>
+          <div style="color: rgba(148,163,184,0.5); font-size: 11px; margin-bottom: 4px;">团队名称</div>
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: rgba(255,255,255,0.35); font-size: 12px; margin-bottom: 8px;">输入名称...</div>
+          <div style="background: rgba(56,189,248,0.2); border: 1px solid rgba(56,189,248,0.35); border-radius: 8px; padding: 8px 16px; color: #7dd3fc; font-size: 12px; text-align: center;">提交</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span style="background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); color: #38bdf8; padding: 3px 10px; border-radius: 20px; font-size: 11px;">进行中</span>
+          <span style="background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; padding: 3px 10px; border-radius: 20px; font-size: 11px;">已完成</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 午夜深蓝（Midnight）</h3>
+      <p>#0f172a 更深的藏青色，极致对比度，科技感十足。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="graphite" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #18181b; padding: 24px; border-radius: 8px; min-height: 240px;">
+        <div style="background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.5);">
+          <div style="font-weight: 600; color: #e4e4e7; font-size: 14px; margin-bottom: 10px;">SDD Platform</div>
+          <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <div style="background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.25); border-radius: 8px; padding: 5px 12px; color: #a855f7; font-size: 11px;">仪表盘</div>
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 5px 12px; color: rgba(255,255,255,0.35); font-size: 11px;">我的团队</div>
+          </div>
+          <div style="color: rgba(161,161,170,0.5); font-size: 11px; margin-bottom: 4px;">团队名称</div>
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: rgba(255,255,255,0.35); font-size: 12px; margin-bottom: 8px;">输入名称...</div>
+          <div style="background: rgba(168,85,247,0.2); border: 1px solid rgba(168,85,247,0.35); border-radius: 8px; padding: 8px 16px; color: #c084fc; font-size: 12px; text-align: center;">提交</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span style="background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.25); color: #a855f7; padding: 3px 10px; border-radius: 20px; font-size: 11px;">进行中</span>
+          <span style="background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; padding: 3px 10px; border-radius: 20px; font-size: 11px;">已完成</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 石墨黑（Graphite）</h3>
+      <p>#18181b 纯黑灰底，中性沉稳，紫色调玻璃点缀。</p>
+    </div>
+  </div>
+</div>

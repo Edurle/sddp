@@ -103,31 +103,6 @@ onMounted(() => fetchTeams())
 .team-list-page h1 {
   margin: 0 0 1rem;
 }
-.toolbar {
-  margin-bottom: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-.toolbar button, .empty-state button {
-  padding: 8px 20px;
-  background: #1890ff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-.toolbar button:hover, .empty-state button:hover {
-  background: #40a9ff;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: #999;
-}
-.empty-state p {
-  margin-bottom: 1rem;
-}
 .team-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -150,46 +125,5 @@ onMounted(() => fetchTeams())
   margin: 0;
   color: #666;
   font-size: 0.9rem;
-}
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.dialog {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  min-width: 400px;
-  max-width: 600px;
-}
-.dialog h3 {
-  margin: 0 0 1rem;
-}
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-.form-group input, .form-group textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-}
-.error-message {
-  color: red;
-  margin-bottom: 0.5rem;
-}
-textarea {
-  width: 100%;
-  min-height: 80px;
 }
 </style>

@@ -75,3 +75,12 @@ async function fetchTeam() {
 
 onMounted(() => fetchTeam())
 </script>
+
+<style scoped>
+.team-detail-page {
+  padding: 1.5rem;
+}
+.team-info {
+  margin-bottom: 1.5rem;
+}
+</style>

@@ -25,3 +25,37 @@ defineProps<{
 }>()
 defineEmits(['update:modelValue'])
 </script>
+
+<style scoped>
+.tab-buttons {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.tab-buttons button {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #111 !important;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.tab-buttons button.active {
+  background: #111;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tab-buttons button:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+</style>

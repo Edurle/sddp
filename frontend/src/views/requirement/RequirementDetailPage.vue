@@ -756,99 +756,31 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.step-nav {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-.step {
-  padding: 4px 12px;
-  border-radius: 4px;
-  background: #f0f0f0;
-}
-.step.active {
-  background: #1890ff;
-  color: white;
-}
-.step.completed {
-  background: #52c41a;
-  color: white;
-}
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.dialog {
-  background: white;
+.requirement-detail-page {
   padding: 1.5rem;
-  border-radius: 8px;
-  min-width: 400px;
-  max-width: 600px;
 }
-.form-group {
-  margin-bottom: 1rem;
+.type-detail {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 4px;
 }
-.form-group label {
-  display: block;
-  margin-bottom: 0.25rem;
+.reject-info {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 4px;
+  color: #cf1322;
 }
-.actions {
-  margin: 1rem 0;
-  display: flex;
-  gap: 0.5rem;
-}
-.tabs-section {
+.review-history {
   margin-top: 1rem;
 }
-.tab-content {
-  margin-top: 0.5rem;
-}
-textarea {
-  width: 100%;
-  min-height: 100px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  border: 1px solid #e8e8e8;
-  padding: 0.5rem;
-}
-select {
+.review-history h3 {
   margin-bottom: 0.5rem;
 }
-.custom-select {
-  position: relative;
-  padding: 6px 10px;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  cursor: pointer;
-  min-height: 32px;
-  background: white;
-}
-.custom-select .dropdown-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1001;
-}
-.custom-select .dropdown-option {
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.custom-select .dropdown-option:hover {
-  background: #f0f0f0;
+.step-status {
+  font-size: 0.85rem;
+  color: #666;
 }
 </style>

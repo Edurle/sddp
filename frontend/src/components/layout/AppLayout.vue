@@ -38,21 +38,25 @@ function handleLogout() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-.app-layout-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 1rem;
-  height: 48px;
-  border-bottom: 1px solid #e0e0e0;
   background: #fff;
 }
+.app-layout-header {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  padding: 0 1.5rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .app-layout-brand {
-  font-weight: bold;
+  font-weight: 700;
   font-size: 1.1rem;
-  color: inherit;
+  color: #111;
   text-decoration: none;
+  letter-spacing: -0.02em;
 }
 .app-layout-user {
   display: flex;
@@ -60,26 +64,31 @@ function handleLogout() {
   gap: 0.5rem;
 }
 .app-layout-nav {
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 0.5rem 1.5rem;
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 .app-layout-nav a {
-  color: #333;
+  color: #666;
   text-decoration: none;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.2s ease;
 }
 .app-layout-nav a:hover {
-  background: #f0f0f0;
+  background: rgba(0, 0, 0, 0.04);
+  color: #111;
 }
 .app-layout-nav a.router-link-active {
-  background: #1890ff;
+  background: #111;
   color: #fff;
 }
 .app-layout-main {
   flex: 1;
-  padding: 1rem;
+  padding: 1.5rem;
 }
 </style>

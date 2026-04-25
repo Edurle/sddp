@@ -10,29 +10,40 @@
 
     <button data-testid="iteration-kanban-btn-add-req" @click="showCreateReqDialog = true">添加需求</button>
 
-    <div class="kanban-board">
-      <div
+    <div class="kanban-filters">
+      <button
+        data-testid="iteration-kanban-filter-all"
+        :class="['filter-btn', { active: statusFilter === '' }]"
+        @click="statusFilter = ''"
+      >全部</button>
+      <button
         v-for="col in columns"
         :key="col.status"
-        class="kanban-column"
-        :data-testid="`iteration-kanban-col-${col.status}`"
+        :data-testid="`iteration-kanban-filter-${col.status}`"
+        :class="['filter-btn', `filter-btn-${col.status}`, { active: statusFilter === col.status }]"
+        @click="statusFilter = col.status"
+      >{{ col.label }}</button>
+    </div>
+
+    <div class="kanban-grid" data-testid="iteration-kanban-grid">
+      <div
+        v-for="req in filteredRequirements"
+        :key="req.id"
+        class="kanban-card"
+        :data-testid="`iteration-kanban-card-req-${req.id}`"
       >
-        <h3>{{ col.label }}</h3>
+        <span
+          data-testid="iteration-kanban-card-req-badge-status"
+          :class="['status-badge', `status-badge-${req.mappedStatus}`]"
+        >{{ statusLabel(req.mappedStatus) }}</span>
         <div
-          v-for="req in getReqsByStatus(col.status)"
-          :key="req.id"
-          class="kanban-card"
-          :data-testid="`iteration-kanban-card-req-${req.id}`"
+          :data-testid="`iteration-kanban-btn-req-${req.id}`"
+          @click="goToRequirement(req.id)"
+          style="cursor: pointer"
         >
-          <div
-            :data-testid="`iteration-kanban-btn-req-${req.id}`"
-            @click="goToRequirement(req.id)"
-            style="cursor: pointer"
-          >
-            <div data-testid="iteration-kanban-card-req-title">{{ req.title }}</div>
-            <div data-testid="iteration-kanban-card-req-type">{{ req.req_type }}</div>
-            <div data-testid="iteration-kanban-card-req-priority">{{ req.priority }}</div>
-          </div>
+          <div data-testid="iteration-kanban-card-req-title">{{ req.title }}</div>
+          <div data-testid="iteration-kanban-card-req-type">{{ req.req_type }}</div>
+          <div data-testid="iteration-kanban-card-req-priority">{{ req.priority }}</div>
         </div>
       </div>
     </div>
@@ -99,6 +110,7 @@ interface Requirement {
 const iteration = ref<IterationData | null>(null)
 const requirements = ref<Requirement[]>([])
 const showCreateReqDialog = ref(false)
+const statusFilter = ref('')
 
 const newReq = reactive({
   title: '',
@@ -136,8 +148,14 @@ const statusSummary = computed(() => {
   return Object.entries(counts).map(([k, v]) => `${k}: ${v}`).join(', ') || '无'
 })
 
-function getReqsByStatus(status: string) {
-  return requirements.value.filter(r => r.mappedStatus === status)
+const filteredRequirements = computed(() => {
+  if (!statusFilter.value) return requirements.value
+  return requirements.value.filter(r => r.mappedStatus === statusFilter.value)
+})
+
+function statusLabel(status: string) {
+  const col = columns.find(c => c.status === status)
+  return col ? col.label : status
 }
 
 async function fetchData() {
@@ -193,23 +211,76 @@ onMounted(() => fetchData())
 </script>
 
 <style scoped>
-.kanban-board {
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
+.iteration-kanban-page {
+  padding: 1.5rem;
 }
-.kanban-column {
-  min-width: 250px;
-  flex: 1;
-  background: #f5f5f5;
-  padding: 0.5rem;
+.kanban-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #d9d9d9;
   border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+.filter-btn:hover {
+  border-color: #4096ff;
+  color: #4096ff;
+}
+.filter-btn.active {
+  background: #4096ff;
+  color: white;
+  border-color: #4096ff;
+}
+.kanban-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
 }
 .kanban-card {
+  position: relative;
   background: white;
   padding: 0.75rem;
-  margin: 0.5rem 0;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid #e8e8e8;
+  transition: box-shadow 0.2s;
+}
+.kanban-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.status-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.status-badge-draft {
+  background: #f0f0f0;
+  color: #666;
+}
+.status-badge-in_review {
+  background: #fff7e6;
+  color: #d48806;
+}
+.status-badge-approved {
+  background: #e6f7ff;
+  color: #1677ff;
+}
+.status-badge-in_progress {
+  background: #f9f0ff;
+  color: #722ed1;
+}
+.status-badge-completed {
+  background: #f6ffed;
+  color: #52c41a;
 }
 </style>

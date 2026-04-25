@@ -9,9 +9,13 @@ defineProps<{ testId?: string; text?: string }>()
 <style scoped>
 .app-badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.85em;
-  background: #e0e0e0;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #333;
+  letter-spacing: 0.01em;
 }
 </style>

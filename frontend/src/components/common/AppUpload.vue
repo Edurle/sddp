@@ -10,3 +10,28 @@ function onFileChange(e: Event) {
   emit('update:files', target.files)
 }
 </script>
+
+<style scoped>
+input[type="file"] {
+  font-size: 13px;
+  color: #333;
+  padding: 8px 0;
+}
+
+input[type="file"]::file-selector-button {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: #333;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+</style>
