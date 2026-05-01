@@ -24,13 +24,58 @@
         <div v-if="activeTab === 'spec'" class="tab-panel">
           <div class="spec-toolbar">
             <span v-if="saveSuccessMsg" class="save-msg">{{ saveSuccessMsg }}</span>
+            <span v-else-if="validationErrors.length > 0" class="save-msg" style="color: #ff4d4f;">{{ validationErrors.length }} 个校验错误</span>
             <span v-else class="spec-hint">在下方编辑规范文档</span>
             <div class="spec-actions">
               <button data-testid="req-detail-btn-save-spec" @click="saveSpec">保存规范</button>
               <button v-if="req.status === 'drafting_spec'" data-testid="req-detail-btn-submit-spec-review" @click="openSubmitSpecReviewDialog">提交规范审核</button>
             </div>
           </div>
-          <textarea v-model="specContent" data-testid="req-detail-txtarea-spec-content" class="spec-editor"></textarea>
+
+          <div v-if="validationErrors.length > 0" class="validation-errors">
+            <div v-for="(err, idx) in validationErrors" :key="idx" class="validation-error-item">
+              {{ err.section }}{{ err.field ? '.' + err.field : '' }}: {{ err.message }}
+            </div>
+          </div>
+
+          <div v-for="section in specSections" :key="section.name" class="spec-section">
+            <h3 class="section-title">
+              {{ section.display_name }}
+              <span v-if="section.required" class="required-mark">*</span>
+            </h3>
+            <div v-for="field in section.fields" :key="field.name" class="field-group">
+              <label class="field-label">
+                {{ field.display_name }}
+                <span v-if="field.required" class="required-mark">*</span>
+              </label>
+              <p v-if="field.description" class="field-desc">{{ field.description }}</p>
+              <template v-if="field.type === 'text'">
+                <textarea
+                  v-model="specFormData[section.name][field.name]"
+                  :data-testid="`spec-field-${section.name}-${field.name}`"
+                  class="spec-field-textarea"
+                  :placeholder="field.description || ''"
+                ></textarea>
+              </template>
+              <template v-else-if="field.type === 'list'">
+                <textarea
+                  v-model="specFormData[section.name][field.name]"
+                  :data-testid="`spec-field-${section.name}-${field.name}`"
+                  class="spec-field-json"
+                  placeholder='JSON 数组格式，例如: [{"name": "xxx", ...}]'
+                ></textarea>
+              </template>
+            </div>
+          </div>
+
+          <div v-if="prototypeHtml" class="prototype-preview">
+            <h3 class="section-title">原型图预览</h3>
+            <iframe
+              :srcdoc="prototypeHtml"
+              sandbox="allow-scripts"
+              class="prototype-iframe"
+            ></iframe>
+          </div>
         </div>
 
         <div v-if="activeTab === 'spec-versions'" class="tab-panel">
@@ -327,7 +372,44 @@ const rejectForm = reactive({ comment: '' })
 const addTaskForm = reactive({ title: '', description: '', assignee_id: '' })
 const reviewers = ref<Member[]>([])
 const activeTab = ref('')
-const specContent = ref('')
+const specSections = ref<any[]>([
+  {
+    name: "entity_definition", display_name: "实体定义", required: true,
+    fields: [
+      { name: "description", display_name: "实体描述", type: "text", required: true, description: "对实体的简要描述" },
+      { name: "fields", display_name: "字段列表", type: "list", required: true, description: "实体包含的字段定义" },
+    ],
+  },
+  {
+    name: "table_design", display_name: "数据表设计", required: true,
+    fields: [
+      { name: "tables", display_name: "表列表", type: "list", required: true, description: "每个表的表名、字段、类型、索引" },
+    ],
+  },
+  {
+    name: "page_structure", display_name: "页面结构", required: true,
+    fields: [
+      { name: "pages", display_name: "页面列表", type: "list", required: true, description: "页面名称、编码、元素列表" },
+      { name: "prototype_html", display_name: "原型图HTML", type: "text", required: false, description: "页面原型图的HTML代码" },
+    ],
+  },
+  {
+    name: "api_design", display_name: "API 设计", required: true,
+    fields: [
+      { name: "endpoints", display_name: "接口列表", type: "list", required: true, description: "每个接口的URL、方法、参数" },
+    ],
+  },
+  {
+    name: "constraints", display_name: "其他约束", required: false,
+    fields: [
+      { name: "directory_structure", display_name: "目录结构", type: "text", required: false, description: "项目目录结构规范" },
+      { name: "naming_conventions", display_name: "命名规范", type: "text", required: false, description: "编码命名规范" },
+      { name: "other", display_name: "其他约束", type: "text", required: false, description: "其他技术约束" },
+    ],
+  },
+])
+const specFormData = ref<Record<string, Record<string, any>>>({})
+const validationErrors = ref<any[]>([])
 const specVersions = ref<SpecVersion[]>([])
 const selectedVersionContent = ref('')
 const tasks = ref<TaskItem[]>([])
@@ -365,9 +447,21 @@ const filteredTestCases = computed(() => {
   return testCases.value.filter((tc) => tc.case_type === testCaseTypeFilter.value)
 })
 
+const prototypeHtml = computed(() => {
+  const pageSection = specFormData.value['page_structure']
+  if (pageSection && pageSection['prototype_html']) {
+    return pageSection['prototype_html']
+  }
+  return ''
+})
+
 function getVersionText(ver: SpecVersion): string {
   if (typeof ver.content === 'string') return ver.content
-  if (ver.content && typeof ver.content === 'object') return (ver.content as Record<string, string>).text || JSON.stringify(ver.content)
+  if (ver.content && typeof ver.content === 'object') {
+    const text = (ver.content as Record<string, string>).text
+    if (text) return text
+    return JSON.stringify(ver.content, null, 2)
+  }
   return ''
 }
 
@@ -498,12 +592,65 @@ async function rejectReview() {
 }
 
 async function saveSpec() {
+  validationErrors.value = []
   try {
+    const content = serializeSpecContent()
     await apiClient.put(`/api/v1/requirements/${reqId.value}/specification`, {
-      content: { text: specContent.value },
+      content,
     })
     saveSuccessMsg.value = '保存成功'
     setTimeout(() => { saveSuccessMsg.value = '' }, 3000)
+  } catch (err: any) {
+    const resp = err.response?.data
+    if (resp?.code === 40001 && resp?.data) {
+      validationErrors.value = resp.data
+    }
+  }
+}
+
+function serializeSpecContent(): Record<string, any> {
+  const content: Record<string, any> = {}
+  for (const section of specSections.value) {
+    const sectionData = specFormData.value[section.name] || {}
+    content[section.name] = {}
+    for (const field of section.fields) {
+      let value = sectionData[field.name]
+      if (field.type === 'list' && typeof value === 'string') {
+        try {
+          value = JSON.parse(value)
+        } catch {
+          value = []
+        }
+      }
+      content[section.name][field.name] = value ?? (field.type === 'list' ? [] : '')
+    }
+  }
+  return content
+}
+
+function loadSpecContent(content: Record<string, any>) {
+  for (const section of specSections.value) {
+    if (!specFormData.value[section.name]) {
+      specFormData.value[section.name] = {}
+    }
+    const sectionData = content[section.name] || {}
+    for (const field of section.fields) {
+      let value = sectionData[field.name]
+      if (field.type === 'list' && Array.isArray(value)) {
+        value = JSON.stringify(value, null, 2)
+      }
+      specFormData.value[section.name][field.name] = value ?? ''
+    }
+  }
+}
+
+async function fetchSpecContent() {
+  try {
+    const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/specification`)
+    const data = res.data?.data
+    if (data?.content) {
+      loadSpecContent(data.content)
+    }
   } catch {
     // ignore
   }
@@ -660,6 +807,7 @@ async function fetchTestStats() {
 
 onMounted(async () => {
   await fetchReq()
+  await fetchSpecContent()
   await fetchTestStats()
 })
 </script>
@@ -740,17 +888,87 @@ onMounted(async () => {
   display: flex;
   gap: 6px;
 }
-.spec-editor {
-  width: 100%;
-  min-height: 400px;
-  font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
-  font-size: 13px;
-  line-height: 1.8;
+.spec-section {
+  margin-bottom: 1.5rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(255, 255, 255, 0.65);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 10px;
+}
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  margin: 0 0 0.75rem 0;
+}
+.required-mark {
+  color: #ff4d4f;
+  margin-left: 2px;
+}
+.field-group {
+  margin-bottom: 0.75rem;
+}
+.field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+.field-desc {
+  font-size: 11px;
+  color: #999;
+  margin: 0 0 4px 0;
+}
+.spec-field-textarea {
+  width: 100%;
+  min-height: 60px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
   resize: vertical;
+}
+.spec-field-json {
+  width: 100%;
+  min-height: 120px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  resize: vertical;
+}
+.prototype-preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+}
+.prototype-iframe {
+  width: 100%;
+  height: 400px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  background: #fff;
+}
+.validation-errors {
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+}
+.validation-error-item {
+  font-size: 12px;
+  color: #ff4d4f;
+  margin-bottom: 4px;
 }
 .version-list {
   display: flex;
