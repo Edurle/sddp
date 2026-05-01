@@ -693,6 +693,13 @@ CREATE TABLE password_reset_tokens (
           "type": "list",
           "required": true,
           "description": "每个页面的名称、编码、元素列表（含唯一编码）、交互行为"
+        },
+        {
+          "name": "prototype_html",
+          "display_name": "原型图HTML",
+          "type": "text",
+          "required": false,
+          "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示"
         }
       ]
     },
@@ -751,6 +758,8 @@ CREATE TABLE password_reset_tokens (
 | `text` | 纯文本 | 文本输入框 / 文本域 |
 | `list` | 列表 | 可增删的列表编辑器 |
 | `object` | 对象 | 嵌套结构编辑器 |
+
+> 字段定义对象还支持一个可选字段 `json_schema`，用于定义 JSON Schema 格式的内容校验规则。
 
 **索引**：
 
@@ -839,7 +848,8 @@ CREATE TABLE password_reset_tokens (
                 }
               ]
             }
-          ]
+          ],
+          "prototype_html": "<div><h1>用户管理原型</h1><button>创建用户</button></div>"
         },
         "api_design": {
           "endpoints": [

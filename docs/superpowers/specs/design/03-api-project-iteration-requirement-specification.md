@@ -474,20 +474,29 @@ drafting_req → reviewing_req → drafting_spec → reviewing_spec → drafting
 ### PUT /api/v1/requirements/{reqId}/specification
 
 - **前置条件**: 仅 `drafting_spec` 状态或被驳回退回后可编辑。
+- **校验规则**: 保存时根据团队模板中定义的 JSON Schema 校验内容，校验失败返回 40001 及详细错误列表。
 - **请求**:
   ```json
   {
     "content": {
       "entity_definition": {},
       "table_design": {},
-      "page_structure": {},
+      "page_structure": {
+        "pages": [...],
+        "prototype_html": "<div>...</div>"
+      },
       "api_design": {},
       "constraints": {}
     }
   }
-  ```
+```
 - **说明**: 每次保存自动递增版本号。
 - **响应 data**: `{ "version": 1 }`
+- **错误码**:
+  | code  | 说明                                                   |
+  | ----- | ------------------------------------------------------ |
+  | 40001 | 规范内容校验失败，data 中返回详细错误列表              |
+  | 40204 | 需求状态不允许此操作                                   |
 
 ### GET /api/v1/requirements/{reqId}/specification/versions
 
