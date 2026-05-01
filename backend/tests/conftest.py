@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
@@ -24,7 +25,7 @@ from app.models import (
     User, Team, TeamMember, Role, RolePermission, MemberRole,
     Invitation, Project, Iteration, Requirement, RequirementReview,
     Task, TestCase, TestExecutionRound, TestExecutionRecord,
-    PasswordResetToken,
+    PasswordResetToken, ApiKey,
 )
 from app.utils.security import hash_password, create_access_token
 
@@ -42,6 +43,28 @@ async def setup_database():
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def mock_mongo_collections():
+    templates_col = AsyncMock()
+    templates_col.find_one = AsyncMock(return_value=None)
+    templates_col.update_one = AsyncMock()
+    templates_col.create_index = AsyncMock()
+
+    documents_col = AsyncMock()
+    documents_col.find_one = AsyncMock(return_value=None)
+    documents_col.update_one = AsyncMock()
+    documents_col.create_index = AsyncMock()
+
+    with patch(
+        "app.services.specification.get_spec_templates_collection",
+        return_value=templates_col,
+    ), patch(
+        "app.services.specification.get_spec_documents_collection",
+        return_value=documents_col,
+    ):
+        yield {"templates": templates_col, "documents": documents_col}
 
 
 @pytest_asyncio.fixture

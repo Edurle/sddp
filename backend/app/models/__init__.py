@@ -10,6 +10,7 @@ from app.models.task import Task
 from app.models.test_case import TestCase
 from app.models.test_execution import TestExecutionRound, TestExecutionRecord
 from app.models.password_reset_token import PasswordResetToken
+from app.models.api_key import ApiKey
 
 __all__ = [
     "User",
@@ -28,4 +29,5 @@ __all__ = [
     "TestExecutionRound",
     "TestExecutionRecord",
     "PasswordResetToken",
+    "ApiKey",
 ]
