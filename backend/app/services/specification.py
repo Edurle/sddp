@@ -2,7 +2,6 @@ import jsonschema
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.cache import cache_instance
 from app.exceptions import (
     BusinessError,
     ERR_FORBIDDEN,
@@ -11,20 +10,20 @@ from app.exceptions import (
     ERR_VALIDATION,
 )
 from app.models import Requirement, TeamMember
+from app.mongo_database import get_spec_templates_collection, get_spec_documents_collection
 from app.mongo_models.spec_document import SpecDocument
 from app.mongo_models.spec_template import SpecTemplate
 
 
-def _get_template_sections(team_id: int) -> list[dict]:
-    key = f"spec_template:{team_id}"
-    data = cache_instance.get(key)
+async def _get_template_sections(team_id: int) -> list[dict]:
+    data = await get_spec_templates_collection().find_one({"team_id": team_id})
     if data is not None:
         return data.get("sections", [])
     return SpecTemplate().DEFAULT_SECTIONS
 
 
-def _validate_spec_content(content: dict, team_id: int) -> list[dict]:
-    sections = _get_template_sections(team_id)
+async def _validate_spec_content(content: dict, team_id: int) -> list[dict]:
+    sections = await _get_template_sections(team_id)
     errors = []
 
     for section in sections:
@@ -101,8 +100,7 @@ async def get_spec_template(
 ) -> dict:
     await _check_team_member(db, team_id, user_id)
 
-    key = f"spec_template:{team_id}"
-    data = cache_instance.get(key)
+    data = await get_spec_templates_collection().find_one({"team_id": team_id})
     if data is None:
         default_sections = SpecTemplate().DEFAULT_SECTIONS
         return {"sections": default_sections}
@@ -124,7 +122,11 @@ async def update_spec_template(
     template.updated_at = datetime.utcnow()
 
     doc = template.to_document()
-    cache_instance.set(f"spec_template:{team_id}", doc)
+    await get_spec_templates_collection().update_one(
+        {"team_id": team_id},
+        {"$set": doc},
+        upsert=True,
+    )
     return {"sections": doc["sections"]}
 
 
@@ -135,8 +137,7 @@ async def get_spec_document(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    key = f"spec_document:{req_id}"
-    data = cache_instance.get(key)
+    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
     if data is None:
         return {"current_version": 0, "content": None}
 
@@ -161,12 +162,11 @@ async def save_spec_document(
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑规格说明")
 
     team_id = await _get_team_id_by_requirement(db, req_id)
-    errors = _validate_spec_content(content, team_id)
+    errors = await _validate_spec_content(content, team_id)
     if errors:
         raise BusinessError(ERR_VALIDATION, "规范内容校验失败", errors=errors)
 
-    key = f"spec_document:{req_id}"
-    data = cache_instance.get(key)
+    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
     if data is None:
         doc = SpecDocument(requirement_id=req_id)
     else:
@@ -184,7 +184,11 @@ async def save_spec_document(
             ))
 
     new_version = doc.add_version(content, user_id)
-    cache_instance.set(key, doc.to_document())
+    await get_spec_documents_collection().update_one(
+        {"requirement_id": req_id},
+        {"$set": doc.to_document()},
+        upsert=True,
+    )
     return {"version": new_version.version}
 
 
@@ -195,8 +199,7 @@ async def list_spec_versions(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    key = f"spec_document:{req_id}"
-    data = cache_instance.get(key)
+    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
     if data is None:
         return []
 
@@ -219,8 +222,7 @@ async def get_spec_version_detail(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    key = f"spec_document:{req_id}"
-    data = cache_instance.get(key)
+    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
     if data is None:
         raise BusinessError(ERR_NOT_FOUND, "版本不存在")
 

@@ -47,14 +47,30 @@ async def setup_database():
 
 @pytest_asyncio.fixture(autouse=True)
 async def mock_mongo_collections():
+    templates_store: dict = {}
+    documents_store: dict = {}
+
     templates_col = AsyncMock()
-    templates_col.find_one = AsyncMock(return_value=None)
-    templates_col.update_one = AsyncMock()
+    documents_col = AsyncMock()
+
+    async def _templates_find_one(query):
+        return templates_store.get(query.get("team_id"))
+
+    async def _templates_update_one(query, update, **kwargs):
+        templates_store[query.get("team_id")] = update["$set"]
+
+    async def _documents_find_one(query):
+        return documents_store.get(query.get("requirement_id"))
+
+    async def _documents_update_one(query, update, **kwargs):
+        documents_store[query.get("requirement_id")] = update["$set"]
+
+    templates_col.find_one.side_effect = _templates_find_one
+    templates_col.update_one.side_effect = _templates_update_one
     templates_col.create_index = AsyncMock()
 
-    documents_col = AsyncMock()
-    documents_col.find_one = AsyncMock(return_value=None)
-    documents_col.update_one = AsyncMock()
+    documents_col.find_one.side_effect = _documents_find_one
+    documents_col.update_one.side_effect = _documents_update_one
     documents_col.create_index = AsyncMock()
 
     with patch(
