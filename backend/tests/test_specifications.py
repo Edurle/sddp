@@ -175,10 +175,10 @@ class TestSaveSpecDocument:
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             json={
                 "content": {
-                    "entity_definition": {"entities": []},
-                    "table_design": {},
-                    "page_structure": {},
-                    "api_design": {},
+                    "entity_definition": {"description": "test", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
                     "constraints": {},
                 }
             },
@@ -203,10 +203,10 @@ class TestSaveSpecDocument:
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             json={
                 "content": {
-                    "entity_definition": {"entities": ["v1"]},
-                    "table_design": {},
-                    "page_structure": {},
-                    "api_design": {},
+                    "entity_definition": {"description": "v1", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
                     "constraints": {},
                 }
             },
@@ -220,10 +220,10 @@ class TestSaveSpecDocument:
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             json={
                 "content": {
-                    "entity_definition": {"entities": ["v2"]},
-                    "table_design": {},
-                    "page_structure": {},
-                    "api_design": {},
+                    "entity_definition": {"description": "v2", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
                     "constraints": {},
                 }
             },
@@ -314,10 +314,10 @@ class TestSaveSpecDocument:
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             json={
                 "content": {
-                    "entity_definition": {"rejected": True},
-                    "table_design": {},
-                    "page_structure": {},
-                    "api_design": {},
+                    "entity_definition": {"description": "test", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
                     "constraints": {},
                 }
             },
@@ -343,10 +343,10 @@ class TestListSpecVersions:
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             json={
                 "content": {
-                    "entity_definition": {},
-                    "table_design": {},
-                    "page_structure": {},
-                    "api_design": {},
+                    "entity_definition": {"description": "test", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
                     "constraints": {},
                 }
             },
@@ -398,10 +398,10 @@ class TestGetSpecVersionDetail:
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             json={
                 "content": {
-                    "entity_definition": {"test": True},
-                    "table_design": {},
-                    "page_structure": {},
-                    "api_design": {},
+                    "entity_definition": {"description": "test", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
                     "constraints": {},
                 }
             },
@@ -434,3 +434,202 @@ class TestGetSpecVersionDetail:
         )
         body = resp.json()
         assert body["code"] == 40400
+
+
+class TestSpecContentValidation:
+    @pytest.mark.asyncio
+    async def test_save_spec_missing_required_section(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={
+                "content": {
+                    "entity_definition": {"description": "test", "fields": []},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                }
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+        error_data = body.get("data") or []
+        assert any("api_design" in str(e) for e in error_data)
+
+    @pytest.mark.asyncio
+    async def test_save_spec_missing_required_field_in_section(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={
+                "content": {
+                    "entity_definition": {},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
+                    "constraints": {},
+                }
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+
+    @pytest.mark.asyncio
+    async def test_save_spec_invalid_entity_fields_format(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={
+                "content": {
+                    "entity_definition": {"description": "test entity", "fields": "not_an_array"},
+                    "table_design": {"tables": []},
+                    "page_structure": {"pages": []},
+                    "api_design": {"endpoints": []},
+                    "constraints": {},
+                }
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+
+    @pytest.mark.asyncio
+    async def test_save_spec_valid_content_passes_validation(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={
+                "content": {
+                    "entity_definition": {
+                        "description": "用户实体",
+                        "fields": [
+                            {"name": "id", "type": "BIGINT", "constraints": ["PK"]},
+                            {"name": "email", "type": "VARCHAR(255)", "constraints": ["NOT NULL"]},
+                        ],
+                    },
+                    "table_design": {
+                        "tables": [
+                            {
+                                "name": "users",
+                                "fields": [
+                                    {"name": "id", "type": "BIGINT"},
+                                    {"name": "email", "type": "VARCHAR(255)"},
+                                ],
+                            }
+                        ]
+                    },
+                    "page_structure": {
+                        "pages": [
+                            {
+                                "name": "用户列表",
+                                "code": "user-list",
+                                "elements": [
+                                    {"code": "user-btn-create", "type": "button", "label": "创建"},
+                                ],
+                            }
+                        ]
+                    },
+                    "api_design": {
+                        "endpoints": [
+                            {
+                                "method": "GET",
+                                "path": "/api/v1/users",
+                                "description": "获取用户列表",
+                            }
+                        ]
+                    },
+                    "constraints": {},
+                }
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+        assert "version" in body["data"]
+
+    @pytest.mark.asyncio
+    async def test_save_spec_with_prototype_html(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={
+                "content": {
+                    "entity_definition": {
+                        "description": "test",
+                        "fields": [{"name": "id", "type": "INT"}],
+                    },
+                    "table_design": {"tables": [{"name": "test", "fields": [{"name": "id", "type": "INT"}]}]},
+                    "page_structure": {
+                        "pages": [
+                            {"name": "测试页", "code": "test-page", "elements": [{"code": "btn", "type": "button", "label": "按钮"}]}
+                        ],
+                        "prototype_html": "<div><h1>原型图</h1><button>点击</button></div>",
+                    },
+                    "api_design": {"endpoints": [{"method": "GET", "path": "/test", "description": "test"}]},
+                    "constraints": {},
+                }
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_save_spec_optional_constraints_section_can_be_omitted(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={
+                "content": {
+                    "entity_definition": {
+                        "description": "test",
+                        "fields": [{"name": "id", "type": "INT"}],
+                    },
+                    "table_design": {"tables": [{"name": "test", "fields": [{"name": "id", "type": "INT"}]}]},
+                    "page_structure": {
+                        "pages": [{"name": "test", "code": "test", "elements": [{"code": "btn", "type": "button", "label": "b"}]}]
+                    },
+                    "api_design": {"endpoints": [{"method": "GET", "path": "/test", "description": "test"}]},
+                }
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0

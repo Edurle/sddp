@@ -56,23 +56,11 @@ class SpecTemplate:
                             "type": "array",
                             "items": {
                                 "type": "object",
-                                "required": ["name", "fields"],
+                                "required": ["name", "type"],
                                 "properties": {
                                     "name": {"type": "string", "minLength": 1},
-                                    "description": {"type": "string"},
-                                    "fields": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "required": ["name", "type"],
-                                            "properties": {
-                                                "name": {"type": "string", "minLength": 1},
-                                                "type": {"type": "string", "minLength": 1},
-                                                "constraints": {"type": "array", "items": {"type": "string"}},
-                                            },
-                                        },
-                                        "minItems": 1,
-                                    },
+                                    "type": {"type": "string", "minLength": 1},
+                                    "constraints": {"type": "array", "items": {"type": "string"}},
                                 },
                             },
                         },
