@@ -15,9 +15,10 @@ class TestListRequirements:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert isinstance(body["data"], list)
-        assert len(body["data"]) >= 1
-        item = body["data"][0]
+        assert isinstance(body["data"], dict)
+        assert "items" in body["data"]
+        assert len(body["data"]["items"]) >= 1
+        item = body["data"]["items"][0]
         assert item["id"] == sample_requirement.id
         assert "title" in item
         assert "req_type" in item
@@ -39,7 +40,7 @@ class TestListRequirements:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert all(r["status"] == "drafting_req" for r in body["data"])
+        assert all(r["status"] == "drafting_req" for r in body["data"]["items"])
 
     @pytest.mark.asyncio
     async def test_list_requirements_filter_by_req_type(
@@ -53,7 +54,7 @@ class TestListRequirements:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert all(r["req_type"] == "bug" for r in body["data"])
+        assert all(r["req_type"] == "bug" for r in body["data"]["items"])
 
     @pytest.mark.asyncio
     async def test_list_requirements_sort_by_priority_desc(
@@ -80,7 +81,7 @@ class TestListRequirements:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        priorities = [r["priority"] for r in body["data"]]
+        priorities = [r["priority"] for r in body["data"]["items"]]
         assert priorities == sorted(priorities, reverse=True)
 
     @pytest.mark.asyncio
@@ -109,7 +110,23 @@ class TestListRequirements:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert isinstance(body["data"], list)
+        assert len(body["data"]["items"]) >= 1
+
+
+    @pytest.mark.asyncio
+    async def test_list_requirements_empty_for_new_iteration(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert isinstance(body["data"], dict)
+        assert body["data"]["items"] == []
 
     @pytest.mark.asyncio
     async def test_list_requirements_excludes_soft_deleted(
@@ -130,7 +147,7 @@ class TestListRequirements:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        ids = [r["id"] for r in body["data"]]
+        ids = [r["id"] for r in body["data"]["items"]]
         assert sample_requirement.id not in ids
 
     @pytest.mark.asyncio

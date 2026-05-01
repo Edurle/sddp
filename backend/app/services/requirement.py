@@ -32,18 +32,25 @@ async def list_requirements(
     req_type: str | None = None,
     sort_by: str | None = None,
     sort_order: str | None = None,
-) -> list[dict]:
+    offset: int = 0,
+    limit: int = 50,
+) -> dict:
     await _check_iteration_member(db, iteration_id, user_id)
 
-    stmt = select(Requirement).where(
+    base_where = [
         Requirement.iteration_id == iteration_id,
         Requirement.is_deleted == False,
-    )
-
+    ]
     if status:
-        stmt = stmt.where(Requirement.status == status)
+        base_where.append(Requirement.status == status)
     if req_type:
-        stmt = stmt.where(Requirement.req_type == req_type)
+        base_where.append(Requirement.req_type == req_type)
+
+    count_stmt = select(func.count()).select_from(Requirement).where(*base_where)
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    stmt = select(Requirement).where(*base_where)
 
     if sort_by == "priority":
         if sort_order == "asc":
@@ -58,11 +65,14 @@ async def list_requirements(
     else:
         stmt = stmt.order_by(Requirement.created_at.desc())
 
+    stmt = stmt.offset(offset).limit(limit + 1)
     result = await db.execute(stmt)
-    requirements = result.scalars().all()
+    rows = result.scalars().all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
 
     items = []
-    for req in requirements:
+    for req in rows:
         task_count = await _count_tasks(db, req.id)
         items.append({
             "id": req.id,
@@ -74,7 +84,13 @@ async def list_requirements(
             "created_by": req.created_by,
             "created_at": req.created_at.isoformat() if req.created_at else None,
         })
-    return items
+    return {
+        "items": items,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "has_more": has_more,
+    }
 
 
 async def create_requirement(

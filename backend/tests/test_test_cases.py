@@ -10,9 +10,10 @@ async def test_list_test_cases_success(client, db, sample_test_case, normal_user
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    assert isinstance(body["data"], list)
-    assert len(body["data"]) >= 1
-    tc = body["data"][0]
+    assert isinstance(body["data"], dict)
+    assert "items" in body["data"]
+    assert len(body["data"]["items"]) >= 1
+    tc = body["data"]["items"][0]
     assert "id" in tc
     assert "case_number" in tc
     assert "title" in tc
@@ -33,7 +34,7 @@ async def test_list_test_cases_filter_by_type(client, db, sample_test_case, norm
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    for tc in body["data"]:
+    for tc in body["data"]["items"]:
         assert tc["case_type"] == "api"
 
 
@@ -50,7 +51,7 @@ async def test_list_test_cases_excludes_soft_deleted(client, db, sample_test_cas
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    for tc in body["data"]:
+    for tc in body["data"]["items"]:
         assert tc["id"] != sample_test_case.id
 
 

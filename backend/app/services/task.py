@@ -21,27 +21,42 @@ async def list_tasks(
     requirement_id: int,
     status: str | None = None,
     assignee_id: int | None = None,
-) -> list[dict]:
-    stmt = select(Task).where(
+    offset: int = 0,
+    limit: int = 50,
+) -> dict:
+    base_where = [
         Task.requirement_id == requirement_id,
         Task.is_deleted == False,
-    )
+    ]
     if status:
-        stmt = stmt.where(Task.status == status)
+        base_where.append(Task.status == status)
     if assignee_id is not None:
-        stmt = stmt.where(Task.assignee_id == assignee_id)
-    stmt = stmt.order_by(Task.created_at.desc())
+        base_where.append(Task.assignee_id == assignee_id)
 
+    count_stmt = select(func.count()).select_from(Task).where(*base_where)
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    stmt = select(Task).where(*base_where).order_by(Task.created_at.desc())
+    stmt = stmt.offset(offset).limit(limit + 1)
     result = await db.execute(stmt)
-    tasks = result.scalars().all()
+    rows = result.scalars().all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
 
     items = []
-    for t in tasks:
+    for t in rows:
         d = _task_to_dict(t)
         if assignee_id is not None and t.assignee_id is not None:
             d["assignee"] = {"id": t.assignee_id}
         items.append(d)
-    return items
+    return {
+        "items": items,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "has_more": has_more,
+    }
 
 
 async def create_task(
@@ -230,6 +245,26 @@ async def complete_task(db: AsyncSession, task_id: int) -> dict:
     return _task_to_dict(task)
 
 
+async def start_coding(db: AsyncSession, task_id: int) -> dict:
+    task = await _get_task_or_fail(db, task_id)
+    if task.status != "pending":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "只有待处理的任务才能开始编码")
+    task.status = "coding"
+    await db.commit()
+    await db.refresh(task)
+    return _task_to_dict(task)
+
+
+async def update_git_info(db: AsyncSession, task_id: int, **kwargs) -> dict:
+    task = await _get_task_or_fail(db, task_id)
+    for key in ("git_branch", "commit_sha", "pr_url", "artifact_url"):
+        if key in kwargs:
+            setattr(task, key, kwargs[key])
+    await db.commit()
+    await db.refresh(task)
+    return _task_to_dict(task)
+
+
 async def _get_task_or_fail(db: AsyncSession, task_id: int) -> Task:
     stmt = select(Task).where(Task.id == task_id, Task.is_deleted == False)
     result = await db.execute(stmt)
@@ -267,16 +302,26 @@ async def _get_latest_execution_stats(db: AsyncSession, task_id: int) -> dict | 
 
 
 async def list_tasks_by_assignee(
-    db: AsyncSession, user_id: int, status: str | None = None
-) -> list[dict]:
-    stmt = select(Task).where(Task.assignee_id == user_id, Task.is_deleted == False)
+    db: AsyncSession, user_id: int, status: str | None = None,
+    offset: int = 0, limit: int = 50,
+) -> dict:
+    base_where = [Task.assignee_id == user_id, Task.is_deleted == False]
     if status:
-        stmt = stmt.where(Task.status == status)
-    stmt = stmt.order_by(Task.updated_at.desc())
+        base_where.append(Task.status == status)
+
+    count_stmt = select(func.count()).select_from(Task).where(*base_where)
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    stmt = select(Task).where(*base_where).order_by(Task.updated_at.desc())
+    stmt = stmt.offset(offset).limit(limit + 1)
     result = await db.execute(stmt)
-    tasks = result.scalars().all()
+    rows = result.scalars().all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+
     items = []
-    for t in tasks:
+    for t in rows:
         d = _task_to_dict(t)
         req_stmt = select(Requirement).where(Requirement.id == t.requirement_id)
         req_result = await db.execute(req_stmt)
@@ -284,7 +329,13 @@ async def list_tasks_by_assignee(
         if req:
             d["requirement_title"] = req.title
         items.append(d)
-    return items
+    return {
+        "items": items,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "has_more": has_more,
+    }
 
 
 def _task_to_dict(task: Task) -> dict:
@@ -296,6 +347,10 @@ def _task_to_dict(task: Task) -> dict:
         "assignee_id": task.assignee_id,
         "status": task.status,
         "created_by": task.created_by,
+        "git_branch": task.git_branch,
+        "commit_sha": task.commit_sha,
+        "pr_url": task.pr_url,
+        "artifact_url": task.artifact_url,
         "created_at": task.created_at.isoformat() if task.created_at else None,
         "updated_at": task.updated_at.isoformat() if task.updated_at else None,
     }

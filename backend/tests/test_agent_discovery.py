@@ -94,7 +94,7 @@ async def test_tc_agent_021_list_my_tasks_with_requirement_title(
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    items = body["data"]
+    items = body["data"]["items"]
     assert len(items) >= 1
     found = [t for t in items if t["id"] == task.id]
     assert len(found) == 1
@@ -128,7 +128,7 @@ async def test_tc_agent_022_filter_tasks_by_status(
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    items = body["data"]
+    items = body["data"]["items"]
     assert all(t["status"] == "coding" for t in items)
     assert len(items) >= 1
 
@@ -141,7 +141,7 @@ async def test_tc_agent_023_no_tasks_empty_array(client, db, another_user):
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    assert body["data"] == []
+    assert body["data"]["items"] == []
 
 
 @pytest.mark.asyncio
@@ -220,7 +220,7 @@ async def test_tc_agent_026_global_requirements_filter_by_status(
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    items = body["data"]
+    items = body["data"]["items"]
     assert all(r["status"] == "approved" for r in items)
     assert len(items) >= 1
 
@@ -237,7 +237,7 @@ async def test_tc_agent_027_filter_by_iteration_id(
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    items = body["data"]
+    items = body["data"]["items"]
     assert len(items) >= 1
     assert all(r["iteration_id"] == sample_iteration.id for r in items)
 
@@ -263,7 +263,7 @@ async def test_tc_agent_028_no_filter_returns_all(
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    items = body["data"]
+    items = body["data"]["items"]
     assert len(items) >= 2
 
 

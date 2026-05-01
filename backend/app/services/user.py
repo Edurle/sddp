@@ -199,7 +199,8 @@ async def _get_active_iterations(db: AsyncSession, project_ids: list[int]) -> li
 
 async def _get_assigned_tasks(db: AsyncSession, user_id: int) -> list[dict]:
     from app.services.task import list_tasks_by_assignee
-    return await list_tasks_by_assignee(db, user_id)
+    result = await list_tasks_by_assignee(db, user_id)
+    return result["items"]
 
 
 async def _get_pending_reviews(db: AsyncSession, user_id: int) -> list[dict]:

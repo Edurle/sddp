@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,9 +84,17 @@ async def get_my_tasks(
     user: Annotated[dict, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db_session),
     status: str | None = None,
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1),
 ) -> dict:
     user_id = int(user["sub"])
-    data = await task_service.list_tasks_by_assignee(db, user_id, status=status)
+    if offset < 0:
+        offset = 0
+    if limit < 1:
+        limit = 1
+    if limit > 200:
+        limit = 200
+    data = await task_service.list_tasks_by_assignee(db, user_id, status=status, offset=offset, limit=limit)
     return {"code": 0, "message": "success", "data": data}
 
 

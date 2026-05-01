@@ -18,18 +18,34 @@ async def list_test_cases(
     db: AsyncSession,
     requirement_id: int,
     case_type: str | None = None,
-) -> list[dict]:
-    stmt = select(TestCase).where(
+    offset: int = 0,
+    limit: int = 50,
+) -> dict:
+    base_where = [
         TestCase.requirement_id == requirement_id,
         TestCase.is_deleted == False,
-    )
+    ]
     if case_type:
-        stmt = stmt.where(TestCase.case_type == case_type)
-    stmt = stmt.order_by(TestCase.created_at.asc())
+        base_where.append(TestCase.case_type == case_type)
 
+    count_stmt = select(func.count()).select_from(TestCase).where(*base_where)
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    stmt = select(TestCase).where(*base_where).order_by(TestCase.created_at.asc())
+    stmt = stmt.offset(offset).limit(limit + 1)
     result = await db.execute(stmt)
-    cases = result.scalars().all()
-    return [_tc_to_dict(tc) for tc in cases]
+    rows = result.scalars().all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+
+    return {
+        "items": [_tc_to_dict(tc) for tc in rows],
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+        "has_more": has_more,
+    }
 
 
 async def create_test_case(

@@ -10,9 +10,10 @@ async def test_list_tasks_success(client, db, sample_task, normal_user):
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    assert isinstance(body["data"], list)
-    assert len(body["data"]) >= 1
-    task = body["data"][0]
+    assert isinstance(body["data"], dict)
+    assert "items" in body["data"]
+    assert len(body["data"]["items"]) >= 1
+    task = body["data"]["items"][0]
     assert "id" in task
     assert "title" in task
     assert "status" in task
@@ -30,7 +31,7 @@ async def test_list_tasks_filter_by_status(client, db, sample_task, normal_user)
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    for task in body["data"]:
+    for task in body["data"]["items"]:
         assert task["status"] == "pending"
 
 
@@ -51,7 +52,7 @@ async def test_list_tasks_filter_by_assignee(client, db, sample_task, normal_use
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    for task in body["data"]:
+    for task in body["data"]["items"]:
         assert task["assignee"] is not None
         assert task["assignee"]["id"] == normal_user.id
 
@@ -69,7 +70,7 @@ async def test_list_tasks_excludes_soft_deleted(client, db, sample_task, normal_
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
-    for task in body["data"]:
+    for task in body["data"]["items"]:
         assert task["id"] != sample_task.id
 
 
