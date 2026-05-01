@@ -266,6 +266,27 @@ async def _get_latest_execution_stats(db: AsyncSession, task_id: int) -> dict | 
     }
 
 
+async def list_tasks_by_assignee(
+    db: AsyncSession, user_id: int, status: str | None = None
+) -> list[dict]:
+    stmt = select(Task).where(Task.assignee_id == user_id, Task.is_deleted == False)
+    if status:
+        stmt = stmt.where(Task.status == status)
+    stmt = stmt.order_by(Task.updated_at.desc())
+    result = await db.execute(stmt)
+    tasks = result.scalars().all()
+    items = []
+    for t in tasks:
+        d = _task_to_dict(t)
+        req_stmt = select(Requirement).where(Requirement.id == t.requirement_id)
+        req_result = await db.execute(req_stmt)
+        req = req_result.scalar_one_or_none()
+        if req:
+            d["requirement_title"] = req.title
+        items.append(d)
+    return items
+
+
 def _task_to_dict(task: Task) -> dict:
     return {
         "id": task.id,

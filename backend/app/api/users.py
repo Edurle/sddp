@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_current_user, get_db_session
 from app.services import user as user_service
+from app.services import task as task_service
 
 router = APIRouter()
 
@@ -75,4 +76,25 @@ async def get_pending_items(
 ) -> dict:
     user_id = int(user["sub"])
     data = await user_service.get_pending_items(db, user_id)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/me/tasks")
+async def get_my_tasks(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+    status: str | None = None,
+) -> dict:
+    user_id = int(user["sub"])
+    data = await task_service.list_tasks_by_assignee(db, user_id, status=status)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/me/pending-reviews")
+async def get_my_pending_reviews(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    user_id = int(user["sub"])
+    data = await user_service.get_pending_reviews(db, user_id)
     return {"code": 0, "message": "success", "data": data}

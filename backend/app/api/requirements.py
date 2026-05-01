@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_current_user, get_db_session, require_permission
+from app.models import Requirement
 from app.services import requirement as req_svc
 from app.services import specification as spec_svc
 from app.services import task as task_svc
@@ -77,6 +78,38 @@ class PatchRequirementRequest(BaseModel):
     title: str | None = None
     description: str | None = None
     type_detail: dict | None = None
+
+
+@router.get("")
+async def list_requirements_global(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    status: str | None = Query(default=None),
+    iteration_id: int | None = Query(default=None),
+) -> dict:
+    stmt = select(Requirement).where(Requirement.is_deleted == False)
+    if status:
+        stmt = stmt.where(Requirement.status == status)
+    if iteration_id is not None:
+        stmt = stmt.where(Requirement.iteration_id == iteration_id)
+    stmt = stmt.order_by(Requirement.created_at.desc())
+    result = await db.execute(stmt)
+    requirements = result.scalars().all()
+    items = []
+    for req in requirements:
+        items.append({
+            "id": req.id,
+            "iteration_id": req.iteration_id,
+            "title": req.title,
+            "req_type": req.req_type,
+            "priority": req.priority,
+            "status": req.status,
+            "description": req.description,
+            "created_by": req.created_by,
+            "created_at": req.created_at.isoformat() if req.created_at else None,
+            "updated_at": req.updated_at.isoformat() if req.updated_at else None,
+        })
+    return {"code": 0, "message": "success", "data": items}
 
 
 @router.post("")
@@ -318,6 +351,50 @@ async def create_iteration_requirement(
         body.description, body.type_detail,
     )
     return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/{id}/full-context")
+async def get_requirement_full_context(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    from app.models import Requirement as ReqModel, TestCase as TCModel
+    from app.exceptions import BusinessError, ERR_NOT_FOUND
+
+    stmt = select(ReqModel).where(ReqModel.id == id, ReqModel.is_deleted == False)
+    result = await db.execute(stmt)
+    req = result.scalar_one_or_none()
+    if req is None:
+        raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+
+    from app.services import requirement as req_svc
+    from app.services import specification as spec_svc
+    from app.services import task as task_svc
+    from app.services import test_case as tc_svc
+
+    requirement_data = req_svc._req_to_dict(req)
+
+    spec = None
+    try:
+        spec = await spec_svc.get_spec_document(db, id)
+    except Exception:
+        pass
+
+    task_list = await task_svc.list_tasks(db, id)
+
+    tc_list = await tc_svc.list_test_cases(db, id)
+
+    return {
+        "code": 0,
+        "message": "success",
+        "data": {
+            "requirement": requirement_data,
+            "spec": spec,
+            "tasks": task_list,
+            "test_cases": tc_list,
+        },
+    }
 
 
 @router.get("/{id}")

@@ -7,6 +7,11 @@ from app.exceptions import BusinessError, ERR_CREDENTIALS, ERR_NOT_FOUND, ERR_VA
 from app.models.user import User
 from app.models.team import Team, TeamMember
 from app.models.role import Role, MemberRole
+from app.models.project import Project
+from app.models.iteration import Iteration
+from app.models.requirement import Requirement
+from app.models.requirement_review import RequirementReview
+from app.models.task import Task
 from app.utils.security import hash_password, verify_password
 from app.utils.pagination import paginate
 
@@ -116,11 +121,109 @@ async def change_password(db: AsyncSession, user_id: int, old_password: str, new
 
 
 async def get_pending_items(db: AsyncSession, user_id: int) -> dict:
+    teams = await _get_user_teams_detailed(db, user_id)
+
+    team_ids = [t["id"] for t in teams]
+    projects = await _get_user_projects(db, team_ids)
+
+    project_ids = [p["id"] for p in projects]
+    active_iterations = await _get_active_iterations(db, project_ids)
+
+    assigned_tasks = await _get_assigned_tasks(db, user_id)
+
+    pending_reviews = await _get_pending_reviews(db, user_id)
+
     return {
-        "pending_reviews": [],
-        "pending_tasks": [],
+        "teams": teams,
+        "projects": projects,
+        "active_iterations": active_iterations,
+        "assigned_tasks": assigned_tasks,
+        "pending_reviews": pending_reviews,
+        "pending_tasks": assigned_tasks,
         "pending_invitations": [],
     }
+
+
+async def get_pending_reviews(db: AsyncSession, user_id: int) -> list[dict]:
+    return await _get_pending_reviews(db, user_id)
+
+
+async def _get_user_teams_detailed(db: AsyncSession, user_id: int) -> list[dict]:
+    stmt = (
+        select(Team.id, Team.name, Team.owner_id)
+        .join(TeamMember, TeamMember.team_id == Team.id)
+        .where(TeamMember.user_id == user_id, TeamMember.is_deleted == False, Team.is_deleted == False)
+    )
+    result = await db.execute(stmt)
+    rows = result.all()
+    items = []
+    for team_id, team_name, owner_id in rows:
+        role_names = await _get_team_role_names(db, user_id, team_id)
+        items.append({
+            "id": team_id,
+            "name": team_name,
+            "role": role_names[0] if role_names else "member",
+        })
+    return items
+
+
+async def _get_user_projects(db: AsyncSession, team_ids: list[int]) -> list[dict]:
+    if not team_ids:
+        return []
+    stmt = select(Project).where(
+        Project.team_id.in_(team_ids),
+        Project.is_deleted == False,
+    )
+    result = await db.execute(stmt)
+    projects = result.scalars().all()
+    return [
+        {"id": p.id, "name": p.name, "team_id": p.team_id, "status": p.status}
+        for p in projects
+    ]
+
+
+async def _get_active_iterations(db: AsyncSession, project_ids: list[int]) -> list[dict]:
+    if not project_ids:
+        return []
+    stmt = select(Iteration).where(
+        Iteration.project_id.in_(project_ids),
+        Iteration.status.in_(["in_progress", "planned"]),
+    )
+    result = await db.execute(stmt)
+    iterations = result.scalars().all()
+    return [
+        {"id": i.id, "name": i.name, "project_id": i.project_id, "status": i.status}
+        for i in iterations
+    ]
+
+
+async def _get_assigned_tasks(db: AsyncSession, user_id: int) -> list[dict]:
+    from app.services.task import list_tasks_by_assignee
+    return await list_tasks_by_assignee(db, user_id)
+
+
+async def _get_pending_reviews(db: AsyncSession, user_id: int) -> list[dict]:
+    stmt = (
+        select(RequirementReview)
+        .where(RequirementReview.reviewer_id == user_id, RequirementReview.status == "pending")
+        .order_by(RequirementReview.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    reviews = result.scalars().all()
+    items = []
+    for r in reviews:
+        req_stmt = select(Requirement).where(Requirement.id == r.requirement_id)
+        req_result = await db.execute(req_stmt)
+        req = req_result.scalar_one_or_none()
+        items.append({
+            "review_id": r.id,
+            "requirement_id": r.requirement_id,
+            "requirement_title": req.title if req else None,
+            "review_type": r.review_type,
+            "status": r.status,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+    return items
 
 
 async def list_users(db: AsyncSession, page: int, page_size: int, search: str = "") -> dict:
