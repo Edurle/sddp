@@ -80,23 +80,49 @@ class PatchRequirementRequest(BaseModel):
     type_detail: dict | None = None
 
 
+def _clamp_pagination(offset: int, limit: int) -> tuple[int, int]:
+    if offset < 0:
+        offset = 0
+    if limit < 1:
+        limit = 1
+    if limit > 200:
+        limit = 200
+    return offset, limit
+
+
 @router.get("")
 async def list_requirements_global(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
     status: str | None = Query(default=None),
     iteration_id: int | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1),
 ) -> dict:
-    stmt = select(Requirement).where(Requirement.is_deleted == False)
+    offset, limit = _clamp_pagination(offset, limit)
+
+    base_where = [Requirement.is_deleted == False]
     if status:
-        stmt = stmt.where(Requirement.status == status)
+        base_where.append(Requirement.status == status)
     if iteration_id is not None:
-        stmt = stmt.where(Requirement.iteration_id == iteration_id)
+        base_where.append(Requirement.iteration_id == iteration_id)
+
+    from sqlalchemy import func
+
+    count_stmt = select(func.count()).select_from(Requirement).where(*base_where)
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar_one()
+
+    stmt = select(Requirement).where(*base_where)
     stmt = stmt.order_by(Requirement.created_at.desc())
+    stmt = stmt.offset(offset).limit(limit + 1)
     result = await db.execute(stmt)
-    requirements = result.scalars().all()
+    rows = result.scalars().all()
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+
     items = []
-    for req in requirements:
+    for req in rows:
         items.append({
             "id": req.id,
             "iteration_id": req.iteration_id,
@@ -109,7 +135,17 @@ async def list_requirements_global(
             "created_at": req.created_at.isoformat() if req.created_at else None,
             "updated_at": req.updated_at.isoformat() if req.updated_at else None,
         })
-    return {"code": 0, "message": "success", "data": items}
+    return {
+        "code": 0,
+        "message": "success",
+        "data": {
+            "items": items,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "has_more": has_more,
+        },
+    }
 
 
 @router.post("")
@@ -180,7 +216,7 @@ async def direct_create_requirement(
         body.title, body.type, priority_val,
         body.description, body.type_detail,
     )
-    return {"code": 0, "message": "success", "data": data, **data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.patch("/{id}")
@@ -217,12 +253,13 @@ async def approve_requirement_direct(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    from app.exceptions import BusinessError, ERR_NOT_FOUND
     from app.models import Requirement as ReqModel, RequirementReview
     stmt = select(ReqModel).where(ReqModel.id == id, ReqModel.is_deleted == False)
     result = await db.execute(stmt)
     req = result.scalar_one_or_none()
     if req is None:
-        return {"code": 1, "message": "需求不存在", "data": None}
+        raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
     approve_map = {
         "reviewing_req": "drafting_spec",
@@ -281,12 +318,13 @@ async def approve_spec_direct(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    from app.exceptions import BusinessError, ERR_NOT_FOUND
     from app.models import Requirement as ReqModel, RequirementReview
     stmt = select(ReqModel).where(ReqModel.id == id, ReqModel.is_deleted == False)
     result = await db.execute(stmt)
     req = result.scalar_one_or_none()
     if req is None:
-        return {"code": 1, "message": "需求不存在", "data": None}
+        raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
     approve_map = {
         "reviewing_spec": "drafting_tests",
@@ -331,9 +369,13 @@ async def list_iteration_requirements(
     req_type: str | None = Query(default=None),
     sort_by: str | None = Query(default=None),
     sort_order: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1),
 ) -> dict:
+    offset, limit = _clamp_pagination(offset, limit)
     data = await req_svc.list_requirements(
-        db, iterationId, int(user["sub"]), status, req_type, sort_by, sort_order
+        db, iterationId, int(user["sub"]), status, req_type, sort_by, sort_order,
+        offset=offset, limit=limit,
     )
     return {"code": 0, "message": "success", "data": data}
 
@@ -382,8 +424,10 @@ async def get_requirement_full_context(
         pass
 
     task_list = await task_svc.list_tasks(db, id)
+    task_items = task_list["items"]
 
     tc_list = await tc_svc.list_test_cases(db, id)
+    tc_items = tc_list["items"]
 
     return {
         "code": 0,
@@ -391,8 +435,8 @@ async def get_requirement_full_context(
         "data": {
             "requirement": requirement_data,
             "spec": spec,
-            "tasks": task_list,
-            "test_cases": tc_list,
+            "tasks": task_items,
+            "test_cases": tc_items,
         },
     }
 
@@ -473,8 +517,11 @@ async def list_test_cases(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
     case_type: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1),
 ) -> dict:
-    data = await tc_svc.list_test_cases(db, reqId, case_type=case_type)
+    offset, limit = _clamp_pagination(offset, limit)
+    data = await tc_svc.list_test_cases(db, reqId, case_type=case_type, offset=offset, limit=limit)
     return {"code": 0, "message": "success", "data": data}
 
 
@@ -505,8 +552,11 @@ async def list_tasks(
     db: Annotated[AsyncSession, Depends(get_db_session)],
     status: str | None = Query(default=None),
     assignee_id: int | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1),
 ) -> dict:
-    data = await task_svc.list_tasks(db, reqId, status=status, assignee_id=assignee_id)
+    offset, limit = _clamp_pagination(offset, limit)
+    data = await task_svc.list_tasks(db, reqId, status=status, assignee_id=assignee_id, offset=offset, limit=limit)
     return {"code": 0, "message": "success", "data": data}
 
 

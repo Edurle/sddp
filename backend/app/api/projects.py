@@ -32,7 +32,7 @@ async def list_team_projects(
     db=Depends(get_db_session),
 ) -> dict:
     data = await project_service.list_team_projects(db, teamId, user["sub"], status)
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @teams_nested_router.post("/{teamId}/projects")
@@ -45,7 +45,7 @@ async def create_team_project(
     data = await project_service.create_project(
         db, teamId, int(user["sub"]), body.name, body.description, body.start_date
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("/{id}")
@@ -55,7 +55,7 @@ async def get_project(
     db=Depends(get_db_session),
 ) -> dict:
     data = await project_service.get_project_detail(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.put("/{id}")
@@ -68,7 +68,7 @@ async def update_project(
     data = await project_service.update_project(
         db, id, int(user["sub"]), body.name, body.description, body.start_date
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.put("/{id}/archive")
@@ -78,7 +78,7 @@ async def archive_project(
     db=Depends(get_db_session),
 ) -> dict:
     data = await project_service.archive_project(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.delete("/{id}")
@@ -88,7 +88,7 @@ async def delete_project(
     db=Depends(get_db_session),
 ) -> dict:
     data = await project_service.delete_project(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("/{id}/test-statistics")
@@ -98,4 +98,4 @@ async def get_project_test_statistics(
     db=Depends(get_db_session),
 ) -> dict:
     data = await project_service.get_project_test_statistics(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}

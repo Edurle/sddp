@@ -58,7 +58,7 @@ async def direct_create_iteration(
     data = await iteration_service.create_iteration(
         db, project.id, user_id, body.name, None, body.start_date, body.end_date,
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 class CreateIterationRequest(BaseModel):
@@ -88,7 +88,7 @@ async def list_project_iterations(
     data = await iteration_service.list_iterations(
         db, projectId, int(user["sub"]), status
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @projects_nested_router.post("/{projectId}/iterations")
@@ -107,7 +107,7 @@ async def create_project_iteration(
         body.start_date,
         body.end_date,
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("/{id}")
@@ -117,7 +117,7 @@ async def get_iteration(
     db=Depends(get_db_session),
 ) -> dict:
     data = await iteration_service.get_iteration_detail(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.put("/{id}")
@@ -136,7 +136,7 @@ async def update_iteration(
         body.end_date,
         body.start_date,
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.post("/{id}/start")
@@ -146,7 +146,7 @@ async def start_iteration(
     db=Depends(get_db_session),
 ) -> dict:
     data = await iteration_service.start_iteration(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.post("/{id}/complete")
@@ -156,7 +156,7 @@ async def complete_iteration(
     db=Depends(get_db_session),
 ) -> dict:
     data = await iteration_service.complete_iteration(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("/{id}/kanban")
@@ -166,7 +166,7 @@ async def get_iteration_kanban(
     db=Depends(get_db_session),
 ) -> dict:
     data = await iteration_service.get_iteration_kanban(db, id, int(user["sub"]))
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("/{id}/statistics")
@@ -178,7 +178,7 @@ async def get_iteration_statistics(
     data = await iteration_service.get_iteration_statistics_detail(
         db, id, int(user["sub"])
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("/{id}/test-statistics")
@@ -190,4 +190,4 @@ async def get_iteration_test_statistics(
     data = await iteration_service.get_iteration_test_statistics(
         db, id, int(user["sub"])
     )
-    return {"code": 0, "message": "ok", "data": data}
+    return {"code": 0, "message": "success", "data": data}

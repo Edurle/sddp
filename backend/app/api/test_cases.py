@@ -63,7 +63,7 @@ async def direct_create_test_case(
         "related_element": tc.related_element,
         "created_at": tc.created_at.isoformat() if tc.created_at else None,
     }
-    return {"code": 0, "message": "success", "data": data, **data}
+    return {"code": 0, "message": "success", "data": data}
 
 
 class UpdateTestCaseRequest(BaseModel):

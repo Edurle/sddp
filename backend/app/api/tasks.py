@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.deps import get_current_user, get_db_session, require_permission
+from app.exceptions import BusinessError, ERR_VALIDATION
 from app.services import task as task_svc
 from app.services.test_execution import list_execution_rounds
 
@@ -51,7 +52,15 @@ async def direct_create_task(
     await db.commit()
     await db.refresh(task)
     data = task_svc._task_to_dict(task)
-    return {"code": 0, "message": "success", "data": data, **data}
+    return {"code": 0, "message": "success", "data": data}
+
+
+VALID_TRANSITIONS = {
+    "pending": {"coding"},
+    "coding": {"testing", "pending"},
+    "testing": {"completed", "coding"},
+    "completed": set(),
+}
 
 
 @router.patch("/{id}")
@@ -62,7 +71,9 @@ async def patch_task(
     db=Depends(get_db_session),
 ) -> dict:
     task = await task_svc._get_task_or_fail(db, id)
-    if body.status is not None:
+    if body.status is not None and body.status != task.status:
+        if body.status not in VALID_TRANSITIONS.get(task.status, set()):
+            raise BusinessError(ERR_VALIDATION, f"不允许从 {task.status} 转换到 {body.status}")
         task.status = body.status
     if body.title is not None:
         task.title = body.title
@@ -71,7 +82,7 @@ async def patch_task(
     await db.commit()
     await db.refresh(task)
     result = task_svc._task_to_dict(task)
-    return {"code": 0, "message": "success", "data": result, **result}
+    return {"code": 0, "message": "success", "data": result}
 
 
 @router.post("/{id}/test-records")
@@ -109,7 +120,7 @@ async def create_test_record(
     db.add(rec)
     await db.commit()
     await db.refresh(rec)
-    return {"code": 0, "message": "success", "data": {"id": rec.id, "status": rec.status, "round_id": latest_round.id}, "id": rec.id, "status": rec.status, "round_id": latest_round.id}
+    return {"code": 0, "message": "success", "data": {"id": rec.id, "status": rec.status, "round_id": latest_round.id}}
 
 
 @router.post("/{id}/test-rounds")
@@ -144,7 +155,7 @@ async def create_test_round(
     await db.commit()
     await db.refresh(round_)
     await db.refresh(rec)
-    return {"code": 0, "message": "success", "data": {"id": round_.id, "round_id": round_.id}, "id": round_.id, "round_id": round_.id}
+    return {"code": 0, "message": "success", "data": {"id": round_.id, "round_id": round_.id}}
 
 
 class UpdateTaskRequest(BaseModel):
@@ -206,6 +217,34 @@ async def complete_task(
     db=Depends(get_db_session),
 ) -> dict:
     data = await task_svc.complete_task(db, id)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.post("/{id}/start-coding")
+async def start_coding(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    data = await task_svc.start_coding(db, id)
+    return {"code": 0, "message": "success", "data": data}
+
+
+class GitInfoRequest(BaseModel):
+    git_branch: str | None = None
+    commit_sha: str | None = None
+    pr_url: str | None = None
+    artifact_url: str | None = None
+
+
+@router.patch("/{id}/git-info")
+async def update_git_info(
+    id: int,
+    body: GitInfoRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    data = await task_svc.update_git_info(db, id, **body.model_dump(exclude_none=True))
     return {"code": 0, "message": "success", "data": data}
 
 
