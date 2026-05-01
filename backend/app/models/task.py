@@ -28,6 +28,10 @@ class Task(Base):
         default="pending",
     )
     created_by: Mapped[int] = mapped_column(nullable=False)  # FK -> users.id
+    git_branch: Mapped[str | None] = mapped_column(String(255), default=None)
+    commit_sha: Mapped[str | None] = mapped_column(String(40), default=None)
+    pr_url: Mapped[str | None] = mapped_column(String(500), default=None)
+    artifact_url: Mapped[str | None] = mapped_column(String(500), default=None)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

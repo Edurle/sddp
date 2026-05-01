@@ -54,6 +54,8 @@ async def get_execution_records(db: AsyncSession, round_id: int) -> list[dict]:
             "status": rec.status,
             "actual_result": rec.actual_result,
             "failure_reason": rec.failure_reason,
+            "log_output": rec.log_output,
+            "duration_ms": rec.duration_ms,
             "executed_at": rec.executed_at.isoformat() if rec.executed_at else None,
         })
     return items
@@ -65,6 +67,8 @@ async def update_execution_record(
     status: str,
     actual_result: str | None = None,
     failure_reason: str | None = None,
+    log_output: str | None = None,
+    duration_ms: int | None = None,
 ) -> dict:
     stmt = select(TestExecutionRecord).where(TestExecutionRecord.id == record_id)
     result = await db.execute(stmt)
@@ -82,6 +86,10 @@ async def update_execution_record(
         record.failure_reason = failure_reason
     else:
         record.failure_reason = None
+    if log_output is not None:
+        record.log_output = log_output
+    if duration_ms is not None:
+        record.duration_ms = duration_ms
 
     await db.commit()
     await db.refresh(record)
@@ -90,4 +98,58 @@ async def update_execution_record(
         "status": record.status,
         "actual_result": record.actual_result,
         "failure_reason": record.failure_reason,
+        "log_output": record.log_output,
+        "duration_ms": record.duration_ms,
+    }
+
+
+async def batch_update_records(
+    db: AsyncSession,
+    round_id: int,
+    records: list,
+) -> dict:
+    round_stmt = select(TestExecutionRound).where(TestExecutionRound.id == round_id)
+    round_result = await db.execute(round_stmt)
+    if round_result.scalar_one_or_none() is None:
+        raise BusinessError(ERR_NOT_FOUND, "执行轮次不存在")
+
+    updated = []
+    for item in records:
+        stmt = select(TestExecutionRecord).where(
+            TestExecutionRecord.round_id == round_id,
+            TestExecutionRecord.test_case_id == item.test_case_id,
+        )
+        result = await db.execute(stmt)
+        rec = result.scalar_one_or_none()
+        if rec is None:
+            rec = TestExecutionRecord(
+                round_id=round_id,
+                test_case_id=item.test_case_id,
+                status=item.status,
+                actual_result=item.actual_result,
+                failure_reason=item.failure_reason,
+                log_output=item.log_output,
+                duration_ms=item.duration_ms,
+            )
+            db.add(rec)
+        else:
+            rec.status = item.status
+            if item.actual_result is not None:
+                rec.actual_result = item.actual_result
+            if item.failure_reason is not None:
+                rec.failure_reason = item.failure_reason
+            if item.log_output is not None:
+                rec.log_output = item.log_output
+            if item.duration_ms is not None:
+                rec.duration_ms = item.duration_ms
+        updated.append(rec)
+    await db.commit()
+    for r in updated:
+        await db.refresh(r)
+    return {
+        "updated": len(updated),
+        "records": [
+            {"id": r.id, "test_case_id": r.test_case_id, "status": r.status}
+            for r in updated
+        ],
     }

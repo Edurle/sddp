@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, String, Text
+from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -38,4 +38,6 @@ class TestExecutionRecord(Base):
     )
     actual_result: Mapped[str | None] = mapped_column(Text, default=None)
     failure_reason: Mapped[str | None] = mapped_column(Text, default=None)
+    log_output: Mapped[str | None] = mapped_column(Text, default=None)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, default=None)
     executed_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
