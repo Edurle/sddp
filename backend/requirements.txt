@@ -12,3 +12,4 @@ pytest-asyncio
 motor
 pymongo
 pydantic-settings
+jsonschema

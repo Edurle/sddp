@@ -23,7 +23,7 @@ start_backend() {
     echo "Starting backend..."
     cd "$BACKEND_DIR"
     rm -f test.db sdd.db
-    nohup python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload \
+    nohup conda run -n sdd python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload \
         > "$LOG_DIR/backend.log" 2>&1 &
     echo $! > "$PID_DIR/backend.pid"
     sleep 2
