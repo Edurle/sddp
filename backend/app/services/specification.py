@@ -108,6 +108,12 @@ async def get_spec_template(
     return {"sections": data.get("sections", [])}
 
 
+async def get_agent_guide(
+    db: AsyncSession, team_id: int, user_id: int
+) -> dict:
+    return await get_spec_template(db, team_id, user_id)
+
+
 async def update_spec_template(
     db: AsyncSession, team_id: int, user_id: int, sections: list[dict]
 ) -> dict:

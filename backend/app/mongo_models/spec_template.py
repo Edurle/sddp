@@ -13,6 +13,7 @@ class SpecTemplateField:
     required: bool = False
     description: str | None = None
     json_schema: dict[str, Any] | None = None
+    agent_prompt: str | None = None
 
 
 @dataclass
@@ -45,13 +46,14 @@ class SpecTemplate:
                 "display_name": "实体定义",
                 "required": True,
                 "fields": [
-                    {"name": "description", "display_name": "实体描述", "type": "text", "required": True, "description": "对实体的简要描述"},
+                    {"name": "description", "display_name": "实体描述", "type": "text", "required": True, "description": "对实体的简要描述", "agent_prompt": "用一段话描述该实体的用途和核心职责"},
                     {
                         "name": "fields",
                         "display_name": "字段列表",
                         "type": "list",
                         "required": True,
                         "description": "实体包含的字段定义（字段名、类型、约束）",
+                        "agent_prompt": "列出实体的所有字段。每个字段需包含 name（字段名，英文小写下划线）、type（数据类型，如 string/integer/boolean/datetime/json）、constraints（约束数组，如 ['required', 'unique', 'max:255'])",
                         "json_schema": {
                             "type": "array",
                             "items": {
@@ -78,6 +80,7 @@ class SpecTemplate:
                         "type": "list",
                         "required": True,
                         "description": "每个表的表名、字段、类型、索引、外键关系",
+                        "agent_prompt": "列出所有数据库表。每张表需包含 name（表名，复数形式）、description（表用途）、fields（字段数组，包含 name/type/nullable/default/comment/primary_key/unique/foreign_key/auto_increment）、indexes（索引数组）",
                         "json_schema": {
                             "type": "array",
                             "items": {
@@ -97,6 +100,10 @@ class SpecTemplate:
                                                 "nullable": {"type": "boolean"},
                                                 "default": {},
                                                 "comment": {"type": "string"},
+                                                "primary_key": {"type": "boolean"},
+                                                "unique": {"type": "boolean"},
+                                                "foreign_key": {"type": "string"},
+                                                "auto_increment": {"type": "boolean"},
                                             },
                                         },
                                         "minItems": 1,
@@ -130,6 +137,7 @@ class SpecTemplate:
                         "type": "list",
                         "required": True,
                         "description": "每个页面的名称、编码、元素列表（含唯一编码）、交互行为",
+                        "agent_prompt": "列出所有页面。每个页面需包含 name（页面名称）、code（页面编码，短横线格式）、route（路由路径）、elements（元素数组，每个元素含 code/type/label/interaction）",
                         "json_schema": {
                             "type": "array",
                             "items": {
@@ -166,7 +174,7 @@ class SpecTemplate:
                             },
                         },
                     },
-                    {"name": "prototype_html", "display_name": "原型图HTML", "type": "text", "required": False, "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示", "json_schema": {"type": "string"}},
+                    {"name": "prototype_html", "display_name": "原型图HTML", "type": "text", "required": False, "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示", "agent_prompt": "用 HTML 编写页面原型图。使用基础 HTML+CSS，不需外部依赖", "json_schema": {"type": "string"}},
                 ],
             },
             {
@@ -180,6 +188,7 @@ class SpecTemplate:
                         "type": "list",
                         "required": True,
                         "description": "每个接口的 URL、HTTP 方法、请求参数、响应参数、错误码",
+                        "agent_prompt": "列出所有 API 接口。每个接口需包含 method（GET/POST/PUT/DELETE/PATCH）、path（URL路径）、description（接口说明）、request_params（请求参数数组，含 name/in/type/required/description）、response（响应体结构，含 code/message/data）、errors（错误码数组）",
                         "json_schema": {
                             "type": "array",
                             "items": {
@@ -203,7 +212,15 @@ class SpecTemplate:
                                             },
                                         },
                                     },
-                                    "response": {"type": "object"},
+                                    "response": {
+                                        "type": "object",
+                                        "properties": {
+                                            "code": {"type": "integer"},
+                                            "message": {"type": "string"},
+                                            "data": {},
+                                        },
+                                        "required": ["code", "message"],
+                                    },
                                     "errors": {
                                         "type": "array",
                                         "items": {
@@ -225,9 +242,9 @@ class SpecTemplate:
                 "display_name": "其他约束",
                 "required": False,
                 "fields": [
-                    {"name": "directory_structure", "display_name": "目录结构", "type": "text", "required": False, "description": "项目目录结构规范"},
-                    {"name": "naming_conventions", "display_name": "命名规范", "type": "text", "required": False, "description": "编码命名规范"},
-                    {"name": "other", "display_name": "其他约束", "type": "text", "required": False, "description": "其他技术约束"},
+                    {"name": "directory_structure", "display_name": "目录结构", "type": "text", "required": False, "description": "项目目录结构规范", "agent_prompt": "描述项目的目录结构规范"},
+                    {"name": "naming_conventions", "display_name": "命名规范", "type": "text", "required": False, "description": "编码命名规范", "agent_prompt": "描述编码命名规范（变量、函数、文件等）"},
+                    {"name": "other", "display_name": "其他约束", "type": "text", "required": False, "description": "其他技术约束", "agent_prompt": "描述其他技术约束（性能要求、安全要求等）"},
                 ],
             },
         ],
@@ -243,6 +260,7 @@ class SpecTemplate:
                 required=f.get("required", False),
                 description=f.get("description"),
                 json_schema=f.get("json_schema"),
+                agent_prompt=f.get("agent_prompt"),
             )
             for f in data.get("fields", [])
         ]
@@ -262,7 +280,7 @@ class SpecTemplate:
                     "display_name": s.display_name,
                     "required": s.required,
                     "fields": [
-                        {"name": f.name, "display_name": f.display_name, "type": f.type, "required": f.required, "description": f.description, "json_schema": f.json_schema}
+                        {"name": f.name, "display_name": f.display_name, "type": f.type, "required": f.required, "description": f.description, "json_schema": f.json_schema, "agent_prompt": f.agent_prompt}
                         for f in s.fields
                     ],
                 }

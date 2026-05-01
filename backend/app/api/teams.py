@@ -233,6 +233,17 @@ async def get_spec_template(
     return {"code": 0, "message": "success", "data": data}
 
 
+@router.get("/{teamId}/spec-template/agent-guide")
+async def get_agent_guide(
+    teamId: str,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    tid = await _resolve_team_id(db, teamId)
+    data = await spec_svc.get_agent_guide(db, tid, int(user["sub"]))
+    return {"code": 0, "message": "success", "data": data}
+
+
 @router.put("/{teamId}/spec-template")
 async def update_spec_template(
     teamId: str,
