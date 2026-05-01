@@ -124,7 +124,11 @@ Base URL: `/api/v1`
   } | null,
   "created_by": { "id": 1, "nickname": "string" },
   "created_at": "datetime",
-  "updated_at": "datetime"
+  "updated_at": "datetime",
+  "git_branch": "string|null",
+  "commit_sha": "string|null",
+  "pr_url": "string|null",
+  "artifact_url": "string|null"
 }
 ```
 
@@ -174,7 +178,63 @@ Base URL: `/api/v1`
 
 ---
 
-### 1.6 开始测试
+### 1.6 开始编码
+
+`POST /api/v1/tasks/{id}/start-coding`
+
+**行为**：将任务状态从 `pending` 转为 `coding`。
+
+**响应 data**
+
+```json
+{
+  "id": 1,
+  "status": "coding"
+}
+```
+
+**错误**
+
+| 错误码 | 说明 |
+|--------|------|
+| 40204 | 只有 pending 状态的任务才能开始编码 |
+
+---
+
+### 1.7 更新任务 Git 信息
+
+`PATCH /api/v1/tasks/{id}/git-info`
+
+**行为**：更新任务的 Git 关联信息。Agent 在创建分支、提交代码、创建 PR 后调用。
+
+**请求体**
+
+```json
+{
+  "git_branch": "feature/user-api",
+  "commit_sha": "a1b2c3d4e5f6...",
+  "pr_url": "https://github.com/org/repo/pull/42",
+  "artifact_url": "https://ci.example.com/build/1234"
+}
+```
+
+所有字段均为可选，仅更新传入的字段。
+
+**响应 data**
+
+```json
+{
+  "id": 1,
+  "git_branch": "feature/user-api",
+  "commit_sha": "a1b2c3d4e5f6...",
+  "pr_url": "https://github.com/org/repo/pull/42",
+  "artifact_url": "https://ci.example.com/build/1234"
+}
+```
+
+---
+
+### 1.8 开始测试
 
 `POST /api/v1/tasks/{id}/start-testing`
 
@@ -201,7 +261,7 @@ Base URL: `/api/v1`
 
 ---
 
-### 1.7 完成任务
+### 1.9 完成任务
 
 `POST /api/v1/tasks/{id}/complete`
 
@@ -364,6 +424,8 @@ Base URL: `/api/v1`
     "status": "passed|failed|skipped|pending",
     "actual_result": "string",
     "failure_reason": "string",
+    "log_output": "string|null",
+    "duration_ms": 120,
     "executed_at": "datetime"
   }
 ]
@@ -394,6 +456,65 @@ Base URL: `/api/v1`
 | 错误码 | 说明 |
 |--------|------|
 | 40403 | 失败原因必填 |
+
+---
+
+### 3.4 批量更新执行记录
+
+`PUT /api/v1/test-executions/{roundId}/batch`
+
+**权限**：`task:test`
+
+**行为**：批量提交一轮测试的所有执行结果。Agent 跑完自动化测试后一次性回写所有结果。
+
+**请求体**
+
+```json
+{
+  "records": [
+    {
+      "test_case_id": 1,
+      "status": "passed",
+      "actual_result": "返回200，数据正确",
+      "failure_reason": null,
+      "log_output": null,
+      "duration_ms": 120
+    },
+    {
+      "test_case_id": 2,
+      "status": "failed",
+      "actual_result": "返回500错误",
+      "failure_reason": "空指针异常",
+      "log_output": "Traceback (most recent call last):\n  ...",
+      "duration_ms": 3400
+    }
+  ]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| test_case_id | number | 是 | 测试用例ID |
+| status | string | 是 | passed / failed / skipped |
+| actual_result | string | 否 | 实际结果 |
+| failure_reason | string | 否 | 失败原因（status 为 failed 时建议填写） |
+| log_output | string | 否 | 测试输出日志 |
+| duration_ms | number | 否 | 执行耗时（毫秒） |
+
+**响应 data**
+
+```json
+{
+  "updated": 5,
+  "records": [
+    {
+      "id": 1,
+      "test_case_id": 1,
+      "status": "passed"
+    }
+  ]
+}
+```
 
 ---
 
@@ -470,6 +591,7 @@ Base URL: `/api/v1`
 | 错误码 | 说明 |
 |--------|------|
 | 40204 | 需求/任务状态不允许此操作 |
+| 40205 | 只有 pending 状态的任务才能开始编码 |
 | 40401 | 存在未通过的测试用例 |
 | 40402 | 没有测试执行记录 |
 | 40403 | 失败原因必填 |

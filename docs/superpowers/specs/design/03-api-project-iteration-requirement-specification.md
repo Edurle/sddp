@@ -522,3 +522,185 @@ drafting_req → reviewing_req → drafting_spec → reviewing_spec → drafting
     "created_at": "datetime"
   }
   ```
+
+---
+
+## 5. Agent 工作发现
+
+> Agent 通过这些端点发现自己的团队、项目、待办任务和待评审项。
+
+### 5.1 获取我的待办概览
+
+`GET /api/v1/users/me/pending`
+
+**响应 data**
+
+```json
+{
+  "teams": [
+    {"id": 1, "name": "产品研发组", "role": "owner"}
+  ],
+  "projects": [
+    {"id": 1, "name": "后台管理系统 v2.0", "team_id": 1, "status": "active"}
+  ],
+  "active_iterations": [
+    {"id": 1, "name": "Sprint 1", "project_id": 1, "status": "in_progress"}
+  ],
+  "assigned_tasks": [
+    {"id": 1, "title": "实现用户 API 接口", "status": "coding", "requirement_id": 1, "requirement_title": "用户CRUD功能"}
+  ],
+  "pending_reviews": [
+    {"requirement_id": 2, "title": "登录功能", "review_type": "requirement", "review_id": 5, "created_at": "2026-05-01T10:00:00Z"}
+  ]
+}
+```
+
+### 5.2 获取我的任务列表
+
+`GET /api/v1/users/me/tasks`
+
+**查询参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| status | string | 否 | 按状态过滤：pending / coding / testing / completed |
+
+**响应 data**
+
+```json
+[
+  {
+    "id": 1,
+    "title": "实现用户 API 接口",
+    "status": "coding",
+    "requirement_id": 1,
+    "requirement_title": "用户CRUD功能",
+    "assignee_id": 2,
+    "git_branch": "feature/user-api",
+    "created_at": "2026-05-01T10:00:00Z",
+    "updated_at": "2026-05-01T12:00:00Z"
+  }
+]
+```
+
+### 5.3 获取我的待评审列表
+
+`GET /api/v1/users/me/pending-reviews`
+
+**响应 data**
+
+```json
+[
+  {
+    "review_id": 5,
+    "requirement_id": 2,
+    "requirement_title": "登录功能",
+    "review_type": "requirement",
+    "status": "pending",
+    "created_at": "2026-05-01T10:00:00Z"
+  }
+]
+```
+
+### 5.4 全局查询需求
+
+`GET /api/v1/requirements`
+
+**查询参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| status | string | 否 | 按状态过滤 |
+| iteration_id | number | 否 | 按迭代过滤 |
+| created_by | number | 否 | 按创建人过滤 |
+
+**响应 data**
+
+```json
+[
+  {
+    "id": 1,
+    "title": "用户CRUD功能",
+    "req_type": "feature",
+    "priority": 1,
+    "status": "drafting_spec",
+    "iteration_id": 1,
+    "created_by": 1,
+    "created_at": "2026-05-01T10:00:00Z"
+  }
+]
+```
+
+### 5.5 获取需求完整上下文
+
+`GET /api/v1/requirements/{id}/full-context`
+
+一次调用返回需求 + 规格文档 + 测试用例 + 任务列表，Agent 获取完整开发上下文。
+
+**响应 data**
+
+```json
+{
+  "requirement": {
+    "id": 1,
+    "title": "用户CRUD功能",
+    "req_type": "feature",
+    "status": "drafting_spec",
+    "description": "...",
+    "created_by": 1
+  },
+  "spec": {
+    "current_version": 2,
+    "content": {
+      "entity_definition": {},
+      "table_design": {},
+      "page_structure": {},
+      "api_design": {},
+      "constraints": {}
+    }
+  },
+  "test_cases": [
+    {"id": 1, "title": "创建用户 — 正常流程", "case_type": "api"}
+  ],
+  "tasks": [
+    {"id": 1, "title": "实现用户 API", "status": "coding"}
+  ]
+}
+```
+
+### 5.6 获取规范模板 Agent 指南
+
+`GET /api/v1/teams/{teamId}/spec-template/agent-guide`
+
+**行为**：返回规范模板的结构化 Agent 指南，包含每个章节和字段的 `agent_prompt`。Agent 在编写规范前先读取此端点获取指导。
+
+**响应 data**
+
+```json
+{
+  "team_id": 1,
+  "sections": [
+    {
+      "name": "entity_definition",
+      "display_name": "实体定义",
+      "required": true,
+      "fields": [
+        {
+          "name": "description",
+          "display_name": "实体描述",
+          "type": "text",
+          "required": true,
+          "agent_prompt": "用一段话描述该实体的用途和核心职责"
+        },
+        {
+          "name": "fields",
+          "display_name": "字段列表",
+          "type": "list",
+          "required": true,
+          "agent_prompt": "列出实体的所有字段。每个字段需包含 name（字段名，英文小写下划线）、type（数据类型）、constraints（约束数组）"
+        }
+      ]
+    }
+  ]
+}
+```

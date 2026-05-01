@@ -23,6 +23,7 @@
 
 ```
 users
+  ├──< api_keys
   ├──< team_members >── teams
   ├──< invitations (inviter_id / invitee_id)
   ├──< requirement_reviews (reviewer_id)
@@ -482,6 +483,10 @@ CREATE TABLE requirement_reviews (
 | description | TEXT | DEFAULT NULL | — | 任务描述 |
 | assignee_id | BIGINT | FK → users(id), DEFAULT NULL | idx_assignee | 执行人（可为空） |
 | status | VARCHAR(20) | NOT NULL DEFAULT 'pending', CHECK (status IN ('pending','coding','testing','completed')) | idx_status | 任务状态 |
+| git_branch | VARCHAR(255) | DEFAULT NULL | — | Agent 工作的 Git 分支名 |
+| commit_sha | VARCHAR(40) | DEFAULT NULL | — | 关联的 Git commit SHA |
+| pr_url | VARCHAR(500) | DEFAULT NULL | — | 关联的 Pull Request URL |
+| artifact_url | VARCHAR(500) | DEFAULT NULL | — | 构建产物或部署 URL |
 
 **任务状态流转**：
 
@@ -499,6 +504,10 @@ CREATE TABLE tasks (
     description     TEXT             DEFAULT NULL,
     assignee_id     BIGINT           DEFAULT NULL,
     status          VARCHAR(20)  NOT NULL DEFAULT 'pending',
+    git_branch      VARCHAR(255) DEFAULT NULL,
+    commit_sha      VARCHAR(40)  DEFAULT NULL,
+    pr_url          VARCHAR(500) DEFAULT NULL,
+    artifact_url    VARCHAR(500) DEFAULT NULL,
     created_by      BIGINT       NOT NULL,
     is_deleted      BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at      DATETIME         DEFAULT NULL,
@@ -588,6 +597,8 @@ CREATE TABLE test_execution_rounds (
 | status | VARCHAR(10) | NOT NULL, CHECK (status IN ('passed','failed','skipped')) | idx_status | 执行结果 |
 | actual_result | TEXT | DEFAULT NULL | — | 实际结果 |
 | failure_reason | TEXT | DEFAULT NULL | — | 失败原因 |
+| log_output | TEXT | DEFAULT NULL | — | 测试输出日志（stdout/stderr/堆栈信息） |
+| duration_ms | INT | DEFAULT NULL | — | 执行耗时（毫秒） |
 | executed_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | — | 执行时间 |
 
 ```sql
@@ -598,6 +609,8 @@ CREATE TABLE test_execution_records (
     status          VARCHAR(10) NOT NULL,
     actual_result   TEXT            DEFAULT NULL,
     failure_reason  TEXT            DEFAULT NULL,
+    log_output      TEXT            DEFAULT NULL,
+    duration_ms     INT             DEFAULT NULL,
     executed_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_terec_status CHECK (status IN ('passed', 'failed', 'skipped')),
     INDEX idx_round (round_id),
@@ -634,6 +647,40 @@ CREATE TABLE password_reset_tokens (
 
 ---
 
+### 3.17 api_keys — API 密钥表
+
+用于 Agent 长期认证，管理员为用户创建 API Key，Agent 通过 `X-API-Key` 请求头访问 API。
+
+| 字段 | 类型 | 约束 | 索引 | 说明 |
+|------|------|------|------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | PRIMARY | 密钥ID |
+| name | VARCHAR(100) | NOT NULL | — | 密钥名称（如"开发Agent"、"测试Agent"） |
+| key_hash | VARCHAR(255) | UNIQUE, NOT NULL | uniq_key_hash | 密钥哈希值（SHA-256） |
+| key_prefix | VARCHAR(10) | NOT NULL | — | 密钥前缀（明文前8字符，用于展示识别） |
+| user_id | BIGINT | FK → users(id), NOT NULL | idx_api_key_user | 关联用户 |
+| is_active | BOOLEAN | NOT NULL DEFAULT TRUE | — | 是否启用 |
+| expires_at | DATETIME | DEFAULT NULL | — | 过期时间（NULL=永不过期） |
+| created_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | — | 创建时间 |
+
+```sql
+CREATE TABLE api_keys (
+    id          BIGINT       AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    key_hash    VARCHAR(255) NOT NULL,
+    key_prefix  VARCHAR(10)  NOT NULL,
+    user_id     BIGINT       NOT NULL,
+    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+    expires_at  DATETIME         DEFAULT NULL,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uniq_key_hash UNIQUE (key_hash),
+    INDEX idx_api_key_user (user_id)
+);
+```
+
+**API Key 格式**：`sdd_{32字节随机URL安全字符串}`，存储时仅保存 SHA-256 哈希值，明文仅在创建时返回一次。
+
+---
+
 ## 4. MongoDB 集合设计
 
 ### 4.1 specification_templates — 规范模板集合
@@ -657,14 +704,16 @@ CREATE TABLE password_reset_tokens (
           "display_name": "实体描述",
           "type": "text",
           "required": true,
-          "description": "对实体的简要描述"
+          "description": "对实体的简要描述",
+          "agent_prompt": "用一段话描述该实体的用途和核心职责"
         },
         {
           "name": "fields",
           "display_name": "字段列表",
           "type": "list",
           "required": true,
-          "description": "实体包含的字段定义（字段名、类型、约束）"
+          "description": "实体包含的字段定义（字段名、类型、约束）",
+          "agent_prompt": "列出实体的所有字段。每个字段需包含 name（字段名，英文小写下划线）、type（数据类型，如 string/integer/boolean/datetime/json）、constraints（约束数组，如 ['required', 'unique', 'max:255'])"
         }
       ]
     },
@@ -678,7 +727,8 @@ CREATE TABLE password_reset_tokens (
           "display_name": "表列表",
           "type": "list",
           "required": true,
-          "description": "每个表的表名、字段、类型、索引、外键关系"
+          "description": "每个表的表名、字段、类型、索引、外键关系",
+          "agent_prompt": "列出所有数据库表。每张表需包含 name（表名，复数形式）、description（表用途）、fields（字段数组，包含 name/type/nullable/default/comment/primary_key/unique/foreign_key/auto_increment）、indexes（索引数组）"
         }
       ]
     },
@@ -692,14 +742,16 @@ CREATE TABLE password_reset_tokens (
           "display_name": "页面列表",
           "type": "list",
           "required": true,
-          "description": "每个页面的名称、编码、元素列表（含唯一编码）、交互行为"
+          "description": "每个页面的名称、编码、元素列表（含唯一编码）、交互行为",
+          "agent_prompt": "列出所有页面。每个页面需包含 name（页面名称）、code（页面编码，短横线格式）、route（路由路径）、elements（元素数组，每个元素含 code/type/label/interaction）"
         },
         {
           "name": "prototype_html",
           "display_name": "原型图HTML",
           "type": "text",
           "required": false,
-          "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示"
+          "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示",
+          "agent_prompt": "用 HTML 编写页面原型图。使用基础 HTML+CSS，不需外部依赖"
         }
       ]
     },
@@ -713,7 +765,8 @@ CREATE TABLE password_reset_tokens (
           "display_name": "接口列表",
           "type": "list",
           "required": true,
-          "description": "每个接口的 URL、HTTP 方法、请求参数、响应参数、错误码"
+          "description": "每个接口的 URL、HTTP 方法、请求参数、响应参数、错误码",
+          "agent_prompt": "列出所有 API 接口。每个接口需包含 method（GET/POST/PUT/DELETE/PATCH）、path（URL路径）、description（接口说明）、request_params（请求参数数组，含 name/in/type/required/description）、response（响应体结构，含 code/message/data）、errors（错误码数组）"
         }
       ]
     },
@@ -727,21 +780,24 @@ CREATE TABLE password_reset_tokens (
           "display_name": "目录结构",
           "type": "text",
           "required": false,
-          "description": "项目目录结构规范"
+          "description": "项目目录结构规范",
+          "agent_prompt": "描述项目的目录结构规范"
         },
         {
           "name": "naming_conventions",
           "display_name": "命名规范",
           "type": "text",
           "required": false,
-          "description": "编码命名规范"
+          "description": "编码命名规范",
+          "agent_prompt": "描述编码命名规范（变量、函数、文件等）"
         },
         {
           "name": "other",
           "display_name": "其他约束",
           "type": "text",
           "required": false,
-          "description": "其他技术约束"
+          "description": "其他技术约束",
+          "agent_prompt": "描述其他技术约束（性能要求、安全要求等）"
         }
       ]
     }
@@ -760,6 +816,8 @@ CREATE TABLE password_reset_tokens (
 | `object` | 对象 | 嵌套结构编辑器 |
 
 > 字段定义对象还支持一个可选字段 `json_schema`，用于定义 JSON Schema 格式的内容校验规则。
+
+> 字段定义对象还支持一个可选字段 `agent_prompt`，用于提供面向 AI Agent 的填写指导文本。
 
 **索引**：
 
@@ -927,7 +985,8 @@ CREATE TABLE password_reset_tokens (
 13. test_cases                → requirements
 14. test_execution_rounds     → tasks, users
 15. test_execution_records    → test_execution_rounds, test_cases
-16. password_reset_tokens     → users
+16. api_keys                   → users
+17. password_reset_tokens     → users
 ```
 
 ---
@@ -977,6 +1036,8 @@ CREATE TABLE password_reset_tokens (
 | 操作 | MySQL 操作 |
 |------|-----------|
 | 创建任务 | INSERT tasks (status = 'coding') |
+| 开始编码 | UPDATE tasks.status = 'coding' |
+| 更新 Git 信息 | UPDATE tasks.git_branch/commit_sha/pr_url/artifact_url |
 | 提交测试 | UPDATE tasks.status = 'testing' |
 | 开始测试执行 | INSERT test_execution_rounds |
 | 记录用例结果 | INSERT test_execution_records |

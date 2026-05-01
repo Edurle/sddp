@@ -43,11 +43,19 @@
 
 ### 认证方式
 
-除登录、注册、忘记密码、重置密码、验证邮箱外，所有接口需在请求头携带：
+除登录、注册、忘记密码、重置密码、验证邮箱外，所有接口需在请求头携带以下任一：
 
+**方式一：JWT Token**
 ```
 Authorization: Bearer <token>
 ```
+
+**方式二：API Key（适用于 Agent）**
+```
+X-API-Key: sdd_xxxxxxxxxxxxxxxxxxxxx
+```
+
+> API Key 由管理员创建，支持长期有效，权限与关联用户一致。API Key 认证时每次从数据库获取最新权限（不受 JWT 权限冻结影响）。
 
 ### 错误码一览
 
@@ -1324,3 +1332,90 @@ Authorization: Bearer <token>
 | 40009 | 内置角色不可删除 |
 
 > 删除角色后，拥有该角色的成员将自动失去对应权限。如果角色正在被使用，仍可删除，相关成员的角色关联自动解除。
+
+---
+
+## 6. API Key 管理
+
+> 供管理员为用户创建和管理 API Key，用于 Agent 长期认证。
+
+### 6.1 创建 API Key
+
+`POST /api/v1/admin/api-keys`
+
+**权限**：管理员
+
+**请求体**
+
+```json
+{
+  "user_id": 1,
+  "name": "开发Agent",
+  "expires_at": "2027-01-01T00:00:00Z"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| user_id | number | 是 | 关联用户ID |
+| name | string | 是 | 密钥名称 |
+| expires_at | string | 否 | 过期时间（ISO 8601），不传则永不过期 |
+
+**响应 data**
+
+```json
+{
+  "id": 1,
+  "name": "开发Agent",
+  "key": "sdd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "key_prefix": "sdd_abcd",
+  "user_id": 1,
+  "expires_at": "2027-01-01T00:00:00Z",
+  "created_at": "2026-05-01T10:00:00Z"
+}
+```
+
+> **注意**：`key` 明文仅在创建时返回一次，后续无法查看。
+
+### 6.2 列出用户的 API Key
+
+`GET /api/v1/admin/users/{id}/api-keys`
+
+**权限**：管理员
+
+**响应 data**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "开发Agent",
+    "key_prefix": "sdd_abcd",
+    "is_active": true,
+    "expires_at": "2027-01-01T00:00:00Z",
+    "created_at": "2026-05-01T10:00:00Z"
+  }
+]
+```
+
+### 6.3 吊销 API Key
+
+`DELETE /api/v1/admin/api-keys/{id}`
+
+**权限**：管理员
+
+**行为**：设置 `is_active = FALSE`，吊销后使用该 Key 的请求将被拒绝。
+
+**响应 data**
+
+```json
+{
+  "id": 1
+}
+```
+
+**错误**
+
+| 错误码 | 说明 |
+|--------|------|
+| 40400 | API Key 不存在 |
