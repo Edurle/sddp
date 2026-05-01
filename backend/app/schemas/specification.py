@@ -9,6 +9,7 @@ class SpecFieldDefinition(BaseModel):
     type: str
     required: bool = True
     description: str | None = None
+    json_schema: dict | None = None
 
 
 class SpecSectionDefinition(BaseModel):
