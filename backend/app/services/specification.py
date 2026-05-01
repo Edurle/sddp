@@ -1,3 +1,4 @@
+import jsonschema
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +13,87 @@ from app.exceptions import (
 from app.models import Requirement, TeamMember
 from app.mongo_models.spec_document import SpecDocument
 from app.mongo_models.spec_template import SpecTemplate
+
+
+def _get_template_sections(team_id: int) -> list[dict]:
+    key = f"spec_template:{team_id}"
+    data = cache_instance.get(key)
+    if data is not None:
+        return data.get("sections", [])
+    return SpecTemplate().DEFAULT_SECTIONS
+
+
+def _validate_spec_content(content: dict, team_id: int) -> list[dict]:
+    sections = _get_template_sections(team_id)
+    errors = []
+
+    for section in sections:
+        section_name = section["name"]
+        section_required = section.get("required", True)
+        section_fields = section.get("fields", [])
+
+        if section_name not in content:
+            if section_required:
+                errors.append({
+                    "section": section_name,
+                    "message": f"缺少必填章节: {section.get('display_name', section_name)}",
+                })
+            continue
+
+        section_content = content[section_name]
+        if not isinstance(section_content, dict):
+            errors.append({
+                "section": section_name,
+                "message": f"章节 {section.get('display_name', section_name)} 的内容必须是对象",
+            })
+            continue
+
+        for field_def in section_fields:
+            field_name = field_def["name"]
+            field_required = field_def.get("required", True)
+            field_schema = field_def.get("json_schema")
+            field_display = field_def.get("display_name", field_name)
+
+            if field_name not in section_content:
+                if field_required:
+                    errors.append({
+                        "section": section_name,
+                        "field": field_name,
+                        "message": f"缺少必填字段: {field_display}",
+                    })
+                continue
+
+            if field_schema is not None:
+                try:
+                    jsonschema.validate(section_content[field_name], field_schema)
+                except jsonschema.ValidationError as e:
+                    errors.append({
+                        "section": section_name,
+                        "field": field_name,
+                        "message": f"字段 {field_display} 格式不正确: {e.message}",
+                        "path": list(e.absolute_path) if e.absolute_path else [],
+                    })
+
+    return errors
+
+
+async def _get_team_id_by_requirement(db: AsyncSession, req_id: int) -> int:
+    from sqlalchemy import select as sel
+    from app.models import Iteration as IterModel, Project as ProjModel
+    req = await _get_requirement(db, req_id)
+    if req is None:
+        return 0
+    stmt = sel(IterModel).where(IterModel.id == req.iteration_id)
+    result = await db.execute(stmt)
+    iteration = result.scalar_one_or_none()
+    if iteration is None:
+        return 0
+    stmt2 = sel(ProjModel).where(ProjModel.id == iteration.project_id)
+    result2 = await db.execute(stmt2)
+    project = result2.scalar_one_or_none()
+    if project is None:
+        return 0
+    return project.team_id
 
 
 async def get_spec_template(
@@ -77,6 +159,11 @@ async def save_spec_document(
 
     if req.status != "drafting_spec":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑规格说明")
+
+    team_id = await _get_team_id_by_requirement(db, req_id)
+    errors = _validate_spec_content(content, team_id)
+    if errors:
+        raise BusinessError(ERR_VALIDATION, "规范内容校验失败", errors=errors)
 
     key = f"spec_document:{req_id}"
     data = cache_instance.get(key)

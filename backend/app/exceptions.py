@@ -25,7 +25,8 @@ ERR_REVIEW_PROCESSED = 40303
 
 
 class BusinessError(Exception):
-    def __init__(self, code: int, message: str):
+    def __init__(self, code: int, message: str, errors: list | None = None):
         self.code = code
         self.message = message
+        self.errors = errors or []
         super().__init__(message)

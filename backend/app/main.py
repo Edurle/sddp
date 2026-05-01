@@ -204,7 +204,7 @@ async def on_startup():
 async def business_error_handler(request: Request, exc: BusinessError):
     return JSONResponse(
         status_code=200,
-        content={"code": exc.code, "message": exc.message, "data": None},
+        content={"code": exc.code, "message": exc.message, "data": exc.errors if exc.errors else None},
     )
 
 
