@@ -40,3 +40,7 @@ venv/
 coverage/
 htmlcov/
 .coverage
+
+.pids/
+*.db-shm
+*.db-wal
