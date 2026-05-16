@@ -9,6 +9,7 @@ from app.deps import get_current_user, get_db_session, require_permission
 from app.exceptions import BusinessError, ERR_FORBIDDEN
 from app.models import Requirement
 from app.services import requirement as req_svc
+from app.services import review_comment as rc_svc
 from app.services import specification as spec_svc
 from app.services import task as task_svc
 from app.services import test_case as tc_svc
@@ -514,6 +515,16 @@ async def review_requirement(
         db, id, int(user["sub"]), body.action, body.comment,
         user.get("permissions", []),
     )
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/{id}/review-comments")
+async def get_review_comments(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    data = await rc_svc.list_review_comments(db, id)
     return {"code": 0, "message": "success", "data": data}
 
 

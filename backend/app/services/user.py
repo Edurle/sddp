@@ -301,3 +301,169 @@ async def toggle_user_status(db: AsyncSession, target_user_id: int, is_active: b
         "id": user.id,
         "is_active": user.is_active,
     }
+
+
+async def get_projects_tree(db: AsyncSession, user_id: int) -> list[dict]:
+    team_ids_stmt = (
+        select(TeamMember.team_id)
+        .where(TeamMember.user_id == user_id, TeamMember.is_deleted == False)
+    )
+    team_result = await db.execute(team_ids_stmt)
+    team_ids = [row[0] for row in team_result.all()]
+
+    if not team_ids:
+        return []
+
+    project_stmt = (
+        select(Project)
+        .where(Project.team_id.in_(team_ids), Project.is_deleted == False)
+        .order_by(Project.created_at.desc())
+    )
+    project_result = await db.execute(project_stmt)
+    projects = project_result.scalars().all()
+
+    result = []
+    for proj in projects:
+        iter_stmt = (
+            select(Iteration)
+            .where(Iteration.project_id == proj.id)
+            .order_by(Iteration.created_at.desc())
+        )
+        iter_result = await db.execute(iter_stmt)
+        iterations = iter_result.scalars().all()
+
+        iter_list = []
+        for it in iterations:
+            req_stmt = (
+                select(Requirement)
+                .where(Requirement.iteration_id == it.id, Requirement.is_deleted == False)
+                .order_by(Requirement.priority.desc(), Requirement.created_at.asc())
+            )
+            req_result = await db.execute(req_stmt)
+            requirements = req_result.scalars().all()
+
+            req_list = []
+            for r in requirements:
+                task_stmt = select(Task).where(Task.requirement_id == r.id).order_by(Task.created_at.asc())
+                task_result = await db.execute(task_stmt)
+                tasks = task_result.scalars().all()
+                req_list.append({
+                    "id": r.id,
+                    "title": r.title,
+                    "status": r.status,
+                    "req_type": r.req_type,
+                    "priority": r.priority,
+                    "tasks": [
+                        {"id": t.id, "title": t.title, "status": t.status, "assignee_id": t.assignee_id}
+                        for t in tasks
+                    ],
+                })
+
+            iter_list.append({
+                "id": it.id,
+                "name": it.name,
+                "status": it.status,
+                "start_date": str(it.start_date) if it.start_date else None,
+                "end_date": str(it.end_date) if it.end_date else None,
+                "requirements": req_list,
+            })
+
+        result.append({
+            "id": proj.id,
+            "name": proj.name,
+            "description": proj.description,
+            "status": proj.status,
+            "team_id": proj.team_id,
+            "iterations": iter_list,
+        })
+
+    return result
+
+
+async def get_user_work(db: AsyncSession, user_id: int) -> dict:
+    pending_reviews = await _get_pending_reviews(db, user_id)
+
+    from app.services.task import list_tasks_by_assignee
+    assigned_result = await list_tasks_by_assignee(db, user_id)
+    assigned_tasks = assigned_result["items"]
+
+    teams = await _get_user_teams_detailed(db, user_id)
+    team_ids = [t["id"] for t in teams]
+    projects = await _get_user_projects(db, team_ids)
+    project_ids = [p["id"] for p in projects]
+
+    draftable_items = await _get_draftable_items(db, user_id, teams, project_ids)
+
+    return {
+        "pending_reviews": pending_reviews,
+        "assigned_tasks": assigned_tasks,
+        "draftable_items": draftable_items,
+        "summary": {
+            "reviews_waiting": len(pending_reviews),
+            "tasks_in_progress": len([t for t in assigned_tasks if t.get("status") not in ("completed",)]),
+            "items_to_draft": len(draftable_items),
+        },
+    }
+
+
+async def _get_draftable_items(
+    db: AsyncSession, user_id: int, teams: list[dict], project_ids: list[int],
+) -> list[dict]:
+    if not project_ids:
+        return []
+
+    role_map = {}
+    for t in teams:
+        role_map[t["id"]] = t.get("role", "member").lower()
+
+    iter_stmt = select(Iteration).where(Iteration.project_id.in_(project_ids))
+    iter_result = await db.execute(iter_stmt)
+    iterations = iter_result.scalars().all()
+    if not iterations:
+        return []
+
+    existing_projects = await _get_user_projects(db, list(set(t["id"] for t in teams)))
+    project_team_map = {p["id"]: p["team_id"] for p in existing_projects}
+
+    status_role_map = {
+        "drafting_req": ["product_manager", "pm", "所有者"],
+        "drafting_spec": ["developer", "开发", "所有者"],
+        "drafting_tests": ["tester", "qa", "测试", "所有者"],
+    }
+
+    req_stmt = select(Requirement).where(
+        Requirement.iteration_id.in_([i.id for i in iterations]),
+        Requirement.is_deleted == False,
+    )
+    req_result = await db.execute(req_stmt)
+    requirements = req_result.scalars().all()
+
+    next_action_map = {
+        "drafting_req": "write_requirement",
+        "drafting_spec": "write_spec",
+        "drafting_tests": "write_tests",
+    }
+
+    items = []
+    for req in requirements:
+        iter_obj = next((i for i in iterations if i.id == req.iteration_id), None)
+        if iter_obj is None:
+            continue
+        team_id = project_team_map.get(iter_obj.project_id)
+        if team_id is None:
+            continue
+        user_role = role_map.get(team_id, "")
+        matching_roles = status_role_map.get(req.status, [])
+        if not matching_roles:
+            continue
+        if user_role not in [r.lower() for r in matching_roles]:
+            continue
+        items.append({
+            "id": req.id,
+            "title": req.title,
+            "status": req.status,
+            "my_role": user_role,
+            "next_action": next_action_map.get(req.status, "unknown"),
+        })
+
+    return items

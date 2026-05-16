@@ -1,15 +1,107 @@
 <template>
   <div class="dashboard-page">
-    <h1>仪表盘</h1>
     <div class="user-info">
       <span data-testid="dashboard-txt-nickname">{{ user?.nickname || '' }}</span>
       <span data-testid="dashboard-txt-email">{{ user?.email || '' }}</span>
     </div>
 
     <div class="tabs">
+      <button data-testid="dashboard-tab-projects" :class="{ active: activeTab === 'projects' }" @click="activeTab = 'projects'">项目总览</button>
+      <button data-testid="dashboard-tab-progress" :class="{ active: activeTab === 'progress' }" @click="activeTab = 'progress'">进度</button>
       <button data-testid="dashboard-tab-teams" :class="{ active: activeTab === 'teams' }" @click="activeTab = 'teams'">我的团队</button>
       <button data-testid="dashboard-tab-pending" :class="{ active: activeTab === 'pending' }" @click="activeTab = 'pending'">待办事项</button>
       <button data-testid="dashboard-tab-profile" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'">个人资料</button>
+    </div>
+
+    <div v-if="activeTab === 'projects'">
+      <div v-if="projectsTree.length === 0" class="empty-state">暂无项目</div>
+      <div v-for="proj in projectsTree" :key="proj.id" class="tree-project">
+        <div class="tree-node project-node" @click="toggleExpand('p', proj.id)">
+          <span class="expand-icon">{{ isExpanded('p', proj.id) ? '▼' : '▶' }}</span>
+          <span class="node-icon">📁</span>
+          <span class="node-title">{{ proj.name }}</span>
+          <span class="node-status" :class="'status-' + proj.status">{{ proj.status }}</span>
+        </div>
+        <div v-if="isExpanded('p', proj.id)" class="tree-children">
+          <div v-if="proj.iterations.length === 0" class="tree-empty">暂无迭代</div>
+          <div v-for="iter in proj.iterations" :key="iter.id" class="tree-iteration">
+            <div class="tree-node iteration-node" @click="toggleExpand('i', iter.id)">
+              <span class="expand-icon">{{ isExpanded('i', iter.id) ? '▼' : '▶' }}</span>
+              <span class="node-icon">🔄</span>
+              <span class="node-title">{{ iter.name }}</span>
+              <span class="node-status" :class="'status-' + iter.status">{{ iterStatusLabel(iter.status) }}</span>
+              <span class="node-date">{{ iter.start_date }} ~ {{ iter.end_date }}</span>
+              <span class="node-count">{{ iter.requirements.length }} 个需求</span>
+            </div>
+            <div v-if="isExpanded('i', iter.id)" class="tree-children">
+              <div v-if="iter.requirements.length === 0" class="tree-empty">暂无需求</div>
+              <div v-for="req in iter.requirements" :key="req.id" class="tree-requirement">
+                <router-link :to="`/requirements/${req.id}`" class="req-link">
+                  <span class="node-icon">{{ reqTypeIcon(req.req_type) }}</span>
+                  <span class="node-title">{{ req.title }}</span>
+                  <span class="req-status-tag" :class="'req-status-' + req.status">{{ reqStatusLabel(req.status) }}</span>
+                  <span class="priority-dot" :class="'priority-' + req.priority"></span>
+                </router-link>
+                <div v-if="req.tasks.length > 0" class="task-list">
+                  <div v-for="task in req.tasks" :key="task.id" class="task-item">
+                    <router-link :to="`/tasks/${task.id}`" class="task-link">
+                      <span class="task-status-dot" :class="'task-' + task.status"></span>
+                      {{ task.title }}
+                    </router-link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="activeTab === 'progress'">
+      <div class="stat-cards">
+        <div class="stat-card stat-draft">
+          <div class="stat-number">{{ progressStats.drafting }}</div>
+          <div class="stat-label">草稿中</div>
+        </div>
+        <div class="stat-card stat-review">
+          <div class="stat-number">{{ progressStats.reviewing }}</div>
+          <div class="stat-label">审核中</div>
+        </div>
+        <div class="stat-card stat-work">
+          <div class="stat-number">{{ progressStats.working }}</div>
+          <div class="stat-label">起草中</div>
+        </div>
+        <div class="stat-card stat-approved">
+          <div class="stat-number">{{ progressStats.approved }}</div>
+          <div class="stat-label">已通过</div>
+        </div>
+      </div>
+
+      <div v-if="flatRequirements.length === 0" class="empty-state">暂无需求</div>
+      <div v-for="group in iterationGroups" :key="group.iterationName" class="progress-iteration-group">
+        <div class="progress-iteration-label">{{ group.iterationName }}</div>
+        <div class="progress-req-list">
+          <div v-for="req in group.items" :key="req.id" class="progress-req-card">
+            <div class="progress-req-header" @click="toggleExpand('pr', req.id)">
+              <span class="expand-icon">{{ isExpanded('pr', req.id) ? '▼' : '▶' }}</span>
+              <router-link :to="`/requirements/${req.id}`" class="progress-req-title" @click.stop>{{ req.title }}</router-link>
+              <span class="progress-req-status" :class="'prs-' + req.status">{{ statusLabel(req.status) }}</span>
+              <span class="priority-indicator" :class="'pi-' + req.priority"></span>
+            </div>
+            <div v-if="isExpanded('pr', req.id)" class="progress-req-detail">
+              <div class="progress-stages">
+                <template v-for="(s, i) in lifecycleStages" :key="i">
+                  <span class="stage-item" :class="stageClass(req.status, s.status)">{{ s.label }}</span>
+                  <span v-if="i < lifecycleStages.length - 1" class="stage-arrow">→</span>
+                </template>
+              </div>
+              <div v-if="req.tasks && req.tasks.length > 0" class="progress-task-summary">
+                {{ req.tasks.length }}个任务 · {{ completedTasks(req) }}已完成
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-if="activeTab === 'teams'">
@@ -102,7 +194,7 @@ const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const myTeams = computed(() => (user.value as any)?.teams || [])
 
-const activeTab = ref('teams')
+const activeTab = ref('projects')
 const pendingSubTab = ref('reviews')
 const profileNickname = ref('')
 const profileSuccess = ref('')
@@ -115,9 +207,123 @@ const pendingReviews = ref<Array<{ id: number; title: string }>>([])
 const pendingTasks = ref<Array<{ id: number; title: string }>>([])
 const pendingInvitations = ref<Array<{ id: number; team_name?: string; name?: string }>>([])
 
+const expandedNodes = ref<Set<string>>(new Set())
+
+interface TaskItem { id: number; title: string; status: string; assignee_id: number | null }
+interface ReqItem { id: number; title: string; status: string; req_type: string; priority: number; tasks: TaskItem[] }
+interface IterItem { id: number; name: string; status: string; start_date: string | null; end_date: string | null; requirements: ReqItem[] }
+interface ProjItem { id: number; name: string; description: string; status: string; team_id: number; iterations: IterItem[] }
+
+const projectsTree = ref<ProjItem[]>([])
+
+function toggleExpand(prefix: string, id: number) {
+  const key = `${prefix}-${id}`
+  const s = new Set(expandedNodes.value)
+  if (s.has(key)) s.delete(key)
+  else s.add(key)
+  expandedNodes.value = s
+}
+
+function isExpanded(prefix: string, id: number): boolean {
+  return expandedNodes.value.has(`${prefix}-${id}`)
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  drafting_req: '草稿', reviewing_req: '需求审核', drafting_spec: '编写规范',
+  reviewing_spec: '规范审核', drafting_tests: '编写测试', reviewing_tests: '测试审核',
+  approved: '已通过', planning: '规划中', in_progress: '进行中', completed: '已完成',
+}
+
+function reqStatusLabel(s: string) { return STATUS_LABELS[s] || s }
+function iterStatusLabel(s: string) { return STATUS_LABELS[s] || s }
+function reqTypeIcon(t: string) { return t === 'bug' ? '🐛' : t === 'optimization' ? '⚡' : '📋' }
+
+const lifecycleStages = [
+  { status: 'drafting_req', label: '草稿' },
+  { status: 'reviewing_req', label: '需求审核' },
+  { status: 'drafting_spec', label: '编写规范' },
+  { status: 'reviewing_spec', label: '规范审核' },
+  { status: 'drafting_tests', label: '编写测试' },
+  { status: 'reviewing_tests', label: '测试审核' },
+  { status: 'approved', label: '已通过' },
+]
+
+const STATUS_LABELS_MAP: Record<string, string> = {
+  drafting_req: '草稿', reviewing_req: '需求审核', drafting_spec: '编写规范',
+  reviewing_spec: '规范审核', drafting_tests: '编写测试', reviewing_tests: '测试审核',
+  approved: '已通过',
+}
+
+const flatRequirements = computed(() => {
+  const items: any[] = []
+  for (const proj of projectsTree.value) {
+    for (const iter of proj.iterations) {
+      for (const req of iter.requirements) {
+        items.push({ ...req, _iterationName: iter.name })
+      }
+    }
+  }
+  return items
+})
+
+const iterationGroups = computed(() => {
+  const map = new Map<string, any[]>()
+  for (const req of flatRequirements.value) {
+    const key = req._iterationName
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(req)
+  }
+  return Array.from(map.entries()).map(([iterationName, items]) => ({ iterationName, items }))
+})
+
+const progressStats = computed(() => {
+  const all = flatRequirements.value
+  return {
+    drafting: all.filter(r => ['drafting_req', 'drafting_spec', 'drafting_tests'].includes(r.status)).length,
+    reviewing: all.filter(r => ['reviewing_req', 'reviewing_spec', 'reviewing_tests'].includes(r.status)).length,
+    working: 0,
+    approved: all.filter(r => r.status === 'approved').length,
+  }
+})
+
+function statusLabel(s: string): string {
+  return STATUS_LABELS_MAP[s] || s
+}
+
+function stageClass(currentStatus: string, stageStatus: string): string {
+  const order = lifecycleStages.map(s => s.status)
+  const currentIdx = order.indexOf(currentStatus)
+  const stageIdx = order.indexOf(stageStatus)
+  if (stageIdx < currentIdx) return 'stage-done'
+  if (stageIdx === currentIdx) return 'stage-current'
+  return 'stage-pending'
+}
+
+function completedTasks(req: any): number {
+  if (!req.tasks) return 0
+  return req.tasks.filter((t: any) => t.status === 'completed').length
+}
+
 watch(() => user.value, (u) => {
   if (u) profileNickname.value = (u as any).nickname || ''
 }, { immediate: true })
+
+async function fetchProjectsTree() {
+  try {
+    const res = await apiClient.get('/api/v1/users/me/projects-tree')
+    projectsTree.value = res.data?.data || []
+    if (projectsTree.value.length > 0 && expandedNodes.value.size === 0) {
+      const s = new Set<string>()
+      s.add(`p-${projectsTree.value[0].id}`)
+      if (projectsTree.value[0].iterations.length > 0) {
+        s.add(`i-${projectsTree.value[0].iterations[0].id}`)
+      }
+      expandedNodes.value = s
+    }
+  } catch {
+    projectsTree.value = []
+  }
+}
 
 async function fetchData() {
   try {
@@ -192,13 +398,15 @@ onMounted(async () => {
   if (authStore.isAuthenticated && !authStore.user) {
     await authStore.fetchUser()
   }
-  await fetchData()
+  await Promise.all([fetchData(), fetchProjectsTree()])
 })
 </script>
 
 <style scoped>
 .dashboard-page {
   padding: 1.5rem;
+  max-width: 960px;
+  margin: 0 auto;
 }
 .user-info {
   margin-bottom: 1rem;
@@ -206,5 +414,299 @@ onMounted(async () => {
   gap: 1rem;
   font-size: 13px;
   color: #666;
+}
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+}
+.tabs button {
+  padding: 8px 20px;
+  font-size: 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+}
+.tabs button:hover { color: #333; }
+.tabs button.active {
+  color: #111;
+  border-bottom-color: #111;
+  font-weight: 600;
+}
+.sub-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.sub-tabs button {
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sub-tabs button.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+.tree-empty {
+  padding: 0.75rem 1rem;
+  color: #bbb;
+  font-size: 12px;
+  font-style: italic;
+}
+.tree-project { margin-bottom: 4px; }
+.tree-children { margin-left: 20px; }
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 14px;
+}
+.tree-node:hover { background: rgba(0, 0, 0, 0.03); }
+.expand-icon {
+  font-size: 10px;
+  color: #bbb;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.node-icon { flex-shrink: 0; }
+.node-title { font-weight: 600; color: #111; }
+.node-status {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+.status-active, .status-in_progress { background: #dcfce7; color: #166534; }
+.status-planning { background: #fef3c7; color: #92400e; }
+.status-completed { background: #e0e7ff; color: #3730a3; }
+.node-date {
+  font-size: 12px;
+  color: #aaa;
+  margin-left: 4px;
+}
+.node-count {
+  font-size: 11px;
+  color: #888;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+.tree-requirement {
+  margin-left: 20px;
+  padding: 4px 0;
+}
+.req-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #333;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.req-link:hover { background: rgba(79, 70, 229, 0.04); }
+.req-status-tag {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.req-status-drafting_req { background: #f3f4f6; color: #666; }
+.req-status-reviewing_req, .req-status-reviewing_spec, .req-status-reviewing_tests { background: #f3e8ff; color: #6b21a8; }
+.req-status-drafting_spec { background: #eff6ff; color: #1e40af; }
+.req-status-drafting_tests { background: #fef3c7; color: #92400e; }
+.req-status-approved { background: #dcfce7; color: #166534; }
+.priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.priority-3 { background: #ef4444; }
+.priority-2 { background: #f59e0b; }
+.priority-1 { background: #22c55e; }
+.task-list {
+  margin-left: 34px;
+  padding: 2px 0 4px;
+}
+.task-item { padding: 2px 0; }
+.task-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: #666;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.task-link:hover { background: rgba(0, 0, 0, 0.02); color: #333; }
+.task-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.task-pending { background: #9ca3af; }
+.task-coding { background: #3b82f6; }
+.task-testing { background: #f59e0b; }
+.task-completed { background: #22c55e; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+.form-group input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.success-message { color: #22c55e; font-size: 13px; margin-bottom: 0.5rem; }
+.error-message { color: #ef4444; font-size: 13px; margin-bottom: 0.5rem; }
+.dialog-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.dialog {
+  background: #fff; padding: 24px; border-radius: 12px; width: 360px; max-width: 90vw;
+}
+.dialog h3 { margin-bottom: 16px; }
+.stat-cards {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  flex: 1;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+}
+.stat-label {
+  font-size: 13px;
+  margin-top: 4px;
+}
+.stat-draft { background: #f3f4f6; color: #4b5563; }
+.stat-review { background: #fef3c7; color: #92400e; }
+.stat-work { background: #eff6ff; color: #1e40af; }
+.stat-approved { background: #f0fdf4; color: #166534; }
+.progress-iteration-group {
+  margin-bottom: 24px;
+}
+.progress-iteration-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+.progress-req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.progress-req-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-req-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.progress-req-title {
+  font-weight: 600;
+  color: #111;
+  text-decoration: none;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+.progress-req-title:hover { color: #4f46e5; }
+.progress-req-status {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.prs-drafting_req, .prs-drafting_spec, .prs-drafting_tests { background: #f3f4f6; color: #666; }
+.prs-reviewing_req, .prs-reviewing_spec, .prs-reviewing_tests { background: #fef3c7; color: #92400e; }
+.prs-approved { background: #dcfce7; color: #166534; }
+.priority-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.pi-3 { background: #ef4444; }
+.pi-2 { background: #f59e0b; }
+.pi-1 { background: #22c55e; }
+.progress-req-detail {
+  padding: 0 16px 16px 40px;
+  border-top: 1px solid #f3f4f6;
+}
+.progress-stages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-top: 12px;
+  margin-bottom: 8px;
+}
+.stage-item {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.stage-done { background: #dcfce7; color: #166534; }
+.stage-current { background: #3b82f6; color: white; font-weight: 600; }
+.stage-pending { background: #f3f4f6; color: #aaa; }
+.stage-arrow {
+  font-size: 11px;
+  color: #d1d5db;
+  flex-shrink: 0;
+}
+.progress-task-summary {
+  font-size: 12px;
+  color: #888;
 }
 </style>

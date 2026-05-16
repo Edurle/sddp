@@ -33,6 +33,8 @@ from app.utils.security import hash_password, create_access_token
 
 _TRUNCATE_SQL = text(
     "TRUNCATE TABLE "
+    "webhook_deliveries, webhooks, "
+    "review_comments, "
     "test_execution_records, test_execution_rounds, test_cases, tasks, "
     "requirement_reviews, requirements, spec_documents, spec_templates, "
     "iterations, projects, "

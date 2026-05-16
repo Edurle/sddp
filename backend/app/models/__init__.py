@@ -12,6 +12,8 @@ from app.models.test_execution import TestExecutionRound, TestExecutionRecord
 from app.models.password_reset_token import PasswordResetToken
 from app.models.api_key import ApiKey
 from app.models.spec import SpecTemplate, SpecDocument
+from app.models.review_comment import ReviewComment
+from app.models.webhook import Webhook, WebhookDelivery
 
 __all__ = [
     "User",
@@ -33,4 +35,7 @@ __all__ = [
     "ApiKey",
     "SpecTemplate",
     "SpecDocument",
+    "ReviewComment",
+    "Webhook",
+    "WebhookDelivery",
 ]

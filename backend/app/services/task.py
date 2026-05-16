@@ -14,6 +14,7 @@ from app.exceptions import (
     BusinessError,
 )
 from app.models import Requirement, Task, TestCase, TestExecutionRecord, TestExecutionRound
+from app.services import webhook as wh_svc
 
 
 async def list_tasks(
@@ -89,6 +90,27 @@ async def create_task(
     db.add(task)
     await db.commit()
     await db.refresh(task)
+    if task.assignee_id:
+        try:
+            from app.models import Iteration as IterModel, Project as ProjModel
+            req_stmt = select(Requirement).where(Requirement.id == requirement_id)
+            req_result = await db.execute(req_stmt)
+            req_obj = req_result.scalar_one_or_none()
+            if req_obj:
+                iter_stmt = select(IterModel).where(IterModel.id == req_obj.iteration_id)
+                iter_result = await db.execute(iter_stmt)
+                iter_obj = iter_result.scalar_one_or_none()
+                if iter_obj:
+                    proj_stmt = select(ProjModel).where(ProjModel.id == iter_obj.project_id)
+                    proj_result = await db.execute(proj_stmt)
+                    proj_obj = proj_result.scalar_one_or_none()
+                    if proj_obj:
+                        await wh_svc.fire_event(db, proj_obj.team_id, "task.assigned", {
+                            "task_id": task.id, "task_title": task.title,
+                            "assignee_id": task.assignee_id, "requirement_id": req_obj.id,
+                        })
+        except Exception:
+            pass
     return _task_to_dict(task)
 
 
@@ -242,6 +264,26 @@ async def complete_task(db: AsyncSession, task_id: int) -> dict:
 
     task.status = "completed"
     await db.commit()
+    try:
+        from app.models import Iteration as IterModel, Project as ProjModel
+        req_stmt = select(Requirement).where(Requirement.id == task.requirement_id)
+        req_result = await db.execute(req_stmt)
+        req_obj = req_result.scalar_one_or_none()
+        if req_obj:
+            iter_stmt = select(IterModel).where(IterModel.id == req_obj.iteration_id)
+            iter_result = await db.execute(iter_stmt)
+            iter_obj = iter_result.scalar_one_or_none()
+            if iter_obj:
+                proj_stmt = select(ProjModel).where(ProjModel.id == iter_obj.project_id)
+                proj_result = await db.execute(proj_stmt)
+                proj_obj = proj_result.scalar_one_or_none()
+                if proj_obj:
+                    await wh_svc.fire_event(db, proj_obj.team_id, "task.completed", {
+                        "task_id": task.id, "task_title": task.title,
+                        "requirement_id": req_obj.id,
+                    })
+    except Exception:
+        pass
     return _task_to_dict(task)
 
 
