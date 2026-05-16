@@ -1,6 +1,6 @@
 import typer
 
-from sdd_cli import admin, auth, iterations, me, projects, requirements, tasks, teams, test_cases, test_executions
+from sdd_cli import admin, auth, iterations, me, projects, requirements, tasks, teams, test_cases, test_executions, webhooks
 
 app = typer.Typer(
     name="sdd",
@@ -18,6 +18,7 @@ app.add_typer(tasks.app, name="tasks")
 app.add_typer(test_cases.app, name="test-cases")
 app.add_typer(test_executions.app, name="test-executions")
 app.add_typer(admin.app, name="admin")
+app.add_typer(webhooks.app, name="webhooks")
 
 
 @app.callback()

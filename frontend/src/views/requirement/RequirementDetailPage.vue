@@ -13,6 +13,20 @@
         @reject="showRejectDialog = true"
       />
 
+      <div v-if="reviewComments.length > 0" class="review-timeline">
+        <h4>审核历史</h4>
+        <div v-for="rc in reviewComments" :key="rc.id" class="review-timeline-item">
+          <div class="review-timeline-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
+          <div class="review-timeline-content">
+            <div class="review-timeline-header">
+              <span class="review-timeline-action" :class="rc.action">{{ rc.action === 'approve' ? '通过' : '拒绝' }}</span>
+              <span class="review-timeline-time">{{ formatTime(rc.created_at) }}</span>
+            </div>
+            <div v-if="rc.comment" class="review-timeline-comment">{{ rc.comment }}</div>
+          </div>
+        </div>
+      </div>
+
       <div class="detail-main">
         <div class="detail-tabs">
           <button data-testid="req-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
@@ -525,6 +539,22 @@ const testCaseForm = reactive({
 })
 const testStats = ref<TestStats>({})
 const dropdownOpen = ref('')
+const reviewComments = ref<Array<{ id: number; reviewer_id: number; action: string; comment: string | null; created_at: string }>>([])
+
+async function fetchReviewComments() {
+  try {
+    const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/review-comments`)
+    reviewComments.value = res.data?.data || []
+  } catch {
+    reviewComments.value = []
+  }
+}
+
+function formatTime(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+}
 
 function toggleDropdown(name: string) {
   const willOpen = dropdownOpen.value !== name
@@ -632,6 +662,7 @@ async function fetchReq() {
     const res = await apiClient.get(`/api/v1/requirements/${reqId.value}`)
     const data = res.data?.data || res.data
     req.value = mapReqData(data)
+    fetchReviewComments()
     if (!activeTab.value) {
       autoSelectTab(req.value.status)
     }
@@ -724,6 +755,7 @@ async function approveReview() {
       action: 'approve',
     })
     await fetchReq()
+    fetchReviewComments()
   } catch {
     // ignore
   }
@@ -738,6 +770,7 @@ async function rejectReview() {
     showRejectDialog.value = false
     rejectForm.comment = ''
     await fetchReq()
+    fetchReviewComments()
   } catch {
     // ignore
   }
@@ -1384,6 +1417,65 @@ onMounted(async () => {
 .version-content pre {
   margin: 0;
   white-space: pre-wrap;
+  word-break: break-word;
+}
+.review-timeline {
+  margin-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 16px;
+}
+.review-timeline h4 {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+}
+.review-timeline-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.review-timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.dot-approve { background: #22c55e; }
+.dot-reject { background: #ef4444; }
+.review-timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+.review-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.review-timeline-action {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.review-timeline-action.approve {
+  background: #dcfce7;
+  color: #166534;
+}
+.review-timeline-action.reject {
+  background: #fef2f2;
+  color: #991b1b;
+}
+.review-timeline-time {
+  font-size: 11px;
+  color: #aaa;
+  white-space: nowrap;
+}
+.review-timeline-comment {
+  font-size: 13px;
+  color: #555;
   word-break: break-word;
 }
 </style>

@@ -44,3 +44,4 @@ htmlcov/
 .pids/
 *.db-shm
 *.db-wal
+.superpowers/

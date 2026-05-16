@@ -22,6 +22,8 @@ from app.models import (
     TeamMember,
     User,
 )
+from app.services import review_comment as rc_svc
+from app.services import webhook as wh_svc
 
 
 async def list_requirements(
@@ -238,6 +240,7 @@ async def submit_review(
     )
     db.add(review)
     await db.commit()
+    await _fire_review_event(db, req, "review.submitted", user_id)
     return {"id": review.id}
 
 
@@ -295,7 +298,14 @@ async def review_requirement(
 
     review.comment = comment
     review.reviewed_at = datetime.now(timezone.utc)
+    await rc_svc.create_review_comment(
+        db, req.id, user_id, review.review_type, action, comment,
+    )
     await db.commit()
+    if action == "approve":
+        await _fire_review_event(db, req, "review.approved", user_id, comment)
+    elif action == "reject":
+        await _fire_review_event(db, req, "review.rejected", user_id, comment)
     return {"id": review.id}
 
 
@@ -427,3 +437,16 @@ def _req_to_dict(req: Requirement) -> dict:
         "created_at": req.created_at.isoformat() if req.created_at else None,
         "updated_at": req.updated_at.isoformat() if req.updated_at else None,
     }
+
+
+async def _fire_review_event(db, req, event, user_id, comment=None):
+    iteration = await _get_iteration(db, req.iteration_id)
+    if iteration is None:
+        return
+    project = await _get_project(db, iteration.project_id)
+    if project is None:
+        return
+    await wh_svc.fire_event(
+        db, project.team_id, event,
+        {"requirement_id": req.id, "requirement_title": req.title, "reviewer_id": user_id, "comment": comment},
+    )

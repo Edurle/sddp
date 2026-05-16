@@ -63,3 +63,60 @@ def pending_reviews() -> None:
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
         raise typer.Exit(code=1)
+
+
+@app.command(name="my-work")
+def my_work(
+    work_type: Optional[str] = typer.Option(None, "--type", "-t", help="Filter: reviews, tasks, drafts"),
+    json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
+) -> None:
+    try:
+        client = get_client()
+        data = client.get("/users/me/work")
+
+        if json_output:
+            print_response(data)
+            return
+
+        if work_type == "reviews":
+            _print_reviews(data.get("pending_reviews", []))
+        elif work_type == "tasks":
+            _print_tasks(data.get("assigned_tasks", []))
+        elif work_type == "drafts":
+            _print_drafts(data.get("draftable_items", []))
+        else:
+            _print_reviews(data.get("pending_reviews", []))
+            _print_tasks(data.get("assigned_tasks", []))
+            _print_drafts(data.get("draftable_items", []))
+            summary = data.get("summary", {})
+            typer.echo(f"\n摘要: {summary.get('reviews_waiting', 0)}个审核 | {summary.get('tasks_in_progress', 0)}个任务 | {summary.get('items_to_draft', 0)}个待起草")
+
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+def _print_reviews(items: list) -> None:
+    if not items:
+        return
+    typer.echo(typer.style("\n📋 待审核", fg=typer.colors.CYAN, bold=True))
+    for item in items:
+        typer.echo(f"  #{item.get('requirement_id')} {item.get('requirement_title', '')} [{item.get('review_type', '')}]")
+
+
+def _print_tasks(items: list) -> None:
+    if not items:
+        return
+    typer.echo(typer.style("\n🔨 我的任务", fg=typer.colors.CYAN, bold=True))
+    for item in items:
+        status = item.get("status", "")
+        req_title = item.get("requirement_title", "")
+        typer.echo(f"  #{item.get('id')} {item.get('title', '')} [{status}]" + (f" → {req_title}" if req_title else ""))
+
+
+def _print_drafts(items: list) -> None:
+    if not items:
+        return
+    typer.echo(typer.style("\n✏️ 待起草", fg=typer.colors.CYAN, bold=True))
+    for item in items:
+        typer.echo(f"  #{item.get('id')} {item.get('title', '')} [{item.get('status', '')}] → {item.get('next_action', '')}")

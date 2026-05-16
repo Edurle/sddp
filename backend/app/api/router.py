@@ -12,6 +12,7 @@ from app.api import (
     test_executions,
     users,
     admin,
+    webhooks,
 )
 
 router = APIRouter()
@@ -20,6 +21,7 @@ router.include_router(auth.router, prefix="/auth", tags=["auth"])
 router.include_router(users.router, prefix="/users", tags=["users"])
 router.include_router(admin.router, prefix="/admin", tags=["admin"])
 router.include_router(teams.router, prefix="/teams", tags=["teams"])
+router.include_router(webhooks.teams_nested_router, prefix="/teams", tags=["webhooks"])
 router.include_router(invitations.router, prefix="/invitations", tags=["invitations"])
 
 router.include_router(projects.teams_nested_router, prefix="/teams", tags=["projects"])

@@ -106,3 +106,23 @@ async def get_my_pending_reviews(
     user_id = int(user["sub"])
     data = await user_service.get_pending_reviews(db, user_id)
     return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/me/projects-tree")
+async def get_projects_tree(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    user_id = int(user["sub"])
+    data = await user_service.get_projects_tree(db, user_id)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/me/work")
+async def get_my_work(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    user_id = int(user["sub"])
+    data = await user_service.get_user_work(db, user_id)
+    return {"code": 0, "message": "success", "data": data}
