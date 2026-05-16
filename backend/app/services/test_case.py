@@ -1,6 +1,6 @@
 """Test case service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,9 +72,10 @@ async def create_test_case(
     if req.status != "drafting_tests":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "需求状态不允许创建测试用例")
 
-    import time
-    import random
-    case_number = f"TC-{int(time.time() * 1000)}-{random.randint(100, 999)}"
+    count_stmt = select(func.count()).select_from(TestCase).where(TestCase.requirement_id == requirement_id)
+    count_result = await db.execute(count_stmt)
+    seq = count_result.scalar_one() + 1
+    case_number = f"TC-{requirement_id}-{seq:03d}"
 
     tc = TestCase(
         requirement_id=requirement_id,
@@ -142,7 +143,7 @@ async def delete_test_case(db: AsyncSession, test_case_id: int) -> dict:
         raise BusinessError(ERR_REQUIREMENT_STATUS, "需求状态不允许删除测试用例")
 
     tc.is_deleted = True
-    tc.deleted_at = datetime.utcnow()
+    tc.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": tc.id}
 

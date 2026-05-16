@@ -197,11 +197,6 @@ async def _seed_data():
 async def on_startup():
     await init_db()
     await _seed_data()
-    try:
-        from app.mongo_database import ensure_indexes
-        await ensure_indexes()
-    except Exception:
-        logger.warning("MongoDB index creation skipped (MongoDB not available)")
     logger.info("Database initialized")
 
 

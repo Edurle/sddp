@@ -594,7 +594,6 @@ class TestSpecContentValidation:
                         "pages": [
                             {"name": "测试页", "code": "test-page", "elements": [{"code": "btn", "type": "button", "label": "按钮"}]}
                         ],
-                        "prototype_html": "<div><h1>原型图</h1><button>点击</button></div>",
                     },
                     "api_design": {"endpoints": [{"method": "GET", "path": "/test", "description": "test"}]},
                     "constraints": {},

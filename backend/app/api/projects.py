@@ -31,7 +31,7 @@ async def list_team_projects(
     status: str | None = Query(default=None),
     db=Depends(get_db_session),
 ) -> dict:
-    data = await project_service.list_team_projects(db, teamId, user["sub"], status)
+    data = await project_service.list_team_projects(db, teamId, int(user["sub"]), status)
     return {"code": 0, "message": "success", "data": data}
 
 

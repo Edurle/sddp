@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -102,6 +102,7 @@ async def create_requirement(
     priority: int,
     description: str | None = None,
     type_detail: dict | None = None,
+    prototype_html: str | None = None,
 ) -> dict:
     await _check_iteration_member(db, iteration_id, user_id)
 
@@ -119,6 +120,7 @@ async def create_requirement(
         status="drafting_req",
         description=description,
         type_detail=type_detail,
+        prototype_html=prototype_html,
         created_by=user_id,
     )
     db.add(req)
@@ -165,9 +167,10 @@ async def update_requirement(
     user_id: int,
     title: str | None = None,
     req_type: str | None = None,
-    priority: int | None = None,
+    priority: str | None = None,
     description: str | None = None,
     type_detail: dict | None = None,
+    prototype_html: str | None = None,
 ) -> dict:
     req = await _get_requirement_or_fail(db, req_id)
 
@@ -184,6 +187,8 @@ async def update_requirement(
         req.description = description
     if type_detail is not None:
         req.type_detail = type_detail
+    if prototype_html is not None:
+        req.prototype_html = prototype_html
 
     await db.commit()
     await db.refresh(req)
@@ -199,7 +204,7 @@ async def delete_requirement(
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许删除")
 
     req.is_deleted = True
-    req.deleted_at = datetime.utcnow()
+    req.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": req.id}
 
@@ -289,7 +294,7 @@ async def review_requirement(
         review.status = "rejected"
 
     review.comment = comment
-    review.reviewed_at = datetime.utcnow()
+    review.reviewed_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": review.id}
 
@@ -415,6 +420,7 @@ def _req_to_dict(req: Requirement) -> dict:
         "status": req.status,
         "description": req.description,
         "type_detail": req.type_detail,
+        "prototype_html": req.prototype_html,
         "created_by": req.created_by,
         "is_deleted": req.is_deleted,
         "deleted_at": req.deleted_at.isoformat() if req.deleted_at else None,

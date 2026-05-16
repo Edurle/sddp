@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,7 +96,7 @@ async def dissolve_team(db: AsyncSession, team_id: int, user_id: int, confirm_na
         raise BusinessError(ERR_VALIDATION, "确认名称不匹配")
 
     team.is_deleted = True
-    team.deleted_at = datetime.utcnow()
+    team.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return _team_to_dict(team)
 
@@ -234,7 +234,7 @@ async def remove_member(db: AsyncSession, team_id: int, user_id: int) -> dict:
         raise BusinessError(ERR_NOT_FOUND, "成员不存在")
 
     member.is_deleted = True
-    member.deleted_at = datetime.utcnow()
+    member.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": member.id}
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
-from sqlalchemy import Date, DateTime, Index, String, types
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String, func, types
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -25,7 +25,7 @@ class Iteration(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    project_id: Mapped[int] = mapped_column(nullable=False)  # FK -> projects.id
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     goal: Mapped[str | None] = mapped_column(String, default=None)
     start_date: Mapped[date] = mapped_column(FlexibleDate, nullable=False)
@@ -35,7 +35,7 @@ class Iteration(Base):
         nullable=False,
         default="planned",
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=lambda: datetime.now(timezone.utc)
     )

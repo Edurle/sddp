@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Index, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,7 +16,7 @@ class TestCase(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    requirement_id: Mapped[int] = mapped_column(nullable=False)  # FK -> requirements.id
+    requirement_id: Mapped[int] = mapped_column(ForeignKey("requirements.id"), nullable=False)
     case_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     case_type: Mapped[str] = mapped_column(
@@ -29,5 +29,5 @@ class TestCase(Base):
     related_api: Mapped[str | None] = mapped_column(String(500), default=None)
     related_element: Mapped[str | None] = mapped_column(String(200), default=None)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

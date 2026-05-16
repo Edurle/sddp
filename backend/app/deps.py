@@ -31,12 +31,11 @@ async def _authenticate_api_key(x_api_key: str, db: AsyncSession) -> dict:
         raise BusinessError(ERR_UNAUTHORIZED, "API Key 已被撤销")
 
     if api_key.expires_at is not None:
+        from datetime import datetime, timezone
         expires = api_key.expires_at
-        if expires.tzinfo is not None:
-            from datetime import timezone
-            expires = expires.replace(tzinfo=None)
-        from datetime import datetime
-        if expires < datetime.utcnow():
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires < datetime.now(timezone.utc):
             raise BusinessError(ERR_UNAUTHORIZED, "API Key 已过期")
 
     stmt = select(User).where(User.id == api_key.user_id)

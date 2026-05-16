@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,9 +16,9 @@ class TestExecutionRound(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    task_id: Mapped[int] = mapped_column(nullable=False)  # FK -> tasks.id
-    executed_by: Mapped[int] = mapped_column(nullable=False)  # FK -> users.id
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), nullable=False)
+    executed_by: Mapped[int] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class TestExecutionRecord(Base):
@@ -30,8 +30,8 @@ class TestExecutionRecord(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    round_id: Mapped[int] = mapped_column(nullable=False)  # FK -> test_execution_rounds.id
-    test_case_id: Mapped[int] = mapped_column(nullable=False)  # FK -> test_cases.id
+    round_id: Mapped[int] = mapped_column(ForeignKey("test_execution_rounds.id"), nullable=False)
+    test_case_id: Mapped[int] = mapped_column(ForeignKey("test_cases.id"), nullable=False)
     status: Mapped[str] = mapped_column(
         String(10),
         nullable=False,
@@ -40,4 +40,4 @@ class TestExecutionRecord(Base):
     failure_reason: Mapped[str | None] = mapped_column(Text, default=None)
     log_output: Mapped[str | None] = mapped_column(Text, default=None)
     duration_ms: Mapped[int | None] = mapped_column(Integer, default=None)
-    executed_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_current_user, get_db_session, require_permission
+from app.exceptions import BusinessError, ERR_FORBIDDEN
 from app.models import Requirement
 from app.services import requirement as req_svc
 from app.services import specification as spec_svc
@@ -22,14 +23,17 @@ class CreateRequirementRequest(BaseModel):
     priority: int
     description: str | None = None
     type_detail: dict | None = None
+    prototype_html: str | None = None
 
 
 class UpdateRequirementRequest(BaseModel):
     title: str | None = None
     req_type: str | None = None
-    priority: int | None = None
+    priority: str | None = None
     description: str | None = None
     type_detail: dict | None = None
+    prototype_html: str | None = None
+
 
 
 class SubmitReviewRequest(BaseModel):
@@ -70,6 +74,7 @@ class DirectCreateRequirementRequest(BaseModel):
     priority: str | int = 0
     description: str | None = None
     type_detail: dict | None = None
+    prototype_html: str | None = None
     iteration_id: int | None = None
 
 
@@ -78,6 +83,7 @@ class PatchRequirementRequest(BaseModel):
     title: str | None = None
     description: str | None = None
     type_detail: dict | None = None
+    prototype_html: str | None = None
 
 
 def _clamp_pagination(offset: int, limit: int) -> tuple[int, int]:
@@ -215,6 +221,7 @@ async def direct_create_requirement(
         db, iteration_id, int(user["sub"]),
         body.title, body.type, priority_val,
         body.description, body.type_detail,
+        body.prototype_html,
     )
     return {"code": 0, "message": "success", "data": data}
 
@@ -242,6 +249,8 @@ async def patch_requirement(
         req.description = body.description
     if body.type_detail is not None:
         req.type_detail = body.type_detail
+    if body.prototype_html is not None:
+        req.prototype_html = body.prototype_html
     await db.commit()
     await db.refresh(req)
     return {"code": 0, "message": "success", "data": {"id": req.id, "status": req.status}}
@@ -278,8 +287,8 @@ async def approve_requirement_direct(
     review = rev_result.scalar_one_or_none()
     if review:
         review.status = "approved"
-        from datetime import datetime
-        review.reviewed_at = datetime.utcnow()
+        from datetime import datetime, timezone
+        review.reviewed_at = datetime.now(timezone.utc)
         review.reviewer_id = int(user["sub"])
 
     await db.commit()
@@ -341,8 +350,8 @@ async def approve_spec_direct(
     review = rev_result.scalar_one_or_none()
     if review:
         review.status = "approved"
-        from datetime import datetime
-        review.reviewed_at = datetime.utcnow()
+        from datetime import datetime, timezone
+        review.reviewed_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(req)
@@ -384,13 +393,14 @@ async def list_iteration_requirements(
 async def create_iteration_requirement(
     iterationId: int,
     body: CreateRequirementRequest,
-    user: Annotated[dict, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_permission("requirement:create"))],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     data = await req_svc.create_requirement(
         db, iterationId, int(user["sub"]),
         body.title, body.req_type, body.priority,
         body.description, body.type_detail,
+        body.prototype_html,
     )
     return {"code": 0, "message": "success", "data": data}
 
@@ -455,13 +465,14 @@ async def get_requirement(
 async def update_requirement(
     id: int,
     body: UpdateRequirementRequest,
-    user: Annotated[dict, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_permission("requirement:edit"))],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     data = await req_svc.update_requirement(
         db, id, int(user["sub"]),
         body.title, body.req_type, body.priority,
         body.description, body.type_detail,
+        body.prototype_html,
     )
     return {"code": 0, "message": "success", "data": data}
 
@@ -469,7 +480,7 @@ async def update_requirement(
 @router.delete("/{id}")
 async def delete_requirement(
     id: int,
-    user: Annotated[dict, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_permission("requirement:delete"))],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     data = await req_svc.delete_requirement(db, id, int(user["sub"]))
@@ -480,9 +491,14 @@ async def delete_requirement(
 async def submit_review(
     id: int,
     body: SubmitReviewRequest,
-    user: Annotated[dict, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_permission("requirement:edit"))],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    req_stmt = select(Requirement).where(Requirement.id == id, Requirement.is_deleted == False)
+    req_result = await db.execute(req_stmt)
+    req = req_result.scalar_one_or_none()
+    if req is not None and req.created_by != int(user["sub"]) and not user.get("is_admin"):
+        raise BusinessError(ERR_FORBIDDEN, "只能由需求创建人提交审核")
     data = await req_svc.submit_review(db, id, int(user["sub"]), body.reviewer_id, user.get("is_admin", False))
     return {"code": 0, "message": "success", "data": data}
 
@@ -564,7 +580,7 @@ async def list_tasks(
 async def create_task(
     reqId: int,
     body: CreateTaskRequest,
-    user: Annotated[dict, Depends(get_current_user)],
+    user: Annotated[dict, Depends(require_permission("task:create"))],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     data = await task_svc.create_task(

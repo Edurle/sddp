@@ -137,8 +137,8 @@
 | TC-SPEC-015 | 缺少必填章节 | `status=drafting_spec` | content 缺少 `api_design` | 40001 | 校验失败，返回错误列表 |
 | TC-SPEC-016 | 必填字段为空 | `status=drafting_spec` | `entity_definition` 为 `{}` | 40001 | 校验失败 |
 | TC-SPEC-017 | 字段格式不正确 | `status=drafting_spec` | `entity_definition.fields` 为字符串 | 40001 | 校验失败，提示格式不正确 |
-| TC-SPEC-018 | 完整合法内容通过 | `status=drafting_spec` | 完整的 5 章节内容 | 0 | 版本递增 |
-| TC-SPEC-019 | 包含 prototype_html | `status=drafting_spec` | `page_structure.prototype_html` 含 HTML | 0 | 保存成功 |
+| TC-SPEC-018 | 完整合法内容通过 | `status=drafting_spec` | 完整的 4 章节内容 | 0 | 版本递增 |
+| TC-SPEC-019 | 创建需求含 prototype_html | — | `prototype_html` 含 HTML | 0 | 返回含 prototype_html |
 | TC-SPEC-020 | 可选章节可省略 | `status=drafting_spec` | 不含 `constraints` | 0 | 保存成功 |
 
 ### 获取规范版本列表

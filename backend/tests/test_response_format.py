@@ -83,11 +83,11 @@ async def test_patch_task_no_top_level_duplicate(client, db, sample_task, normal
 
 
 @pytest.mark.asyncio
-async def test_create_test_record_no_top_level_duplicate(client, db, sample_task, normal_user):
+async def test_create_test_record_no_top_level_duplicate(client, db, sample_task, sample_test_case, normal_user):
     headers = auth_headers(normal_user.id)
     resp = await client.post(
         f"/api/v1/tasks/{sample_task.id}/test-records",
-        json={"test_case_id": 1, "status": "pending"},
+        json={"test_case_id": sample_test_case.id, "status": "pending"},
         headers=headers,
     )
     assert resp.status_code == 200
@@ -100,11 +100,11 @@ async def test_create_test_record_no_top_level_duplicate(client, db, sample_task
 
 
 @pytest.mark.asyncio
-async def test_create_test_round_no_top_level_duplicate(client, db, sample_task, normal_user):
+async def test_create_test_round_no_top_level_duplicate(client, db, sample_task, sample_test_case, normal_user):
     headers = auth_headers(normal_user.id)
     resp = await client.post(
         f"/api/v1/tasks/{sample_task.id}/test-rounds",
-        json={"test_case_id": 1, "status": "pending"},
+        json={"test_case_id": sample_test_case.id, "status": "pending"},
         headers=headers,
     )
     assert resp.status_code == 200

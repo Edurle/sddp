@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
@@ -137,7 +137,7 @@ async def test_tc_agent_008_revoked_key(client, normal_user, db):
 @pytest.mark.asyncio
 async def test_tc_agent_009_expired_key(client, normal_user, db):
     api_key, raw_key = await _create_api_key_in_db(
-        db, normal_user.id, expires_at=datetime.utcnow() - timedelta(hours=1),
+        db, normal_user.id, expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
     )
 
     resp = await client.get(

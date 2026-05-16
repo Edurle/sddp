@@ -179,13 +179,13 @@ async def test_tc_agent_025_processed_reviews_excluded(
 ):
     headers = auth_headers(normal_user.id)
 
-    from datetime import datetime
+    from datetime import datetime, timezone
     review = RequirementReview(
         requirement_id=approved_requirement.id,
         review_type="requirement",
         reviewer_id=normal_user.id,
         status="approved",
-        reviewed_at=datetime.utcnow(),
+        reviewed_at=datetime.now(timezone.utc),
     )
     db.add(review)
     await db.commit()

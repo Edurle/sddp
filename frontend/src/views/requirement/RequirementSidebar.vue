@@ -29,6 +29,19 @@
           <p class="info-desc" data-testid="req-detail-txt-description">{{ req.description }}</p>
           <p data-testid="req-detail-txt-review-status" class="status-text">{{ statusLabel(req.status) }}</p>
 
+          <div v-if="!editing && req.prototype_html" class="prototype-section">
+            <div class="prototype-header">
+              <span class="sidebar-label" style="margin: 0;">原型图</span>
+              <button class="prototype-zoom-btn" @click="showPrototypeModal = true" title="放大查看">⛶</button>
+            </div>
+            <iframe
+              :srcdoc="req.prototype_html"
+              sandbox="allow-scripts"
+              class="prototype-iframe"
+              data-testid="req-detail-prototype-preview"
+            ></iframe>
+          </div>
+
           <div v-if="req.type === 'bug' && req.type_detail" class="type-detail">
             <p data-testid="req-detail-txt-reproduce-steps">{{ req.type_detail.reproduce_steps }}</p>
             <p data-testid="req-detail-txt-environment">{{ req.type_detail.environment }}</p>
@@ -47,6 +60,13 @@
           <div class="form-group">
             <label>描述</label>
             <textarea v-model="editForm.description" data-testid="req-detail-txtarea-description"></textarea>
+          </div>
+          <div class="form-group">
+            <label>原型图 HTML</label>
+            <textarea v-model="editForm.prototype_html" data-testid="req-detail-txtarea-prototype-html" class="prototype-textarea" placeholder="输入 HTML 代码作为页面原型图"></textarea>
+            <div v-if="editForm.prototype_html" class="prototype-preview-edit">
+              <iframe :srcdoc="editForm.prototype_html" sandbox="allow-scripts" class="prototype-iframe"></iframe>
+            </div>
           </div>
         </template>
       </div>
@@ -80,11 +100,25 @@
         <button v-if="canReview" data-testid="req-detail-btn-reject" @click="$emit('reject')">驳回</button>
       </div>
     </div>
+
+    <div v-if="showPrototypeModal" class="prototype-modal-overlay" @click.self="showPrototypeModal = false">
+      <div class="prototype-modal">
+        <div class="prototype-modal-header">
+          <span class="prototype-modal-title">原型图 - {{ req.title }}</span>
+          <button class="prototype-modal-close" @click="showPrototypeModal = false">✕</button>
+        </div>
+        <iframe
+          :srcdoc="req.prototype_html ?? undefined"
+          sandbox="allow-scripts"
+          class="prototype-modal-iframe"
+        ></iframe>
+      </div>
+    </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AppBadge from '@/components/common/AppBadge.vue'
 
 interface TypeDetail {
@@ -113,6 +147,7 @@ interface RequirementData {
   status: string
   description: string
   type_detail?: TypeDetail | null
+  prototype_html?: string | null
   reviews?: Review[]
   iteration_id?: number
   req_type?: string
@@ -121,10 +156,12 @@ interface RequirementData {
 const props = defineProps<{
   req: RequirementData
   editing: boolean
-  editForm: { title: string; description: string }
+  editForm: { title: string; description: string; prototype_html: string }
 }>()
 
 defineEmits(['edit', 'save', 'delete', 'submit-review', 'approve', 'reject'])
+
+const showPrototypeModal = ref(false)
 
 const steps = [
   { key: 'req', label: '需求' },
@@ -362,6 +399,100 @@ function stepCircle(step: string) {
   margin: 0;
   font-size: 12px;
   padding: 6px 12px;
+}
+.prototype-section {
+  margin-top: 4px;
+}
+.prototype-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  margin-bottom: 0.5rem;
+}
+.prototype-zoom-btn {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  line-height: 1;
+}
+.prototype-zoom-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #111;
+}
+.prototype-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.prototype-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 95vw;
+  max-width: 900px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+.prototype-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+.prototype-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+.prototype-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.prototype-modal-close:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: #333;
+}
+.prototype-modal-iframe {
+  flex: 1;
+  border: none;
+  border-radius: 0 0 12px 12px;
+  width: 100%;
+}
+.prototype-iframe {
+  width: 100%;
+  height: 200px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: #fff;
+}
+.prototype-textarea {
+  min-height: 80px;
+  font-family: monospace;
+  font-size: 11px;
+}
+.prototype-preview-edit {
+  margin-top: 6px;
 }
 
 @media (max-width: 768px) {

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Index, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -18,7 +19,7 @@ class Requirement(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    iteration_id: Mapped[int] = mapped_column(nullable=False)  # FK -> iterations.id
+    iteration_id: Mapped[int] = mapped_column(ForeignKey("iterations.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     req_type: Mapped[str] = mapped_column(
         String(20),
@@ -31,11 +32,12 @@ class Requirement(Base):
         default="drafting_req",
     )
     description: Mapped[str | None] = mapped_column(Text, default=None)
-    type_detail: Mapped[dict | None] = mapped_column(JSON, default=None)
-    created_by: Mapped[int] = mapped_column(nullable=False)  # FK -> users.id
+    type_detail: Mapped[dict | None] = mapped_column(JSONB, default=None)
+    prototype_html: Mapped[str | None] = mapped_column(Text, default=None)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=lambda: datetime.now(timezone.utc)
     )

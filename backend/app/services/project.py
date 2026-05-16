@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -140,7 +140,7 @@ async def delete_project(
         raise BusinessError(ERR_ACTIVE_ITERATIONS, "存在进行中的迭代")
 
     project.is_deleted = True
-    project.deleted_at = datetime.utcnow()
+    project.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": project.id}
 

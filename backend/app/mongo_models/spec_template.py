@@ -174,7 +174,6 @@ class SpecTemplate:
                             },
                         },
                     },
-                    {"name": "prototype_html", "display_name": "原型图HTML", "type": "text", "required": False, "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示", "agent_prompt": "用 HTML 编写页面原型图。使用基础 HTML+CSS，不需外部依赖", "json_schema": {"type": "string"}},
                 ],
             },
             {

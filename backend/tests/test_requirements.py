@@ -132,10 +132,10 @@ class TestListRequirements:
     async def test_list_requirements_excludes_soft_deleted(
         self, client, normal_user, sample_iteration, sample_requirement, db
     ):
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         sample_requirement.is_deleted = True
-        sample_requirement.deleted_at = datetime.utcnow()
+        sample_requirement.deleted_at = datetime.now(timezone.utc)
         db.add(sample_requirement)
         await db.commit()
 
@@ -358,10 +358,10 @@ class TestGetRequirementDetail:
     async def test_get_requirement_soft_deleted(
         self, client, normal_user, sample_requirement, db
     ):
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         sample_requirement.is_deleted = True
-        sample_requirement.deleted_at = datetime.utcnow()
+        sample_requirement.deleted_at = datetime.now(timezone.utc)
         db.add(sample_requirement)
         await db.commit()
 
@@ -880,7 +880,7 @@ class TestReview:
         db.add(sample_requirement)
         await db.flush()
 
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         from app.models import RequirementReview
 
@@ -889,7 +889,7 @@ class TestReview:
             review_type="requirement",
             reviewer_id=another_user.id,
             status="approved",
-            reviewed_at=datetime.utcnow(),
+            reviewed_at=datetime.now(timezone.utc),
         )
         db.add(review)
         await db.commit()
@@ -932,3 +932,77 @@ class TestReview:
         )
         body = resp.json()
         assert body["code"] == 40300
+
+
+class TestRequirementPrototypeHtml:
+    @pytest.mark.asyncio
+    async def test_create_requirement_with_prototype_html(
+        self, client, normal_user, sample_iteration
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:create"])
+        resp = await client.post(
+            f"/api/v1/iterations/{sample_iteration.id}/requirements",
+            json={
+                "title": "带原型图的需求",
+                "req_type": "feature",
+                "priority": 3,
+                "description": "测试",
+                "prototype_html": "<div><h1>登录页</h1><button>提交</button></div>",
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert body["data"]["prototype_html"] == "<div><h1>登录页</h1><button>提交</button></div>"
+
+    @pytest.mark.asyncio
+    async def test_update_requirement_prototype_html(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={
+                "prototype_html": "<div><h2>更新后的原型</h2></div>",
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert body["data"]["prototype_html"] == "<div><h2>更新后的原型</h2></div>"
+
+    @pytest.mark.asyncio
+    async def test_get_requirement_includes_prototype_html(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"prototype_html": "<button>测试</button>"},
+            headers=headers,
+        )
+
+        headers = auth_headers(normal_user.id, permissions=["requirement:read"])
+        resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["data"]["prototype_html"] == "<button>测试</button>"
+
+    @pytest.mark.asyncio
+    async def test_patch_requirement_prototype_html(
+        self, client, normal_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"prototype_html": "<div>patched</div>"},
+            headers=headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0

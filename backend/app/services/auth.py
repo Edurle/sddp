@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 def _utcnow():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -81,8 +81,8 @@ async def verify_email(db: AsyncSession, token: str) -> dict:
     if reset_token.used:
         raise BusinessError(ERR_NOT_FOUND, "验证链接已使用")
     expires = reset_token.expires_at
-    if expires.tzinfo is not None:
-        expires = expires.replace(tzinfo=None)
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
     if expires < _utcnow():
         raise BusinessError(ERR_NOT_FOUND, "验证链接已过期")
 
@@ -164,8 +164,8 @@ async def reset_password(db: AsyncSession, token: str, new_password: str) -> dic
     if reset_token.used:
         raise BusinessError(ERR_NOT_FOUND, "重置链接已使用")
     expires = reset_token.expires_at
-    if expires.tzinfo is not None:
-        expires = expires.replace(tzinfo=None)
+    if expires.tzinfo is None:
+        expires = expires.replace(tzinfo=timezone.utc)
     if expires < _utcnow():
         raise BusinessError(ERR_NOT_FOUND, "重置链接已过期")
 
