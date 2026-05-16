@@ -23,50 +23,159 @@
 
         <div v-if="activeTab === 'spec'" class="tab-panel">
           <div class="spec-toolbar">
-            <span v-if="saveSuccessMsg" class="save-msg">{{ saveSuccessMsg }}</span>
-            <span v-else-if="validationErrors.length > 0" class="save-msg" style="color: #ff4d4f;">{{ validationErrors.length }} 个校验错误</span>
-            <span v-else class="spec-hint">在下方编辑规范文档</span>
+            <span class="spec-hint">{{ hasSectionContent('entity_definition') ? '规范内容预览（由 Agent 填写）' : '暂无规范内容' }}</span>
             <div class="spec-actions">
-              <button data-testid="req-detail-btn-save-spec" @click="saveSpec">保存规范</button>
               <button v-if="req.status === 'drafting_spec'" data-testid="req-detail-btn-submit-spec-review" @click="openSubmitSpecReviewDialog">提交规范审核</button>
             </div>
           </div>
 
-          <div v-if="validationErrors.length > 0" class="validation-errors">
-            <div v-for="(err, idx) in validationErrors" :key="idx" class="validation-error-item">
-              {{ err.section }}{{ err.field ? '.' + err.field : '' }}: {{ err.message }}
-            </div>
+          <div v-if="!hasSectionContent('entity_definition')" class="spec-empty">
+            <p>该需求尚未编写规范，请通过 Agent 提交规范内容。</p>
           </div>
 
-          <div v-for="section in specSections" :key="section.name" class="spec-section">
-            <h3 class="section-title">
-              {{ section.display_name }}
-              <span v-if="section.required" class="required-mark">*</span>
-            </h3>
-            <div v-for="field in section.fields" :key="field.name" class="field-group">
-              <label class="field-label">
-                {{ field.display_name }}
-                <span v-if="field.required" class="required-mark">*</span>
-              </label>
-              <p v-if="field.description" class="field-desc">{{ field.description }}</p>
-              <template v-if="field.type === 'text'">
-                <textarea
-                  v-model="specFormData[section.name][field.name]"
-                  :data-testid="`spec-field-${section.name}-${field.name}`"
-                  class="spec-field-textarea"
-                  :placeholder="field.description || ''"
-                ></textarea>
-              </template>
-              <template v-else-if="field.type === 'list'">
-                <textarea
-                  v-model="specFormData[section.name][field.name]"
-                  :data-testid="`spec-field-${section.name}-${field.name}`"
-                  class="spec-field-json"
-                  placeholder='JSON 数组格式，例如: [{"name": "xxx", ...}]'
-                ></textarea>
-              </template>
+          <template v-if="hasSectionContent('entity_definition')">
+            <div class="spec-section">
+              <h3 class="section-title">实体定义</h3>
+              <p v-if="getFieldText('entity_definition', 'description')" class="spec-description">{{ getFieldText('entity_definition', 'description') }}</p>
+              <table v-if="getFieldList('entity_definition', 'fields').length" class="spec-table">
+                <thead><tr><th>字段名</th><th>类型</th><th>约束</th></tr></thead>
+                <tbody>
+                  <tr v-for="(f, i) in getFieldList('entity_definition', 'fields')" :key="i">
+                    <td><code>{{ f.name }}</code></td>
+                    <td><span class="spec-type">{{ f.type }}</span></td>
+                    <td>
+                      <span v-for="c in (f.constraints || [])" :key="c" class="spec-tag" :style="constraintStyle(c)">{{ c }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
+
+            <div v-if="hasSectionContent('table_design')" class="spec-section">
+              <h3 class="section-title">数据表设计</h3>
+              <div v-for="(tbl, ti) in getFieldList('table_design', 'tables')" :key="ti" class="spec-card">
+                <div class="spec-card-header">
+                  <strong>{{ tbl.name }}</strong>
+                  <span v-if="tbl.description" class="spec-card-desc">— {{ tbl.description }}</span>
+                </div>
+                <table class="spec-table nested">
+                  <thead><tr><th>字段</th><th>类型</th><th>可空</th><th>默认</th><th>说明</th><th>属性</th></tr></thead>
+                  <tbody>
+                    <tr v-for="(col, ci) in tbl.fields" :key="ci">
+                      <td><code>{{ col.name }}</code></td>
+                      <td><span class="spec-type">{{ col.type }}</span></td>
+                      <td>{{ col.nullable ? 'YES' : 'NO' }}</td>
+                      <td><code v-if="col.default != null">{{ col.default }}</code><span v-else class="spec-muted">—</span></td>
+                      <td>{{ col.comment || '' }}</td>
+                      <td>
+                        <span v-if="col.primary_key" class="spec-tag" style="background:#eff6ff;color:#3b82f6">PK</span>
+                        <span v-if="col.unique" class="spec-tag" style="background:#f0fdf4;color:#22c55e">UNIQUE</span>
+                        <span v-if="col.auto_increment" class="spec-tag" style="background:#f3e8ff;color:#6b21a8">自增</span>
+                        <code v-if="col.foreign_key" class="spec-fk">→ {{ col.foreign_key }}</code>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="tbl.indexes && tbl.indexes.length" class="spec-indexes">
+                  <span class="spec-index-label">索引：</span>
+                  <span v-for="(idx, ii) in tbl.indexes" :key="ii" class="spec-index-item">
+                    <code>{{ idx.name }}</code><span v-if="idx.unique" class="spec-tag" style="background:#fef3c7;color:#92400e;font-size:10px">UNIQUE</span>
+                    ({{ (idx.fields || []).join(', ') }})
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="hasSectionContent('page_structure')" class="spec-section">
+              <h3 class="section-title">页面结构</h3>
+              <div v-for="(pg, pi) in getFieldList('page_structure', 'pages')" :key="pi" class="spec-card">
+                <div class="spec-card-header">
+                  <strong>{{ pg.name }}</strong>
+                  <code class="spec-badge">{{ pg.code }}</code>
+                  <code v-if="pg.route" class="spec-route">{{ pg.route }}</code>
+                </div>
+                <table class="spec-table nested">
+                  <thead><tr><th>元素编码</th><th>类型</th><th>标签</th><th>交互</th></tr></thead>
+                  <tbody>
+                    <tr v-for="(el, ei) in (pg.elements || [])" :key="ei">
+                      <td><code>{{ el.code }}</code></td>
+                      <td>{{ el.type }}</td>
+                      <td>{{ el.label }}</td>
+                      <td>{{ el.interaction || '' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-if="pg.interactions && pg.interactions.length" class="spec-interactions">
+                  <span class="spec-index-label">交互行为：</span>
+                  <div v-for="(ia, ii) in pg.interactions" :key="ii" class="spec-interaction-item">
+                    <code class="spec-trigger">{{ ia.trigger }}</code>
+                    <span>{{ ia.behavior }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="hasSectionContent('api_design')" class="spec-section">
+              <h3 class="section-title">API 设计</h3>
+              <div v-for="(ep, ei) in getFieldList('api_design', 'endpoints')" :key="ei" class="spec-card">
+                <div class="spec-card-header">
+                  <span class="spec-method" :style="methodStyle(ep.method)">{{ ep.method }}</span>
+                  <code>{{ ep.path }}</code>
+                  <span class="spec-card-desc">— {{ ep.description }}</span>
+                </div>
+                <div class="spec-card-body">
+                  <div v-if="ep.request_params && ep.request_params.length" class="spec-sub">
+                    <div class="spec-sub-title">请求参数</div>
+                    <table class="spec-table nested">
+                      <thead><tr><th>参数</th><th>位置</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+                      <tbody>
+                        <tr v-for="(p, pi2) in ep.request_params" :key="pi2">
+                          <td><code>{{ p.name }}</code></td>
+                          <td><span class="spec-tag" :style="paramInStyle(p.in)">{{ p.in }}</span></td>
+                          <td><span class="spec-type">{{ p.type }}</span></td>
+                          <td>{{ p.required ? '是' : '否' }}</td>
+                          <td>{{ p.description || '' }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div v-if="ep.response" class="spec-sub">
+                    <div class="spec-sub-title">响应</div>
+                    <div class="spec-response-block">
+                      <template v-if="ep.response.data">
+                        <span v-for="(v, k) in ep.response.data" :key="k"><span class="spec-key">{{ k }}</span>: <span class="spec-val">{{ typeof v === 'object' ? JSON.stringify(v) : v }}</span> · </span>
+                      </template>
+                      <span class="spec-key">code</span>: <span class="spec-val">{{ ep.response.code }}</span> ·
+                      <span class="spec-key">message</span>: <span class="spec-val">{{ ep.response.message }}</span>
+                    </div>
+                  </div>
+                  <div v-if="ep.errors && ep.errors.length" class="spec-sub">
+                    <div class="spec-sub-title">错误码</div>
+                    <div class="spec-error-row" v-for="(err, erri) in ep.errors" :key="erri">
+                      <span class="spec-error-code">{{ err.code }}</span>
+                      <span>{{ err.message }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="hasSectionContent('constraints')" class="spec-section">
+              <h3 class="section-title">其他约束</h3>
+              <div v-if="getFieldText('constraints', 'directory_structure')" class="spec-sub">
+                <div class="spec-sub-title">目录结构</div>
+                <pre class="spec-code-block">{{ getFieldText('constraints', 'directory_structure') }}</pre>
+              </div>
+              <div v-if="getFieldText('constraints', 'naming_conventions')" class="spec-sub">
+                <div class="spec-sub-title">命名规范</div>
+                <pre class="spec-code-block">{{ getFieldText('constraints', 'naming_conventions') }}</pre>
+              </div>
+              <div v-if="getFieldText('constraints', 'other')" class="spec-sub">
+                <div class="spec-sub-title">其他约束</div>
+                <pre class="spec-code-block">{{ getFieldText('constraints', 'other') }}</pre>
+              </div>
+            </div>
+          </template>
         </div>
 
         <div v-if="activeTab === 'spec-versions'" class="tab-panel">          <div data-testid="req-detail-list-spec-versions" class="version-list">
@@ -79,7 +188,7 @@
             </div>
           </div>
           <div v-if="selectedVersionContent" data-testid="req-detail-txt-spec-version-content" class="version-content">
-            {{ selectedVersionContent }}
+            <pre>{{ selectedVersionContent }}</pre>
           </div>
         </div>
 
@@ -399,7 +508,7 @@ const specSections = ref<any[]>([
   },
 ])
 const specFormData = ref<Record<string, Record<string, any>>>({})
-const validationErrors = ref<any[]>([])
+const specRawContent = ref<Record<string, any>>({})
 const specVersions = ref<SpecVersion[]>([])
 const selectedVersionContent = ref('')
 const tasks = ref<TaskItem[]>([])
@@ -416,7 +525,6 @@ const testCaseForm = reactive({
 })
 const testStats = ref<TestStats>({})
 const dropdownOpen = ref('')
-const saveSuccessMsg = ref('')
 
 function toggleDropdown(name: string) {
   const willOpen = dropdownOpen.value !== name
@@ -440,11 +548,72 @@ const filteredTestCases = computed(() => {
 function getVersionText(ver: SpecVersion): string {
   if (typeof ver.content === 'string') return ver.content
   if (ver.content && typeof ver.content === 'object') {
-    const text = (ver.content as Record<string, string>).text
-    if (text) return text
     return JSON.stringify(ver.content, null, 2)
   }
   return ''
+}
+
+function getSpecField(sectionName: string, fieldName: string): any {
+  return specRawContent.value[sectionName]?.[fieldName]
+}
+
+function getFieldList(sectionName: string, fieldName: string): any[] {
+  const val = getSpecField(sectionName, fieldName)
+  if (Array.isArray(val)) return val
+  if (typeof val === 'string') {
+    try { return JSON.parse(val) } catch { return [] }
+  }
+  return []
+}
+
+function getFieldText(sectionName: string, fieldName: string): string {
+  const val = getSpecField(sectionName, fieldName)
+  if (typeof val === 'string') return val
+  return ''
+}
+
+function hasSectionContent(sectionName: string): boolean {
+  const sectionData = specRawContent.value[sectionName]
+  if (!sectionData || typeof sectionData !== 'object') return false
+  return Object.values(sectionData).some(v => {
+    if (v == null) return false
+    if (typeof v === 'string') return v.trim().length > 0
+    if (Array.isArray(v)) return v.length > 0
+    return true
+  })
+}
+
+const CONSTRAINT_COLORS: Record<string, string> = {
+  required: 'background:#fef2f2;color:#ef4444',
+  unique: 'background:#f0fdf4;color:#22c55e',
+  primary_key: 'background:#eff6ff;color:#3b82f6',
+  auto_increment: 'background:#f3e8ff;color:#6b21a8',
+}
+
+function constraintStyle(c: string): string {
+  return CONSTRAINT_COLORS[c] || 'background:#f3f4f6;color:#666'
+}
+
+const METHOD_COLORS: Record<string, string> = {
+  GET: 'background:#dcfce7;color:#166534',
+  POST: 'background:#dbeafe;color:#1e40af',
+  PUT: 'background:#fef3c7;color:#92400e',
+  DELETE: 'background:#fee2e2;color:#991b1b',
+  PATCH: 'background:#f3e8ff;color:#6b21a8',
+}
+
+function methodStyle(m: string): string {
+  return METHOD_COLORS[m] || 'background:#f3f4f6;color:#666'
+}
+
+function paramInStyle(p: string): string {
+  const map: Record<string, string> = {
+    query: 'background:#dbeafe;color:#1e40af',
+    body: 'background:#fef3c7;color:#92400e',
+    path: 'background:#dcfce7;color:#166534',
+    header: 'background:#f3e8ff;color:#6b21a8',
+  }
+  return map[p] || 'background:#f0f0f0;color:#666'
 }
 
 function mapReqData(data: any): RequirementData {
@@ -574,44 +743,8 @@ async function rejectReview() {
   }
 }
 
-async function saveSpec() {
-  validationErrors.value = []
-  try {
-    const content = serializeSpecContent()
-    await apiClient.put(`/api/v1/requirements/${reqId.value}/specification`, {
-      content,
-    })
-    saveSuccessMsg.value = '保存成功'
-    setTimeout(() => { saveSuccessMsg.value = '' }, 3000)
-  } catch (err: any) {
-    const resp = err.response?.data
-    if (resp?.code === 40001 && resp?.data) {
-      validationErrors.value = resp.data
-    }
-  }
-}
-
-function serializeSpecContent(): Record<string, any> {
-  const content: Record<string, any> = {}
-  for (const section of specSections.value) {
-    const sectionData = specFormData.value[section.name] || {}
-    content[section.name] = {}
-    for (const field of section.fields) {
-      let value = sectionData[field.name]
-      if (field.type === 'list' && typeof value === 'string') {
-        try {
-          value = JSON.parse(value)
-        } catch {
-          value = []
-        }
-      }
-      content[section.name][field.name] = value ?? (field.type === 'list' ? [] : '')
-    }
-  }
-  return content
-}
-
 function loadSpecContent(content: Record<string, any>) {
+  specRawContent.value = content
   for (const section of specSections.value) {
     if (!specFormData.value[section.name]) {
       specFormData.value[section.name] = {}
@@ -619,10 +752,7 @@ function loadSpecContent(content: Record<string, any>) {
     const sectionData = content[section.name] || {}
     for (const field of section.fields) {
       let value = sectionData[field.name]
-      if (field.type === 'list' && Array.isArray(value)) {
-        value = JSON.stringify(value, null, 2)
-      }
-      specFormData.value[section.name][field.name] = value ?? ''
+      specFormData.value[section.name][field.name] = value ?? (field.type === 'list' ? [] : '')
     }
   }
 }
@@ -1042,5 +1172,218 @@ onMounted(async () => {
   .stat-cards {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+.spec-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #999;
+  font-size: 14px;
+}
+.spec-description {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 14px;
+}
+.spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.spec-table th {
+  background: #f8f9fa;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+.spec-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+.spec-table tr:hover td {
+  background: #fafbfc;
+}
+.spec-table.nested th {
+  background: #f0f1f3;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.spec-table.nested td {
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.spec-table code,
+.spec-card-header code,
+.spec-trigger {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-weight: 600;
+  color: #111;
+  font-size: 12px;
+}
+.spec-type {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  color: #4f46e5;
+  font-size: 12px;
+}
+.spec-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.spec-muted {
+  color: #ccc;
+}
+.spec-fk {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 11px;
+  color: #f59e0b;
+  background: #fffbeb;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.spec-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.spec-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fafbfc;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+.spec-card-desc {
+  color: #888;
+  font-size: 13px;
+}
+.spec-card-body {
+  padding: 16px;
+}
+.spec-sub {
+  margin-bottom: 12px;
+}
+.spec-sub:last-child {
+  margin-bottom: 0;
+}
+.spec-sub-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.spec-method {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.spec-badge {
+  font-size: 12px;
+  color: #4f46e5;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.spec-route {
+  color: #888;
+  font-size: 12px;
+}
+.spec-response-block {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.spec-key {
+  color: #4f46e5;
+  font-weight: 500;
+}
+.spec-val {
+  color: #333;
+}
+.spec-error-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+}
+.spec-error-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.spec-indexes {
+  padding: 10px 16px;
+  background: #fafbfc;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+}
+.spec-index-label {
+  font-weight: 600;
+  color: #888;
+  margin-right: 4px;
+}
+.spec-index-item {
+  margin-right: 16px;
+}
+.spec-index-item code {
+  color: #4f46e5;
+}
+.spec-interactions {
+  padding: 10px 16px;
+  border-top: 1px solid #f0f0f0;
+}
+.spec-interaction-item {
+  display: flex;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.spec-interaction-item:last-child {
+  border-bottom: none;
+}
+.spec-trigger {
+  color: #f59e0b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.spec-code-block {
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: #333;
+  margin: 0;
+}
+.version-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>JSON 展现形式对比</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f5;color:#333;padding:24px}
+h1{font-size:22px;margin-bottom:8px}
+.subtitle{color:#888;font-size:14px;margin-bottom:24px}
+.section{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.section h2{font-size:16px;margin-bottom:4px;color:#111}
+.section .desc{font-size:13px;color:#888;margin-bottom:16px}
+
+h3{font-size:14px;color:#555;margin:16px 0 8px;border-bottom:1px solid #eee;padding-bottom:4px}
+
+pre{background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-size:13px;line-height:1.6;overflow-x:auto;font-family:'SF Mono','Menlo',monospace}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fa;text-align:left;padding:10px 12px;border-bottom:2px solid #e5e7eb;font-weight:600;color:#555;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+tr:hover td{background:#fafbfc}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;margin-right:4px}
+.tag-required{background:#fef2f2;color:#ef4444}
+.tag-unique{background:#f0fdf4;color:#22c55e}
+.tag-pk{background:#eff6ff;color:#3b82f6}
+.method{display:inline-block;padding:3px 10px;border-radius:4px;font-size:12px;font-weight:700;font-family:monospace;margin-right:8px}
+.method-POST{background:#dcfce7;color:#166534}
+.method-GET{background:#dbeafe;color:#1e40af}
+.method-PUT{background:#fef3c7;color:#92400e}
+.method-DELETE{background:#fee2e2;color:#991b1b}
+.method-PATCH{background:#f3e8ff;color:#6b21a8}
+.param-in{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:#f0f0f0;color:#666;margin-right:4px}
+.param-in.query{background:#dbeafe;color:#1e40af}
+.param-in.body{background:#fef3c7;color:#92400e}
+.param-in.path{background:#dcfce7;color:#166534}
+.param-in.header{background:#f3e8ff;color:#6b21a8}
+.field-name{font-family:'SF Mono','Menlo',monospace;font-weight:600;color:#111}
+.field-type{font-family:'SF Mono','Menlo',monospace;color:#4f46e5;font-size:12px}
+.field-constraints{display:flex;gap:4px;flex-wrap:wrap}
+.field-null{color:#999;font-style:italic}
+.nested-table{margin:8px 0 8px 16px;width:calc(100% - 16px)}
+.nested-table th{background:#f0f1f3;font-size:12px;padding:8px 10px}
+.nested-table td{font-size:12px;padding:8px 10px}
+.code-block{background:#f8f9fa;border:1px solid #e5e7eb;border-radius:6px;padding:12px;font-family:'SF Mono','Menlo',monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;color:#333}
+.error-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.error-code{font-family:monospace;font-weight:700;color:#ef4444;background:#fef2f2;padding:2px 8px;border-radius:4px}
+.error-msg{color:#666}
+.endpoint-card{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:12px;overflow:hidden}
+.endpoint-header{display:flex;align-items:center;padding:12px 16px;background:#fafbfc;border-bottom:1px solid #e5e7eb;gap:8px}
+.endpoint-path{font-family:'SF Mono','Menlo',monospace;font-weight:600;font-size:14px}
+.endpoint-desc{color:#888;font-size:13px}
+.endpoint-body{padding:16px}
+.endpoint-section{margin-bottom:12px}
+.endpoint-section-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.response-block{background:#f8f9fa;border-radius:6px;padding:12px;font-size:13px}
+.response-block .key{color:#4f46e5;font-weight:500}
+.response-block .val{color:#333}
+.index-name{font-family:'SF Mono','Menlo',monospace;font-size:12px;color:#4f46e5}
+.index-unique{font-size:11px;color:#f59e0b;background:#fffbeb;padding:1px 6px;border-radius:3px;margin-left:4px}
+.page-card{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:12px;overflow:hidden}
+.page-header{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#fafbfc;border-bottom:1px solid #e5e7eb}
+.page-name{font-weight:600;font-size:14px}
+.page-code{font-family:'SF Mono','Menlo',monospace;font-size:12px;color:#4f46e5;background:#eff6ff;padding:2px 8px;border-radius:4px}
+.page-route{font-family:'SF Mono','Menlo',monospace;font-size:12px;color:#888}
+.page-body{padding:16px}
+.element-table{width:100%}
+.element-table th{background:#f0f1f3;font-size:12px;padding:8px 10px}
+.element-table td{font-size:12px;padding:8px 10px}
+.element-code{font-family:'SF Mono','Menlo',monospace;color:#4f46e5;font-size:12px}
+.interaction-list{margin-top:12px}
+.interaction-item{display:flex;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f5f5f5}
+.interaction-trigger{font-family:'SF Mono','Menlo',monospace;color:#f59e0b;font-weight:500;white-space:nowrap}
+.interaction-behavior{color:#555}
+</style>
+</head>
+<body>
+<h1>JSON 展现形式对比预览</h1>
+<p class="subtitle">以「用户注册登录」需求的规范数据为例，展示 5 个 section 的渲染效果</p>
+
+<div class="section">
+<h2>1. 实体定义 (entity_definition)</h2>
+<p class="desc">描述改为段落文本，字段列表渲染为结构化表格，约束用标签展示</p>
+
+<h3>实体描述</h3>
+<p style="color:#555;line-height:1.6;margin-bottom:12px">用户实体，用于管理记账App的注册用户信息，支持邮箱注册和JWT认证</p>
+
+<h3>字段列表</h3>
+<table>
+<tr><th>字段名</th><th>类型</th><th>约束</th></tr>
+<tr><td><span class="field-name">id</span></td><td><span class="field-type">integer</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span><span class="tag tag-pk">primary_key</span><span class="tag" style="background:#f3e8ff;color:#6b21a8">auto_increment</span></div></td></tr>
+<tr><td><span class="field-name">email</span></td><td><span class="field-type">string</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span><span class="tag tag-unique">unique</span><span class="tag" style="background:#fef3c7;color:#92400e">max:255</span></div></td></tr>
+<tr><td><span class="field-name">nickname</span></td><td><span class="field-type">string</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span><span class="tag" style="background:#fef3c7;color:#92400e">max:50</span></div></td></tr>
+<tr><td><span class="field-name">password_hash</span></td><td><span class="field-type">string</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span><span class="tag" style="background:#fef3c7;color:#92400e">max:255</span></div></td></tr>
+<tr><td><span class="field-name">avatar_url</span></td><td><span class="field-type">string</span></td><td><div class="field-constraints"><span class="tag" style="background:#f0f0f0;color:#888">max:500</span></div></td></tr>
+<tr><td><span class="field-name">is_active</span></td><td><span class="field-type">boolean</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span><span class="tag" style="background:#f0fdf4;color:#22c55e">default:true</span></div></td></tr>
+<tr><td><span class="field-name">created_at</span></td><td><span class="field-type">datetime</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span></div></td></tr>
+<tr><td><span class="field-name">updated_at</span></td><td><span class="field-type">datetime</span></td><td><div class="field-constraints"><span class="tag tag-required">required</span></div></td></tr>
+</table>
+</div>
+
+<div class="section">
+<h2>2. 数据表设计 (table_design)</h2>
+<p class="desc">表结构渲染为嵌套表格，字段属性用标签/图标，索引单独展示</p>
+
+<div style="border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:12px">
+<div style="padding:12px 16px;background:#fafbfc;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;gap:8px">
+<span style="font-weight:600;font-size:15px">users</span>
+<span style="color:#888;font-size:13px">— 用户表，存储注册用户信息</span>
+</div>
+<table>
+<tr><th>字段</th><th>类型</th><th>可空</th><th>默认</th><th>说明</th><th>属性</th></tr>
+<tr><td><span class="field-name">id</span></td><td><span class="field-type">BIGSERIAL</span></td><td><span class="field-null">NO</span></td><td class="field-null">—</td><td>用户ID</td><td><span class="tag tag-pk">PK</span> <span class="tag" style="background:#f3e8ff;color:#6b21a8">自增</span></td></tr>
+<tr><td><span class="field-name">email</span></td><td><span class="field-type">VARCHAR(255)</span></td><td><span class="field-null">NO</span></td><td class="field-null">—</td><td>邮箱地址，用于登录</td><td><span class="tag tag-unique">UNIQUE</span></td></tr>
+<tr><td><span class="field-name">nickname</span></td><td><span class="field-type">VARCHAR(50)</span></td><td><span class="field-null">NO</span></td><td class="field-null">—</td><td>用户昵称</td><td></td></tr>
+<tr><td><span class="field-name">password_hash</span></td><td><span class="field-type">VARCHAR(255)</span></td><td><span class="field-null">NO</span></td><td class="field-null">—</td><td>密码哈希(bcrypt)</td><td></td></tr>
+<tr><td><span class="field-name">avatar_url</span></td><td><span class="field-type">VARCHAR(500)</span></td><td style="color:#22c55e">YES</td><td class="field-null">—</td><td>头像URL</td><td></td></tr>
+<tr><td><span class="field-name">is_active</span></td><td><span class="field-type">BOOLEAN</span></td><td><span class="field-null">NO</span></td><td><code>true</code></td><td>是否启用</td><td></td></tr>
+<tr><td><span class="field-name">created_at</span></td><td><span class="field-type">TIMESTAMPTZ</span></td><td><span class="field-null">NO</span></td><td><code>now()</code></td><td>创建时间</td><td></td></tr>
+<tr><td><span class="field-name">updated_at</span></td><td><span class="field-type">TIMESTAMPTZ</span></td><td><span class="field-null">NO</span></td><td><code>now()</code></td><td>更新时间</td><td></td></tr>
+</table>
+<div style="padding:10px 16px;background:#fafbfc;border-top:1px solid #e5e7eb">
+<span style="font-size:12px;font-weight:600;color:#888">索引：</span>
+<span class="index-name">idx_users_email</span><span class="index-unique">UNIQUE</span><span style="margin-left:16px" class="index-name">idx_users_created_at</span>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h2>3. 页面结构 (page_structure)</h2>
+<p class="desc">页面渲染为卡片，元素列表为内嵌表格，交互行为单独展示</p>
+
+<div class="page-card">
+<div class="page-header">
+<span class="page-name">注册页面</span>
+<span class="page-code">register-page</span>
+<span class="page-route">/register</span>
+</div>
+<div class="page-body">
+<table class="element-table">
+<tr><th>元素编码</th><th>类型</th><th>标签</th><th>交互</th></tr>
+<tr><td><span class="element-code">email-input</span></td><td>input</td><td>邮箱地址</td><td>输入邮箱</td></tr>
+<tr><td><span class="element-code">nickname-input</span></td><td>input</td><td>昵称</td><td>输入昵称</td></tr>
+<tr><td><span class="element-code">password-input</span></td><td>input</td><td>密码</td><td>输入密码</td></tr>
+<tr><td><span class="element-code">confirm-password-input</span></td><td>input</td><td>确认密码</td><td>再次输入密码</td></tr>
+<tr><td><span class="element-code">register-btn</span></td><td>button</td><td>注册</td><td>点击提交注册表单</td></tr>
+<tr><td><span class="element-code">login-link</span></td><td>link</td><td>已有账号？去登录</td><td>跳转登录页</td></tr>
+</table>
+<div class="interaction-list">
+<div style="font-size:12px;font-weight:600;color:#888;margin-bottom:4px">交互行为</div>
+<div class="interaction-item"><span class="interaction-trigger">register-btn.click</span><span class="interaction-behavior">验证表单，调用注册API，成功后跳转登录页</span></div>
+<div class="interaction-item"><span class="interaction-trigger">login-link.click</span><span class="interaction-behavior">导航到 /login</span></div>
+</div>
+</div>
+</div>
+
+<div class="page-card">
+<div class="page-header">
+<span class="page-name">登录页面</span>
+<span class="page-code">login-page</span>
+<span class="page-route">/login</span>
+</div>
+<div class="page-body">
+<table class="element-table">
+<tr><th>元素编码</th><th>类型</th><th>标签</th><th>交互</th></tr>
+<tr><td><span class="element-code">email-input</span></td><td>input</td><td>邮箱地址</td><td>输入邮箱</td></tr>
+<tr><td><span class="element-code">password-input</span></td><td>input</td><td>密码</td><td>输入密码</td></tr>
+<tr><td><span class="element-code">login-btn</span></td><td>button</td><td>登录</td><td>点击提交登录表单</td></tr>
+<tr><td><span class="element-code">register-link</span></td><td>link</td><td>没有账号？去注册</td><td>跳转注册页</td></tr>
+</table>
+<div class="interaction-list">
+<div style="font-size:12px;font-weight:600;color:#888;margin-bottom:4px">交互行为</div>
+<div class="interaction-item"><span class="interaction-trigger">login-btn.click</span><span class="interaction-behavior">验证表单，调用登录API，成功后存储JWT并跳转首页</span></div>
+<div class="interaction-item"><span class="interaction-trigger">register-link.click</span><span class="interaction-behavior">导航到 /register</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h2>4. API 设计 (api_design)</h2>
+<p class="desc">接口渲染为卡片，HTTP 方法用彩色标签，参数用结构化表格，错误码单独展示</p>
+
+<div class="endpoint-card">
+<div class="endpoint-header">
+<span class="method method-POST">POST</span>
+<span class="endpoint-path">/api/v1/auth/register</span>
+<span class="endpoint-desc">— 用户注册</span>
+</div>
+<div class="endpoint-body">
+<div class="endpoint-section">
+<div class="endpoint-section-title">请求参数</div>
+<table>
+<tr><th>参数</th><th>位置</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td><span class="field-name">email</span></td><td><span class="param-in body">body</span></td><td>string</td><td><span style="color:#ef4444">是</span></td><td>邮箱地址</td></tr>
+<tr><td><span class="field-name">nickname</span></td><td><span class="param-in body">body</span></td><td>string</td><td><span style="color:#ef4444">是</span></td><td>昵称</td></tr>
+<tr><td><span class="field-name">password</span></td><td><span class="param-in body">body</span></td><td>string</td><td><span style="color:#ef4444">是</span></td><td>密码（8-32位，含大小写字母和数字）</td></tr>
+</table>
+</div>
+<div class="endpoint-section">
+<div class="endpoint-section-title">响应</div>
+<div class="response-block">
+<span class="key">code</span>: <span class="val">0</span> · <span class="key">message</span>: <span class="val">"success"</span> · <span class="key">data</span>: <span class="val">{ id, email, nickname }</span>
+</div>
+</div>
+<div class="endpoint-section">
+<div class="endpoint-section-title">错误码</div>
+<div class="error-row"><span class="error-code">40001</span><span class="error-msg">邮箱格式不正确</span></div>
+<div class="error-row"><span class="error-code">40001</span><span class="error-msg">密码强度不足</span></div>
+<div class="error-row"><span class="error-code">40900</span><span class="error-msg">邮箱已被注册</span></div>
+</div>
+</div>
+</div>
+
+<div class="endpoint-card">
+<div class="endpoint-header">
+<span class="method method-POST">POST</span>
+<span class="endpoint-path">/api/v1/auth/login</span>
+<span class="endpoint-desc">— 用户登录，返回JWT令牌</span>
+</div>
+<div class="endpoint-body">
+<div class="endpoint-section">
+<div class="endpoint-section-title">请求参数</div>
+<table>
+<tr><th>参数</th><th>位置</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td><span class="field-name">email</span></td><td><span class="param-in body">body</span></td><td>string</td><td><span style="color:#ef4444">是</span></td><td>邮箱地址</td></tr>
+<tr><td><span class="field-name">password</span></td><td><span class="param-in body">body</span></td><td>string</td><td><span style="color:#ef4444">是</span></td><td>密码</td></tr>
+</table>
+</div>
+<div class="endpoint-section">
+<div class="endpoint-section-title">响应</div>
+<div class="response-block">
+<span class="key">code</span>: <span class="val">0</span> · <span class="key">message</span>: <span class="val">"success"</span> · <span class="key">data</span>: <span class="val">{ token }</span>
+</div>
+</div>
+<div class="endpoint-section">
+<div class="endpoint-section-title">错误码</div>
+<div class="error-row"><span class="error-code">40100</span><span class="error-msg">邮箱或密码错误</span></div>
+<div class="error-row"><span class="error-code">40300</span><span class="error-msg">账号已被禁用</span></div>
+</div>
+</div>
+</div>
+
+<div class="endpoint-card">
+<div class="endpoint-header">
+<span class="method method-GET">GET</span>
+<span class="endpoint-path">/api/v1/auth/me</span>
+<span class="endpoint-desc">— 获取当前用户信息</span>
+</div>
+<div class="endpoint-body">
+<div class="endpoint-section">
+<div class="endpoint-section-title">请求参数</div>
+<table>
+<tr><th>参数</th><th>位置</th><th>类型</th><th>必填</th><th>说明</th></tr>
+<tr><td><span class="field-name">Authorization</span></td><td><span class="param-in header">header</span></td><td>string</td><td><span style="color:#ef4444">是</span></td><td>Bearer JWT令牌</td></tr>
+</table>
+</div>
+<div class="endpoint-section">
+<div class="endpoint-section-title">响应</div>
+<div class="response-block">
+<span class="key">code</span>: <span class="val">0</span> · <span class="key">message</span>: <span class="val">"success"</span> · <span class="key">data</span>: <span class="val">{ id, email, nickname, avatar_url }</span>
+</div>
+</div>
+<div class="endpoint-section">
+<div class="endpoint-section-title">错误码</div>
+<div class="error-row"><span class="error-code">40100</span><span class="error-msg">未登录或令牌已过期</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="section">
+<h2>5. 其他约束 (constraints)</h2>
+<p class="desc">文本字段保持段落展示，但用等宽字体和语法高亮</p>
+
+<h3>目录结构</h3>
+<div class="code-block">src/
+  controllers/
+    auth.controller.ts
+  services/
+    auth.service.ts
+  models/
+    user.model.ts
+  middleware/
+    auth.middleware.ts
+  routes/
+    auth.routes.ts
+  utils/
+    jwt.util.ts
+    password.util.ts</div>
+
+<h3>命名规范</h3>
+<div class="code-block">文件名：kebab-case（如 auth-controller.ts）
+类名：PascalCase（如 AuthService）
+函数/变量：camelCase（如 generateToken）
+常量：UPPER_SNAKE_CASE（如 JWT_SECRET）
+数据库表名：snake_case 复数（如 users）
+API路径：kebab-case（如 /api/v1/auth/login）</div>
+
+<h3>其他约束</h3>
+<div class="code-block">密码使用 bcrypt 哈希（salt rounds >= 10）
+JWT 过期时间：24小时
+密码强度要求：8-32位，必须包含大写字母、小写字母和数字
+邮箱格式校验：使用正则表达式
+所有API响应使用统一格式 {code, message, data}
+敏感操作需验证用户身份</div>
+</div>
+
+<div class="section" style="background:#eff6ff;border:1px solid #bfdbfe">
+<h2 style="color:#1e40af">对比：当前效果（纯 JSON textarea）</h2>
+<p class="desc">这就是现在用户看到的 — 一个巨大的 JSON 文本框</p>
+<pre>{
+  "fields": [
+    {
+      "name": "id",
+      "type": "integer",
+      "constraints": ["required", "primary_key", "auto_increment"]
+    },
+    {
+      "name": "email",
+      "type": "string",
+      "constraints": ["required", "unique", "max:255"]
+    },
+    {
+      "name": "nickname",
+      "type": "string",
+      "constraints": ["required", "max:50"]
+    }
+  ]
+}</pre>
+</div>
+
+</body>
+</html>
