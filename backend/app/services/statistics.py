@@ -56,7 +56,7 @@ async def get_requirement_test_statistics(db: AsyncSession, requirement_id: int)
             round_stmt = (
                 select(TestExecutionRound)
                 .where(TestExecutionRound.task_id == tid)
-                .order_by(TestExecutionRound.created_at.desc())
+                .order_by(TestExecutionRound.created_at.desc(), TestExecutionRound.id.desc())
                 .limit(1)
             )
             round_result = await db.execute(round_stmt)
@@ -131,7 +131,7 @@ async def get_iteration_test_statistics(db: AsyncSession, iteration_id: int) -> 
             round_stmt = (
                 select(TestExecutionRound)
                 .where(TestExecutionRound.task_id == t.id)
-                .order_by(TestExecutionRound.created_at.desc())
+                .order_by(TestExecutionRound.created_at.desc(), TestExecutionRound.id.desc())
                 .limit(1)
             )
             round_result = await db.execute(round_stmt)

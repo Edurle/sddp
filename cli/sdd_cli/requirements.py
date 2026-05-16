@@ -50,6 +50,7 @@ def create_requirement(
     priority: int = typer.Option(0, "--priority", "-p"),
     description: Optional[str] = typer.Option(None, "--description", "-d"),
     type_detail: Optional[str] = typer.Option(None, "--type-detail"),
+    prototype_html: Optional[str] = typer.Option(None, "--prototype-html"),
     iteration: Optional[int] = typer.Option(None, "--iteration", "-i"),
 ) -> None:
     try:
@@ -57,6 +58,7 @@ def create_requirement(
         body: dict = {"title": title, "type": type, "priority": priority}
         body["description"] = description
         body["type_detail"] = json.loads(type_detail) if type_detail else None
+        body["prototype_html"] = prototype_html
         if iteration is not None:
             body["iteration_id"] = iteration
         data = client.post("/requirements", json=body)
@@ -77,6 +79,7 @@ def update_requirement(
     priority: Optional[int] = typer.Option(None, "--priority", "-p"),
     description: Optional[str] = typer.Option(None, "--description", "-d"),
     type_detail: Optional[str] = typer.Option(None, "--type-detail"),
+    prototype_html: Optional[str] = typer.Option(None, "--prototype-html"),
 ) -> None:
     try:
         client = get_client()
@@ -86,6 +89,7 @@ def update_requirement(
             "priority": priority,
             "description": description,
             "type_detail": json.loads(type_detail) if type_detail else None,
+            "prototype_html": prototype_html,
         }
         data = client.put(f"/requirements/{id}", json=body)
         print_response(data)

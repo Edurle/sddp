@@ -9,6 +9,16 @@ class RequirementCreateRequest(BaseModel):
     priority: int = 0
     description: str
     type_detail: dict | None = None
+    prototype_html: str | None = None
+
+
+class RequirementUpdateRequest(BaseModel):
+    title: str | None = None
+    req_type: str | None = None
+    priority: str | None = None
+    description: str | None = None
+    type_detail: dict | None = None
+    prototype_html: str | None = None
 
 
 class RequirementUpdateRequest(BaseModel):
@@ -77,6 +87,7 @@ class RequirementDetail(BaseModel):
     status: str
     description: str
     type_detail: dict | None = None
+    prototype_html: str | None = None
     iteration: IterationBrief
     created_by: UserBrief
     current_step: str

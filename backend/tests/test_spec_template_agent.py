@@ -15,7 +15,6 @@ class TestDefaultTemplateAgentPrompt:
             ("entity_definition", "fields"): "列出实体的所有字段。每个字段需包含 name（字段名，英文小写下划线）、type（数据类型，如 string/integer/boolean/datetime/json）、constraints（约束数组，如 ['required', 'unique', 'max:255'])",
             ("table_design", "tables"): "列出所有数据库表。每张表需包含 name（表名，复数形式）、description（表用途）、fields（字段数组，包含 name/type/nullable/default/comment/primary_key/unique/foreign_key/auto_increment）、indexes（索引数组）",
             ("page_structure", "pages"): "列出所有页面。每个页面需包含 name（页面名称）、code（页面编码，短横线格式）、route（路由路径）、elements（元素数组，每个元素含 code/type/label/interaction）",
-            ("page_structure", "prototype_html"): "用 HTML 编写页面原型图。使用基础 HTML+CSS，不需外部依赖",
             ("api_design", "endpoints"): "列出所有 API 接口。每个接口需包含 method（GET/POST/PUT/DELETE/PATCH）、path（URL路径）、description（接口说明）、request_params（请求参数数组，含 name/in/type/required/description）、response（响应体结构，含 code/message/data）、errors（错误码数组）",
             ("constraints", "directory_structure"): "描述项目的目录结构规范",
             ("constraints", "naming_conventions"): "描述编码命名规范（变量、函数、文件等）",
@@ -136,7 +135,7 @@ class TestAgentGuideEndpoint:
             for field_def in section.get("fields", []):
                 all_prompts.append((section["name"], field_def["name"], field_def.get("agent_prompt")))
 
-        assert len(all_prompts) >= 9
+        assert len(all_prompts) >= 8
         for section_name, field_name, prompt in all_prompts:
             assert prompt is not None, f"agent_prompt is None for {section_name}.{field_name}"
 

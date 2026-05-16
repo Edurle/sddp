@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,12 +51,12 @@ async def handle_invitation(db: AsyncSession, invitation_id: int, user_id: int, 
 
     if action == "accept":
         invitation.status = "accepted"
-        invitation.responded_at = datetime.utcnow()
+        invitation.responded_at = datetime.now(timezone.utc)
         member = TeamMember(team_id=invitation.team_id, user_id=user_id)
         db.add(member)
     elif action == "reject":
         invitation.status = "rejected"
-        invitation.responded_at = datetime.utcnow()
+        invitation.responded_at = datetime.now(timezone.utc)
 
     await db.commit()
 

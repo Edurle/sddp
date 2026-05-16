@@ -303,13 +303,16 @@ drafting_req → reviewing_req → drafting_spec → reviewing_spec → drafting
     "req_type": "feature|optimization|bug",
     "priority": 0,
     "description": "string",
-    "type_detail": {}
+    "type_detail": {},
+    "prototype_html": "string"
   }
   ```
   `type_detail` 按类型不同：
   - **feature**: `{ "feature_description": "string" }`
   - **optimization**: `{ "change_description": "string" }`
   - **bug**: `{ "bug_steps": "string", "expected_behavior": "string", "actual_behavior": "string", "fix_description": "string" }`
+  
+  `prototype_html` 为可选字段，存放页面原型图 HTML 代码，前端以 `<iframe sandbox>` 渲染。
 - **响应 data**: `{ "id": 1 }`
 
 ### GET /api/v1/requirements/{id}
@@ -482,8 +485,7 @@ drafting_req → reviewing_req → drafting_spec → reviewing_spec → drafting
       "entity_definition": {},
       "table_design": {},
       "page_structure": {
-        "pages": [...],
-        "prototype_html": "<div>...</div>"
+        "pages": [...]
       },
       "api_design": {},
       "constraints": {}

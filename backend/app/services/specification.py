@@ -10,20 +10,21 @@ from app.exceptions import (
     ERR_VALIDATION,
 )
 from app.models import Requirement, TeamMember
-from app.mongo_database import get_spec_templates_collection, get_spec_documents_collection
-from app.mongo_models.spec_document import SpecDocument
-from app.mongo_models.spec_template import SpecTemplate
+from app.models.spec import SpecTemplate, SpecDocument
+from app.mongo_models.spec_template import SpecTemplate as SpecTemplateDefaults
 
 
-async def _get_template_sections(team_id: int) -> list[dict]:
-    data = await get_spec_templates_collection().find_one({"team_id": team_id})
-    if data is not None:
-        return data.get("sections", [])
-    return SpecTemplate().DEFAULT_SECTIONS
+async def _get_template_sections(db: AsyncSession, team_id: int) -> list[dict]:
+    stmt = select(SpecTemplate).where(SpecTemplate.team_id == team_id)
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
+    if template is not None:
+        return template.sections
+    return SpecTemplateDefaults().DEFAULT_SECTIONS
 
 
-async def _validate_spec_content(content: dict, team_id: int) -> list[dict]:
-    sections = await _get_template_sections(team_id)
+async def _validate_spec_content(content: dict, db: AsyncSession, team_id: int) -> list[dict]:
+    sections = await _get_template_sections(db, team_id)
     errors = []
 
     for section in sections:
@@ -100,12 +101,14 @@ async def get_spec_template(
 ) -> dict:
     await _check_team_member(db, team_id, user_id)
 
-    data = await get_spec_templates_collection().find_one({"team_id": team_id})
-    if data is None:
-        default_sections = SpecTemplate().DEFAULT_SECTIONS
+    stmt = select(SpecTemplate).where(SpecTemplate.team_id == team_id)
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
+    if template is None:
+        default_sections = SpecTemplateDefaults().DEFAULT_SECTIONS
         return {"sections": default_sections}
 
-    return {"sections": data.get("sections", [])}
+    return {"sections": template.sections}
 
 
 async def get_agent_guide(
@@ -119,21 +122,20 @@ async def update_spec_template(
 ) -> dict:
     await _check_team_member(db, team_id, user_id)
 
-    template = SpecTemplate(team_id=team_id)
-    template.sections = [
-        SpecTemplate._section_from_dict(s) for s in sections
-    ]
-    template.updated_by = user_id
-    from datetime import datetime
-    template.updated_at = datetime.utcnow()
+    stmt = select(SpecTemplate).where(SpecTemplate.team_id == team_id)
+    result = await db.execute(stmt)
+    template = result.scalar_one_or_none()
 
-    doc = template.to_document()
-    await get_spec_templates_collection().update_one(
-        {"team_id": team_id},
-        {"$set": doc},
-        upsert=True,
-    )
-    return {"sections": doc["sections"]}
+    if template is None:
+        template = SpecTemplate(team_id=team_id, sections=sections, updated_by=user_id)
+        db.add(template)
+    else:
+        template.sections = sections
+        template.updated_by = user_id
+
+    await db.commit()
+    await db.refresh(template)
+    return {"sections": template.sections}
 
 
 async def get_spec_document(
@@ -143,17 +145,18 @@ async def get_spec_document(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
-    if data is None:
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+
+    if doc is None or doc.current_version == 0:
         return {"current_version": 0, "content": None}
 
-    doc = SpecDocument(
-        requirement_id=req_id,
-        current_version=data.get("current_version", 0),
-    )
+    versions = doc.versions or []
+    content = versions[-1].get("content") if versions else None
     return {
-        "current_version": doc.current_version if doc.current_version > 0 else None,
-        "content": _get_current_content(data) if doc.current_version > 0 else None,
+        "current_version": doc.current_version,
+        "content": content,
     }
 
 
@@ -168,34 +171,38 @@ async def save_spec_document(
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑规格说明")
 
     team_id = await _get_team_id_by_requirement(db, req_id)
-    errors = await _validate_spec_content(content, team_id)
+    errors = await _validate_spec_content(content, db, team_id)
     if errors:
         raise BusinessError(ERR_VALIDATION, "规范内容校验失败", errors=errors)
 
-    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
-    if data is None:
-        doc = SpecDocument(requirement_id=req_id)
-    else:
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+
+    from datetime import datetime, timezone
+    new_version_num = (doc.current_version + 1) if doc else 1
+    new_version_entry = {
+        "version": new_version_num,
+        "content": content,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user_id,
+    }
+
+    if doc is None:
         doc = SpecDocument(
             requirement_id=req_id,
-            current_version=data.get("current_version", 0),
+            current_version=new_version_num,
+            versions=[new_version_entry],
         )
-        for v in data.get("versions", []):
-            from app.mongo_models.spec_document import SpecDocumentVersion
-            doc.versions.append(SpecDocumentVersion(
-                version=v["version"],
-                content=v["content"],
-                created_at=v.get("created_at"),
-                created_by=v.get("created_by"),
-            ))
+        db.add(doc)
+    else:
+        versions = list(doc.versions or [])
+        versions.append(new_version_entry)
+        doc.current_version = new_version_num
+        doc.versions = versions
 
-    new_version = doc.add_version(content, user_id)
-    await get_spec_documents_collection().update_one(
-        {"requirement_id": req_id},
-        {"$set": doc.to_document()},
-        upsert=True,
-    )
-    return {"version": new_version.version}
+    await db.commit()
+    return {"version": new_version_num}
 
 
 async def list_spec_versions(
@@ -205,19 +212,20 @@ async def list_spec_versions(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
-    if data is None:
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+    if doc is None:
         return []
 
-    versions = data.get("versions", [])
     return [
         {
             "version": v["version"],
             "content": v.get("content"),
             "created_by": v.get("created_by"),
-            "created_at": v.get("created_at").isoformat() if v.get("created_at") else None,
+            "created_at": v.get("created_at"),
         }
-        for v in versions
+        for v in (doc.versions or [])
     ]
 
 
@@ -228,17 +236,19 @@ async def get_spec_version_detail(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    data = await get_spec_documents_collection().find_one({"requirement_id": req_id})
-    if data is None:
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+    if doc is None:
         raise BusinessError(ERR_NOT_FOUND, "版本不存在")
 
-    for v in data.get("versions", []):
+    for v in (doc.versions or []):
         if v["version"] == version:
             return {
                 "version": v["version"],
                 "content": v["content"],
                 "created_by": v.get("created_by"),
-                "created_at": v.get("created_at").isoformat() if v.get("created_at") else None,
+                "created_at": v.get("created_at"),
             }
 
     raise BusinessError(ERR_NOT_FOUND, "版本不存在")
@@ -263,10 +273,3 @@ async def _get_requirement(db: AsyncSession, req_id: int) -> Requirement | None:
     )
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
-
-
-def _get_current_content(data: dict) -> dict | None:
-    versions = data.get("versions", [])
-    if not versions:
-        return None
-    return versions[-1].get("content")

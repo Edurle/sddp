@@ -1,7 +1,6 @@
 import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://admin:ameiharu@182.92.70.54:5432/project_manager_db")
 REDIS_URL = os.getenv("REDIS_URL", "")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key")

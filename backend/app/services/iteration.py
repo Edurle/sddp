@@ -151,7 +151,7 @@ async def start_iteration(
     project = await _get_project_or_fail(db, iteration.project_id)
     await _check_member_by_project(db, project, user_id)
 
-    if iteration.status != "planning":
+    if iteration.status not in ("planning", "planned"):
         raise BusinessError(ERR_REQUIREMENT_STATUS, "迭代状态不允许启动")
 
     iteration.status = "in_progress"

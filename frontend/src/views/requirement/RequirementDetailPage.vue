@@ -67,19 +67,9 @@
               </template>
             </div>
           </div>
-
-          <div v-if="prototypeHtml" class="prototype-preview">
-            <h3 class="section-title">原型图预览</h3>
-            <iframe
-              :srcdoc="prototypeHtml"
-              sandbox="allow-scripts"
-              class="prototype-iframe"
-            ></iframe>
-          </div>
         </div>
 
-        <div v-if="activeTab === 'spec-versions'" class="tab-panel">
-          <div data-testid="req-detail-list-spec-versions" class="version-list">
+        <div v-if="activeTab === 'spec-versions'" class="tab-panel">          <div data-testid="req-detail-list-spec-versions" class="version-list">
             <div v-for="(ver, idx) in specVersions" :key="idx" class="version-card" :class="{ selected: selectedVersionContent === getVersionText(ver) }" @click="viewSpecVersion(ver)">
               <div class="version-header">
                 <span class="version-num">v{{ ver.version || idx + 1 }}</span>
@@ -313,6 +303,7 @@ interface RequirementData {
   status: string
   description: string
   type_detail?: TypeDetail | null
+  prototype_html?: string | null
   reviews?: Review[]
   tasks?: TaskItem[]
   iteration_id?: number
@@ -358,7 +349,7 @@ interface TestStats {
 
 const req = ref<RequirementData | null>(null)
 const editingReq = ref(false)
-const editForm = reactive({ title: '', description: '' })
+const editForm = reactive({ title: '', description: '', prototype_html: '' })
 const showSubmitReviewDialog = ref(false)
 const showRejectDialog = ref(false)
 const showSubmitSpecReviewDialog = ref(false)
@@ -390,7 +381,6 @@ const specSections = ref<any[]>([
     name: "page_structure", display_name: "页面结构", required: true,
     fields: [
       { name: "pages", display_name: "页面列表", type: "list", required: true, description: "页面名称、编码、元素列表" },
-      { name: "prototype_html", display_name: "原型图HTML", type: "text", required: false, description: "页面原型图的HTML代码" },
     ],
   },
   {
@@ -445,14 +435,6 @@ function getSelectedReviewerName(id: string | number) {
 const filteredTestCases = computed(() => {
   if (!testCaseTypeFilter.value) return testCases.value
   return testCases.value.filter((tc) => tc.case_type === testCaseTypeFilter.value)
-})
-
-const prototypeHtml = computed(() => {
-  const pageSection = specFormData.value['page_structure']
-  if (pageSection && pageSection['prototype_html']) {
-    return pageSection['prototype_html']
-  }
-  return ''
 })
 
 function getVersionText(ver: SpecVersion): string {
@@ -521,6 +503,7 @@ async function startEditReq() {
   if (req.value) {
     editForm.title = req.value.title
     editForm.description = req.value.description
+    editForm.prototype_html = req.value.prototype_html || ''
   }
   editingReq.value = true
 }
@@ -648,11 +631,9 @@ async function fetchSpecContent() {
   try {
     const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/specification`)
     const data = res.data?.data
-    if (data?.content) {
-      loadSpecContent(data.content)
-    }
+    loadSpecContent(data?.content || {})
   } catch {
-    // ignore
+    loadSpecContent({})
   }
 }
 
@@ -943,20 +924,6 @@ onMounted(async () => {
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 6px;
   resize: vertical;
-}
-.prototype-preview {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 10px;
-}
-.prototype-iframe {
-  width: 100%;
-  height: 400px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  background: #fff;
 }
 .validation-errors {
   margin-bottom: 0.75rem;

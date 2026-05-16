@@ -1,6 +1,6 @@
 """Task service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -161,7 +161,7 @@ async def delete_task(db: AsyncSession, task_id: int) -> dict:
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前任务状态不允许删除")
 
     task.is_deleted = True
-    task.deleted_at = datetime.utcnow()
+    task.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": task.id}
 

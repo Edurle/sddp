@@ -11,6 +11,7 @@ from app.models.test_case import TestCase
 from app.models.test_execution import TestExecutionRound, TestExecutionRecord
 from app.models.password_reset_token import PasswordResetToken
 from app.models.api_key import ApiKey
+from app.models.spec import SpecTemplate, SpecDocument
 
 __all__ = [
     "User",
@@ -30,4 +31,6 @@ __all__ = [
     "TestExecutionRecord",
     "PasswordResetToken",
     "ApiKey",
+    "SpecTemplate",
+    "SpecDocument",
 ]

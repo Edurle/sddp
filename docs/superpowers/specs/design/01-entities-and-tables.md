@@ -367,6 +367,7 @@ CREATE TABLE iterations (
 | status | VARCHAR(30) | NOT NULL DEFAULT 'drafting_req', CHECK (status IN ('drafting_req','reviewing_req','drafting_spec','reviewing_spec','drafting_tests','reviewing_tests','approved')) | idx_status | 需求状态 |
 | description | TEXT | DEFAULT NULL | — | 需求描述 |
 | type_detail | JSON | DEFAULT NULL | — | 类型附加信息（如 Bug 的复现步骤） |
+| prototype_html | TEXT | DEFAULT NULL | — | 页面原型图 HTML 代码 |
 | created_by | BIGINT | FK → users(id), NOT NULL | idx_creator | 创建人 |
 | is_deleted | BOOLEAN | NOT NULL DEFAULT FALSE | — | 是否已删除 |
 | deleted_at | DATETIME | DEFAULT NULL | — | 删除时间 |
@@ -393,6 +394,7 @@ CREATE TABLE requirements (
     status        VARCHAR(30)  NOT NULL DEFAULT 'drafting_req',
     description   TEXT             DEFAULT NULL,
     type_detail   JSON             DEFAULT NULL,
+    prototype_html TEXT            DEFAULT NULL,
     created_by    BIGINT       NOT NULL,
     is_deleted    BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at    DATETIME         DEFAULT NULL,
@@ -428,6 +430,15 @@ CREATE TABLE requirements (
     "expected_behavior": "响应时间 < 500ms",
     "metric": "API响应时间"
 }
+```
+
+**prototype_html 示例**：
+
+```html
+<div>
+  <h1>用户管理原型</h1>
+  <button>创建用户</button>
+</div>
 ```
 
 ---
@@ -744,14 +755,6 @@ CREATE TABLE api_keys (
           "required": true,
           "description": "每个页面的名称、编码、元素列表（含唯一编码）、交互行为",
           "agent_prompt": "列出所有页面。每个页面需包含 name（页面名称）、code（页面编码，短横线格式）、route（路由路径）、elements（元素数组，每个元素含 code/type/label/interaction）"
-        },
-        {
-          "name": "prototype_html",
-          "display_name": "原型图HTML",
-          "type": "text",
-          "required": false,
-          "description": "页面原型图的HTML代码，在规范中以iframe沙箱展示",
-          "agent_prompt": "用 HTML 编写页面原型图。使用基础 HTML+CSS，不需外部依赖"
         }
       ]
     },
@@ -906,8 +909,7 @@ CREATE TABLE api_keys (
                 }
               ]
             }
-          ],
-          "prototype_html": "<div><h1>用户管理原型</h1><button>创建用户</button></div>"
+          ]
         },
         "api_design": {
           "endpoints": [

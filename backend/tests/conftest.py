@@ -1,11 +1,12 @@
 from datetime import date
-from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from httpx._models import _normalize_header_value as _orig_normalize
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 
 def _normalize_header_value_utf8(value, encoding=None):
@@ -20,6 +21,7 @@ def _normalize_header_value_utf8(value, encoding=None):
 import httpx._models as _httpx_models
 _httpx_models._normalize_header_value = _normalize_header_value_utf8
 
+from app.config import DATABASE_URL
 from app.database import Base
 from app.models import (
     User, Team, TeamMember, Role, RolePermission, MemberRole,
@@ -29,64 +31,31 @@ from app.models import (
 )
 from app.utils.security import hash_password, create_access_token
 
-
-TEST_DATABASE_URL = "sqlite+aiosqlite://"
-
-test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-TestSessionFactory = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def setup_database():
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+_TRUNCATE_SQL = text(
+    "TRUNCATE TABLE "
+    "test_execution_records, test_execution_rounds, test_cases, tasks, "
+    "requirement_reviews, requirements, spec_documents, spec_templates, "
+    "iterations, projects, "
+    "member_roles, role_permissions, roles, team_members, invitations, "
+    "password_reset_tokens, api_keys, teams, users "
+    "RESTART IDENTITY CASCADE"
+)
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def mock_mongo_collections():
-    templates_store: dict = {}
-    documents_store: dict = {}
-
-    templates_col = AsyncMock()
-    documents_col = AsyncMock()
-
-    async def _templates_find_one(query):
-        return templates_store.get(query.get("team_id"))
-
-    async def _templates_update_one(query, update, **kwargs):
-        templates_store[query.get("team_id")] = update["$set"]
-
-    async def _documents_find_one(query):
-        return documents_store.get(query.get("requirement_id"))
-
-    async def _documents_update_one(query, update, **kwargs):
-        documents_store[query.get("requirement_id")] = update["$set"]
-
-    templates_col.find_one.side_effect = _templates_find_one
-    templates_col.update_one.side_effect = _templates_update_one
-    templates_col.create_index = AsyncMock()
-
-    documents_col.find_one.side_effect = _documents_find_one
-    documents_col.update_one.side_effect = _documents_update_one
-    documents_col.create_index = AsyncMock()
-
-    with patch(
-        "app.services.specification.get_spec_templates_collection",
-        return_value=templates_col,
-    ), patch(
-        "app.services.specification.get_spec_documents_collection",
-        return_value=documents_col,
-    ):
-        yield {"templates": templates_col, "documents": documents_col}
+def _make_engine():
+    return create_async_engine(DATABASE_URL, echo=False, poolclass=NullPool)
 
 
 @pytest_asyncio.fixture
 async def db():
-    async with TestSessionFactory() as session:
+    engine = _make_engine()
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with session_factory() as session:
         yield session
+    async with engine.connect() as conn:
+        await conn.execute(_TRUNCATE_SQL)
+        await conn.commit()
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture

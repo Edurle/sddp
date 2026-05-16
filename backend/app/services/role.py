@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -154,7 +154,7 @@ async def delete_role(db: AsyncSession, team_id: int, role_id: int) -> dict:
         raise BusinessError(ERR_BUILTIN_ROLE, "不能删除内置角色")
 
     role.is_deleted = True
-    role.deleted_at = datetime.utcnow()
+    role.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"id": role.id}
 
