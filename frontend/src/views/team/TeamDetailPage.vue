@@ -42,6 +42,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { apiClient } from '@/api/client'
+import { useNotificationStore } from '@/stores/notification'
 import TeamMembersTab from './TeamMembersTab.vue'
 import TeamRolesTab from './TeamRolesTab.vue'
 import TeamSettingsTab from './TeamSettingsTab.vue'
@@ -49,6 +50,7 @@ import ProjectListTab from '../project/ProjectListTab.vue'
 
 const route = useRoute()
 const teamId = computed(() => route.params.id as string)
+const notification = useNotificationStore()
 
 interface TeamInfo {
   id: number
@@ -68,8 +70,8 @@ async function fetchTeam() {
   try {
     const res = await apiClient.get(`/api/v1/teams/${teamId.value}`)
     team.value = res.data?.data || res.data
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取团队信息失败')
   }
 }
 

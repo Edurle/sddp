@@ -5,7 +5,7 @@
       <h2 data-testid="project-detail-txt-name">{{ project.name }}</h2>
       <p data-testid="project-detail-txt-desc">{{ project.description || '' }}</p>
       <p data-testid="project-detail-txt-start-date">开始日期: {{ project.start_date || '' }}</p>
-      <p v-if="!activeTab" data-testid="project-detail-txt-status">{{ statusText(project.status) }}</p>
+      <p v-if="!activeTab" data-testid="project-detail-txt-status">{{ projectStatusLabel(project.status) }}</p>
 
       <div class="stats">
         <span data-testid="project-detail-txt-stat-req">需求数: {{ project.req_count ?? 0 }}</span>
@@ -63,11 +63,14 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
+import { useNotificationStore } from '@/stores/notification'
+import { projectStatusLabel } from '@/utils/status'
 import IterationListTab from '../iteration/IterationListTab.vue'
 
 const route = useRoute()
 const router = useRouter()
 const projectId = computed(() => route.params.id as string)
+const notification = useNotificationStore()
 
 interface ProjectData {
   id: number
@@ -88,18 +91,12 @@ const showArchiveConfirm = ref(false)
 const showDeleteConfirm = ref(false)
 const editForm = reactive({ name: '' })
 
-function statusText(status: string) {
-  if (status === 'active') return '进行中'
-  if (status === 'archived') return '已归档'
-  return status
-}
-
 async function fetchProject() {
   try {
     const res = await apiClient.get(`/api/v1/projects/${projectId.value}`)
     project.value = res.data?.data || res.data
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取项目失败')
   }
 }
 
@@ -115,8 +112,8 @@ async function saveEdit() {
     await apiClient.put(`/api/v1/projects/${projectId.value}`, editForm)
     showEditDialog.value = false
     await fetchProject()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
   }
 }
 
@@ -125,8 +122,8 @@ async function archiveProject() {
     await apiClient.put(`/api/v1/projects/${projectId.value}/archive`)
     showArchiveConfirm.value = false
     await fetchProject()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '归档失败')
   }
 }
 
@@ -140,8 +137,8 @@ async function deleteProject() {
     } else {
       router.push('/dashboard')
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
   }
 }
 

@@ -1,6 +1,7 @@
 <template>
   <div class="requirement-detail-page">
-    <div v-if="req" class="detail-layout">
+    <div v-if="isLoading" class="loading-state">加载中...</div>
+    <div v-else-if="req" class="detail-layout">
       <RequirementSidebar
         :req="req"
         :editing="editingReq"
@@ -217,7 +218,7 @@
             <tbody>
               <tr v-for="task in tasks" :key="task.id">
                 <td><router-link :to="`/tasks/${task.id}`" class="task-link">{{ task.title }}</router-link></td>
-                <td>{{ task.status }}</td>
+                <td>{{ taskStatusLabel(task.status) }}</td>
               </tr>
             </tbody>
           </table>
@@ -249,29 +250,29 @@
               </tr>
             </tbody>
           </table>
-        </div>
 
-        <div class="stat-cards" data-testid="req-detail-txt-test-stats">
-          <span data-testid="req-detail-tab-test-stats" style="display: none;"></span>
-          <div class="stat-card">
-            <div class="stat-num">{{ testStats.total_cases ?? 0 }}</div>
-            <div class="stat-label">总用例</div>
-          </div>
-          <div class="stat-card stat-pass">
-            <div class="stat-num" data-testid="req-detail-txt-test-pass-count">{{ testStats.latest_results?.passed ?? 0 }}</div>
-            <div class="stat-label">通过</div>
-          </div>
-          <div class="stat-card stat-fail">
-            <div class="stat-num" data-testid="req-detail-txt-test-fail-count">{{ testStats.latest_results?.failed ?? 0 }}</div>
-            <div class="stat-label">失败</div>
-          </div>
-          <div class="stat-card stat-skip">
-            <div class="stat-num" data-testid="req-detail-txt-test-skip-count">{{ testStats.latest_results?.skipped ?? 0 }}</div>
-            <div class="stat-label">跳过</div>
-          </div>
-          <div class="stat-card stat-rate">
-            <div class="stat-num" data-testid="req-detail-txt-test-total-count">{{ testStats.pass_rate != null ? (testStats.pass_rate * 100).toFixed(0) + '%' : 'N/A' }}</div>
-            <div class="stat-label">通过率</div>
+          <div class="stat-cards" data-testid="req-detail-txt-test-stats">
+            <span data-testid="req-detail-tab-test-stats" style="display: none;"></span>
+            <div class="stat-card">
+              <div class="stat-num">{{ testStats.total_cases ?? 0 }}</div>
+              <div class="stat-label">总用例</div>
+            </div>
+            <div class="stat-card stat-pass">
+              <div class="stat-num" data-testid="req-detail-txt-test-pass-count">{{ testStats.latest_results?.passed ?? 0 }}</div>
+              <div class="stat-label">通过</div>
+            </div>
+            <div class="stat-card stat-fail">
+              <div class="stat-num" data-testid="req-detail-txt-test-fail-count">{{ testStats.latest_results?.failed ?? 0 }}</div>
+              <div class="stat-label">失败</div>
+            </div>
+            <div class="stat-card stat-skip">
+              <div class="stat-num" data-testid="req-detail-txt-test-skip-count">{{ testStats.latest_results?.skipped ?? 0 }}</div>
+              <div class="stat-label">跳过</div>
+            </div>
+            <div class="stat-card stat-rate">
+              <div class="stat-num" data-testid="req-detail-txt-test-total-count">{{ testStats.pass_rate != null ? (testStats.pass_rate * 100).toFixed(0) + '%' : 'N/A' }}</div>
+              <div class="stat-label">通过率</div>
+            </div>
           </div>
         </div>
       </div>
@@ -394,11 +395,14 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
+import { useNotificationStore } from '@/stores/notification'
+import { taskStatusLabel } from '@/utils/status'
 import RequirementSidebar from './RequirementSidebar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const reqId = computed(() => route.params.id as string)
+const notification = useNotificationStore()
 
 interface TypeDetail {
   reproduce_steps?: string
@@ -539,6 +543,7 @@ const testCaseForm = reactive({
 })
 const testStats = ref<TestStats>({})
 const dropdownOpen = ref('')
+const isLoading = ref(true)
 const reviewComments = ref<Array<{ id: number; reviewer_id: number; action: string; comment: string | null; created_at: string }>>([])
 
 async function fetchReviewComments() {
@@ -666,8 +671,8 @@ async function fetchReq() {
     if (!activeTab.value) {
       autoSelectTab(req.value.status)
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取需求失败')
   }
 }
 
@@ -713,8 +718,8 @@ async function saveReq() {
     await apiClient.put(`/api/v1/requirements/${reqId.value}`, editForm)
     editingReq.value = false
     await fetchReq()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -727,8 +732,8 @@ async function deleteReq() {
     } else {
       router.push('/dashboard')
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
   }
 }
 
@@ -744,8 +749,8 @@ async function submitReview() {
     })
     showSubmitReviewDialog.value = false
     await fetchReq()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '提交审核失败')
   }
 }
 
@@ -756,8 +761,8 @@ async function approveReview() {
     })
     await fetchReq()
     fetchReviewComments()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '审核操作失败')
   }
 }
 
@@ -771,8 +776,8 @@ async function rejectReview() {
     rejectForm.comment = ''
     await fetchReq()
     fetchReviewComments()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '驳回操作失败')
   }
 }
 
@@ -812,8 +817,8 @@ async function submitSpecReview() {
     })
     showSubmitSpecReviewDialog.value = false
     await fetchReq()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '提交规范审核失败')
   }
 }
 
@@ -829,8 +834,8 @@ async function submitTestsReview() {
     })
     showSubmitTestsReviewDialog.value = false
     await fetchReq()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '提交测试审核失败')
   }
 }
 
@@ -873,8 +878,8 @@ async function createTask() {
     addTaskForm.description = ''
     addTaskForm.assignee_id = ''
     await fetchTasks()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -925,8 +930,8 @@ async function saveTestCase() {
     showTestCaseDialog.value = false
     editingTestCase.value = null
     await fetchTestCases()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -935,8 +940,8 @@ async function deleteTestCase(tcId: number) {
   try {
     await apiClient.delete(`/api/v1/test-cases/${tcId}`)
     await fetchTestCases()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
   }
 }
 
@@ -950,16 +955,20 @@ async function fetchTestStats() {
 }
 
 onMounted(async () => {
-  await fetchReq()
-  await fetchSpecContent()
-  await fetchTestStats()
+  isLoading.value = true
+  try {
+    await fetchReq()
+    await fetchSpecContent()
+    await fetchTestStats()
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
 
 <style scoped>
 .requirement-detail-page {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 .detail-layout {
   display: flex;
@@ -1477,5 +1486,13 @@ onMounted(async () => {
   font-size: 13px;
   color: #555;
   word-break: break-word;
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #999;
+  font-size: 14px;
 }
 </style>

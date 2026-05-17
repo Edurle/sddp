@@ -115,9 +115,11 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
+import { useNotificationStore } from '@/stores/notification'
 
 const props = defineProps<{ projectId: string }>()
 const router = useRouter()
+const notification = useNotificationStore()
 
 interface Iteration {
   id: number
@@ -185,8 +187,8 @@ async function createIteration() {
     newIter.start_date = ''
     newIter.end_date = ''
     await fetchIterations()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '创建迭代失败')
   }
 }
 
@@ -202,8 +204,8 @@ async function saveEdit() {
     await apiClient.put(`/api/v1/iterations/${editingId.value}`, { end_date: editForm.end_date })
     showEditDialog.value = false
     await fetchIterations()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
   }
 }
 
@@ -219,21 +221,15 @@ async function confirmStart() {
     await apiClient.post(`/api/v1/iterations/${pendingIter.value.id}/start`)
     showStartConfirm.value = false
     await fetchIterations()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '开始迭代失败')
   }
 }
 
-async function completeIteration(it: Iteration) {
+function completeIteration(it: Iteration) {
   pendingIter.value = it
   completeError.value = ''
-  try {
-    await apiClient.post(`/api/v1/iterations/${it.id}/complete`)
-    await fetchIterations()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '完成失败'
-    completeError.value = msg
-  }
+  showCompleteConfirm.value = true
 }
 
 async function confirmComplete() {

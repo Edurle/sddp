@@ -8,6 +8,7 @@ interface User {
   nickname: string
   role?: string
   status?: string
+  is_admin?: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
