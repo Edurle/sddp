@@ -1,5 +1,7 @@
 <template>
   <div class="dashboard-page">
+    <div v-if="isLoading" class="loading-state">加载中...</div>
+    <template v-else>
     <div class="user-info">
       <span data-testid="dashboard-txt-nickname">{{ user?.nickname || '' }}</span>
       <span data-testid="dashboard-txt-email">{{ user?.email || '' }}</span>
@@ -14,7 +16,7 @@
     </div>
 
     <div v-if="activeTab === 'projects'">
-      <div v-if="projectsTree.length === 0" class="empty-state">暂无项目</div>
+      <div v-if="projectsTree.length === 0" class="empty-state">暂无项目，前往 <router-link to="/teams">团队页面</router-link> 查看或创建项目</div>
       <div v-for="proj in projectsTree" :key="proj.id" class="tree-project">
         <div class="tree-node project-node" @click="toggleExpand('p', proj.id)">
           <span class="expand-icon">{{ isExpanded('p', proj.id) ? '▼' : '▶' }}</span>
@@ -85,7 +87,7 @@
             <div class="progress-req-header" @click="toggleExpand('pr', req.id)">
               <span class="expand-icon">{{ isExpanded('pr', req.id) ? '▼' : '▶' }}</span>
               <router-link :to="`/requirements/${req.id}`" class="progress-req-title" @click.stop>{{ req.title }}</router-link>
-              <span class="progress-req-status" :class="'prs-' + req.status">{{ statusLabel(req.status) }}</span>
+              <span class="progress-req-status" :class="'prs-' + req.status">{{ reqStatusLabel(req.status) }}</span>
               <span class="priority-indicator" :class="'pi-' + req.priority"></span>
             </div>
             <div v-if="isExpanded('pr', req.id)" class="progress-req-detail">
@@ -128,7 +130,10 @@
         <h3>待审核列表</h3>
         <div v-if="pendingReviews.length === 0" class="empty-state">暂无待审核项</div>
         <div v-for="item in pendingReviews" :key="item.id">
-          {{ item.title }}
+          <router-link :to="`/requirements/${(item as any).requirement_id || item.id}`" class="pending-item">
+            {{ (item as any).requirement_title || item.title }}
+            <span class="pending-badge">{{ (item as any).review_type || '审核' }}</span>
+          </router-link>
         </div>
       </div>
 
@@ -136,7 +141,10 @@
         <h3>待办任务列表</h3>
         <div v-if="pendingTasks.length === 0" class="empty-state">暂无待办任务</div>
         <div v-for="item in pendingTasks" :key="item.id">
-          {{ item.title }}
+          <router-link :to="`/tasks/${item.id}`" class="pending-item">
+            {{ item.title }}
+            <span class="pending-badge">{{ (item as any).status || '待办' }}</span>
+          </router-link>
         </div>
       </div>
 
@@ -182,21 +190,26 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore } from '@/stores/notification'
 import { apiClient } from '@/api/client'
+import { reqStatusLabel, iterStatusLabel } from '@/utils/status'
 
 const authStore = useAuthStore()
+const notification = useNotificationStore()
 const user = computed(() => authStore.user)
 const myTeams = computed(() => (user.value as any)?.teams || [])
 
 const activeTab = ref('projects')
 const pendingSubTab = ref('reviews')
 const profileNickname = ref('')
+const isLoading = ref(true)
 const profileSuccess = ref('')
 const showPasswordDialog = ref(false)
 const passwordError = ref('')
@@ -228,14 +241,6 @@ function isExpanded(prefix: string, id: number): boolean {
   return expandedNodes.value.has(`${prefix}-${id}`)
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  drafting_req: '草稿', reviewing_req: '需求审核', drafting_spec: '编写规范',
-  reviewing_spec: '规范审核', drafting_tests: '编写测试', reviewing_tests: '测试审核',
-  approved: '已通过', planning: '规划中', in_progress: '进行中', completed: '已完成',
-}
-
-function reqStatusLabel(s: string) { return STATUS_LABELS[s] || s }
-function iterStatusLabel(s: string) { return STATUS_LABELS[s] || s }
 function reqTypeIcon(t: string) { return t === 'bug' ? '🐛' : t === 'optimization' ? '⚡' : '📋' }
 
 const lifecycleStages = [
@@ -247,12 +252,6 @@ const lifecycleStages = [
   { status: 'reviewing_tests', label: '测试审核' },
   { status: 'approved', label: '已通过' },
 ]
-
-const STATUS_LABELS_MAP: Record<string, string> = {
-  drafting_req: '草稿', reviewing_req: '需求审核', drafting_spec: '编写规范',
-  reviewing_spec: '规范审核', drafting_tests: '编写测试', reviewing_tests: '测试审核',
-  approved: '已通过',
-}
 
 const flatRequirements = computed(() => {
   const items: any[] = []
@@ -281,14 +280,10 @@ const progressStats = computed(() => {
   return {
     drafting: all.filter(r => ['drafting_req', 'drafting_spec', 'drafting_tests'].includes(r.status)).length,
     reviewing: all.filter(r => ['reviewing_req', 'reviewing_spec', 'reviewing_tests'].includes(r.status)).length,
-    working: 0,
+    working: all.filter(r => ['drafting_spec', 'drafting_tests'].includes(r.status)).length,
     approved: all.filter(r => r.status === 'approved').length,
   }
 })
-
-function statusLabel(s: string): string {
-  return STATUS_LABELS_MAP[s] || s
-}
 
 function stageClass(currentStatus: string, stageStatus: string): string {
   const order = lifecycleStages.map(s => s.status)
@@ -322,6 +317,7 @@ async function fetchProjectsTree() {
     }
   } catch {
     projectsTree.value = []
+    notification.showError('获取项目数据失败')
   }
 }
 
@@ -334,8 +330,8 @@ async function fetchData() {
       pendingTasks.value = data.pending_tasks || []
       pendingInvitations.value = data.pending_invitations || []
     }
-  } catch {
-    // ignore fetch errors
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -343,8 +339,8 @@ async function acceptInvitation(id: number) {
   try {
     await apiClient.post(`/api/v1/invitations/${id}/accept`)
     pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -352,8 +348,8 @@ async function rejectInvitation(id: number) {
   try {
     await apiClient.post(`/api/v1/invitations/${id}/reject`)
     pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -363,8 +359,8 @@ async function saveProfile() {
     await apiClient.put('/api/v1/users/me', { nickname: profileNickname.value })
     await authStore.fetchUser()
     profileSuccess.value = '保存成功'
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -395,10 +391,15 @@ async function changePassword() {
 }
 
 onMounted(async () => {
-  if (authStore.isAuthenticated && !authStore.user) {
-    await authStore.fetchUser()
+  isLoading.value = true
+  try {
+    if (authStore.isAuthenticated && !authStore.user) {
+      await authStore.fetchUser()
+    }
+    await Promise.all([fetchData(), fetchProjectsTree()])
+  } finally {
+    isLoading.value = false
   }
-  await Promise.all([fetchData(), fetchProjectsTree()])
 })
 </script>
 
@@ -708,5 +709,31 @@ onMounted(async () => {
 .progress-task-summary {
   font-size: 12px;
   color: #888;
+}
+.pending-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #333;
+  transition: background 0.15s;
+}
+.pending-item:hover { background: rgba(0, 0, 0, 0.03); }
+.pending-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #666;
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #999;
+  font-size: 14px;
 }
 </style>

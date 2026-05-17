@@ -13,19 +13,55 @@
     <nav class="app-layout-nav" v-if="authStore.isAuthenticated">
       <router-link to="/dashboard">仪表盘</router-link>
       <router-link to="/teams">我的团队</router-link>
+      <router-link v-if="authStore.user?.is_admin" to="/admin">管理</router-link>
     </nav>
+    <div v-if="authStore.isAuthenticated && breadcrumbItems.length > 0" class="breadcrumb-bar">
+      <router-link to="/dashboard">仪表盘</router-link>
+      <template v-for="(item, i) in breadcrumbItems" :key="i">
+        <span class="breadcrumb-sep">/</span>
+        <router-link v-if="i < breadcrumbItems.length - 1" :to="item.to">{{ item.label }}</router-link>
+        <span v-else class="breadcrumb-current">{{ item.label }}</span>
+      </template>
+    </div>
     <main class="app-layout-main">
       <router-view />
     </main>
+    <div v-if="notification.visible" class="notification-toast" :class="notification.type">
+      {{ notification.message }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore } from '@/stores/notification'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const notification = useNotificationStore()
+
+const breadcrumbLabels: Record<string, string> = {
+  teams: '团队', projects: '项目', iterations: '迭代',
+  requirements: '需求', tasks: '任务',
+}
+
+const breadcrumbItems = computed(() => {
+  const items: { label: string; to: string }[] = []
+  const path = route.path
+  const matches = path.match(/\/(teams|projects|iterations|requirements|tasks)\/(\d+)/g)
+  if (!matches) return items
+  for (const m of matches) {
+    const parts = m.match(/\/(\w+)\/(\d+)/)
+    if (!parts) continue
+    const type = parts[1]
+    const id = parts[2]
+    items.push({ label: `${breadcrumbLabels[type] || type} #${id}`, to: m })
+  }
+  return items
+})
 
 function handleLogout() {
   authStore.logout()
@@ -91,4 +127,41 @@ function handleLogout() {
   flex: 1;
   padding: 1.5rem;
 }
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1000;
+  max-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.notification-toast.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.notification-toast.success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.breadcrumb-bar {
+  padding: 8px 24px;
+  font-size: 13px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+.breadcrumb-bar a {
+  color: #666;
+  text-decoration: none;
+}
+.breadcrumb-bar a:hover { color: #111; }
+.breadcrumb-sep { color: #ccc; }
+.breadcrumb-current { color: #333; font-weight: 500; }
 </style>

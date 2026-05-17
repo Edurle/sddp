@@ -112,17 +112,6 @@ button:disabled {
   box-shadow: none;
 }
 
-button[type="button"]:not([class*="active"]) {
-  background: rgba(0, 0, 0, 0.04);
-  color: #111;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-button[type="button"]:not([class*="active"]):hover {
-  background: rgba(0, 0, 0, 0.07);
-  border-color: rgba(0, 0, 0, 0.14);
-}
-
 table {
   width: 100%;
   border-collapse: separate;
@@ -221,8 +210,9 @@ label {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
   padding: 1.5rem;
   border-radius: 16px;
-  min-width: 440px;
-  max-width: 600px;
+  min-width: 0;
+  width: auto;
+  max-width: 90vw;
 }
 
 .dialog h3 {

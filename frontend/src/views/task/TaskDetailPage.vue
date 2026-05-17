@@ -1,6 +1,7 @@
 <template>
   <div class="task-detail-page">
-    <div v-if="task" class="detail-layout">
+    <div v-if="isLoading" class="loading-state">加载中...</div>
+    <div v-else-if="task" class="detail-layout">
       <TaskSidebar
         :task="task"
         :editing="editing"
@@ -14,6 +15,7 @@
       />
 
       <div class="detail-main">
+        <div v-if="completeError" class="error-message">{{ completeError }}</div>
         <div class="detail-tabs">
           <button data-testid="task-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
           <button v-if="task.status === 'testing' || task.status === 'completed'" data-testid="task-detail-tab-test-exec" :class="['tab-btn', { active: activeTab === 'test-exec' }]" @click="activeTab = 'test-exec'; fetchTestExecutions()">测试执行</button>
@@ -121,11 +123,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
+import { useNotificationStore } from '@/stores/notification'
 import TaskSidebar from './TaskSidebar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const taskId = computed(() => route.params.id as string)
+const notification = useNotificationStore()
 
 interface TestCase {
   id?: number
@@ -179,6 +183,7 @@ const showRecordDialog = ref(false)
 const recordForm = reactive({ id: 0, status: 'pass', actual_result: '', failure_reason: '' })
 const recordError = ref('')
 const completeError = ref('')
+const isLoading = ref(true)
 
 const testSummary = computed(() => {
   if (testRecords.value.length === 0) return '无测试记录'
@@ -212,8 +217,8 @@ async function fetchTask() {
       activeTab.value = 'test-exec'
       await fetchTestExecutions()
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取任务失败')
   }
 }
 
@@ -235,8 +240,8 @@ async function fetchTestExecutions() {
         id: r.id || r.round_id,
       }))
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取测试执行数据失败')
   }
 }
 
@@ -247,8 +252,8 @@ async function fetchSpec(reqId: number) {
     if (data?.content) {
       specContent.value = typeof data.content === 'string' ? data.content : data.content.text || JSON.stringify(data.content, null, 2)
     }
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取规范失败')
   }
 }
 
@@ -265,8 +270,8 @@ async function saveEdit() {
     await apiClient.put(`/api/v1/tasks/${taskId.value}`, editForm)
     editing.value = false
     await fetchTask()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
   }
 }
 
@@ -275,8 +280,8 @@ async function deleteTask() {
   try {
     await apiClient.delete(`/api/v1/tasks/${taskId.value}`)
     router.push('/dashboard')
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
   }
 }
 
@@ -284,8 +289,8 @@ async function startCoding() {
   try {
     await apiClient.patch(`/api/v1/tasks/${taskId.value}`, { status: 'coding' })
     await fetchTask()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -295,8 +300,8 @@ async function startTesting() {
     await fetchTask()
     activeTab.value = 'test-exec'
     await fetchTestExecutions()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
   }
 }
 
@@ -332,8 +337,8 @@ async function saveRecord() {
     })
     showRecordDialog.value = false
     await fetchTestExecutions()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
   }
 }
 
@@ -350,18 +355,27 @@ async function viewRound(round: TestRound) {
 }
 
 onMounted(async () => {
-  await fetchTask()
-  if (task.value && (task.value.status === 'testing' || task.value.status === 'completed')) {
-    activeTab.value = 'test-exec'
-    await fetchTestExecutions()
+  isLoading.value = true
+  try {
+    await fetchTask()
+    if (task.value && (task.value.status === 'testing' || task.value.status === 'completed')) {
+      activeTab.value = 'test-exec'
+      await fetchTestExecutions()
+    }
+  } finally {
+    isLoading.value = false
   }
 })
 </script>
 
 <style scoped>
 .task-detail-page {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+}
+.error-message {
+  color: #ef4444;
+  font-size: 13px;
+  margin-bottom: 0.5rem;
 }
 .detail-layout {
   display: flex;
@@ -550,5 +564,13 @@ onMounted(async () => {
   .test-summary-cards {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #999;
+  font-size: 14px;
 }
 </style>

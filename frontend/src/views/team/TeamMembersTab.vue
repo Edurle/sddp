@@ -93,8 +93,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { apiClient } from '@/api/client'
+import { useNotificationStore } from '@/stores/notification'
 
 const props = defineProps<{ teamId: string }>()
+const notification = useNotificationStore()
 
 interface MemberUser {
   id?: number
@@ -159,8 +161,8 @@ async function fetchTeamOwner() {
     const res = await apiClient.get(`/api/v1/teams/${props.teamId}`)
     const data = res.data?.data || res.data
     teamOwnerId.value = data?.owner_id || null
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '获取团队信息失败')
   }
 }
 
@@ -209,9 +211,14 @@ async function inviteMember() {
   }
 }
 
-function removeMember(userId: number | string) {
-  confirmRemoveMember.value = null
-  members.value = members.value.filter(m => String(m.user_id) !== String(userId))
+async function removeMember(userId: number | string) {
+  try {
+    await apiClient.delete(`/api/v1/teams/${props.teamId}/members/${userId}`)
+    confirmRemoveMember.value = null
+    members.value = members.value.filter(m => String(m.user_id) !== String(userId))
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '移除成员失败')
+  }
 }
 
 function openRoleDialog(member: Member) {
@@ -227,8 +234,8 @@ async function saveRoles() {
     })
     showRoleDialog.value = false
     await fetchMembers()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '保存角色失败')
   }
 }
 

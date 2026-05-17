@@ -35,7 +35,7 @@
         <span
           data-testid="iteration-kanban-card-req-badge-status"
           :class="['status-badge', `status-badge-${req.mappedStatus}`]"
-        >{{ statusLabel(req.mappedStatus) }}</span>
+        >{{ reqStatusLabel(req.status) }}</span>
         <div
           :data-testid="`iteration-kanban-btn-req-${req.id}`"
           @click="goToRequirement(req.id)"
@@ -43,7 +43,7 @@
         >
           <div data-testid="iteration-kanban-card-req-title">{{ req.title }}</div>
           <div data-testid="iteration-kanban-card-req-type">{{ req.req_type }}</div>
-          <div data-testid="iteration-kanban-card-req-priority">{{ req.priority }}</div>
+          <span class="priority-badge" :class="'priority-' + req.priority">{{ priorityText(req.priority) }}</span>
         </div>
       </div>
     </div>
@@ -86,6 +86,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
+import { reqStatusLabel } from '@/utils/status'
 
 const route = useRoute()
 const router = useRouter()
@@ -153,9 +154,9 @@ const filteredRequirements = computed(() => {
   return requirements.value.filter(r => r.mappedStatus === statusFilter.value)
 })
 
-function statusLabel(status: string) {
-  const col = columns.find(c => c.status === status)
-  return col ? col.label : status
+function priorityText(p: string | number): string {
+  const map: Record<string, string> = { '3': '高', '2': '中', '1': '低' }
+  return map[String(p)] || String(p)
 }
 
 async function fetchData() {
@@ -283,5 +284,25 @@ onMounted(() => fetchData())
 .status-badge-completed {
   background: #f6ffed;
   color: #52c41a;
+}
+.priority-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.priority-3 {
+  background: #fef2f2;
+  color: #ef4444;
+}
+.priority-2 {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+.priority-1 {
+  background: #f0fdf4;
+  color: #22c55e;
 }
 </style>

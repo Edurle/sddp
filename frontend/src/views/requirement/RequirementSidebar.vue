@@ -24,10 +24,10 @@
           <div class="info-badges">
             <AppBadge data-testid="req-detail-tag-type" :text="typeLabel(req.type)" />
             <AppBadge data-testid="req-detail-txt-priority" :text="priorityLabel(req.priority)" />
-            <span data-testid="req-detail-tag-status" class="status-tag">{{ statusLabel(req.status) }}</span>
+            <span data-testid="req-detail-tag-status" class="status-tag">{{ reqStatusLabel(req.status) }}</span>
           </div>
           <p class="info-desc" data-testid="req-detail-txt-description">{{ req.description }}</p>
-          <p data-testid="req-detail-txt-review-status" class="status-text">{{ statusLabel(req.status) }}</p>
+          <p data-testid="req-detail-txt-review-status" class="status-text">{{ reqStatusLabel(req.status) }}</p>
 
           <div v-if="!editing && req.prototype_html" class="prototype-section">
             <div class="prototype-header">
@@ -78,23 +78,12 @@
       </div>
     </div>
 
-    <div v-if="reviewHistory.length" class="sidebar-section">
-      <div class="sidebar-label">审核历史</div>
-      <div class="info-card" data-testid="req-detail-list-review-history">
-        <div v-for="(review, idx) in reviewHistory" :key="idx" class="review-item">
-          <span :class="['review-dot', review.action === 'approve' ? 'dot-pass' : 'dot-reject']">●</span>
-          <span class="review-text">{{ review.action === 'approve' ? '通过' : '驳回' }}</span>
-          <span v-if="review.comment" class="review-comment"> — {{ review.comment }}</span>
-        </div>
-      </div>
-    </div>
-
     <div class="sidebar-section sidebar-actions">
       <div class="sidebar-label">操作</div>
       <div class="action-buttons">
         <button v-if="canEdit && !editing" data-testid="req-detail-btn-edit-req" @click="$emit('edit')">编辑需求</button>
         <button v-if="editing" data-testid="req-detail-btn-save-req" @click="$emit('save')">保存</button>
-        <button v-if="canEdit" data-testid="req-detail-btn-delete-req" @click="$emit('delete')">删除</button>
+        <button v-if="canEdit" data-testid="req-detail-btn-delete-req" class="btn-danger" @click="$emit('delete')">删除</button>
         <button v-if="canEdit" data-testid="req-detail-btn-submit-req-review" @click="$emit('submit-review')">提交审核</button>
         <button v-if="canReview" data-testid="req-detail-btn-approve" @click="$emit('approve')">通过</button>
         <button v-if="canReview" data-testid="req-detail-btn-reject" @click="$emit('reject')">驳回</button>
@@ -120,6 +109,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppBadge from '@/components/common/AppBadge.vue'
+import { reqStatusLabel } from '@/utils/status'
 
 interface TypeDetail {
   reproduce_steps?: string
@@ -195,20 +185,6 @@ function typeLabel(type: string) {
 function priorityLabel(p: string | number) {
   const map: Record<string, string> = { high: '高优先', 3: '高优先', medium: '中优先', 2: '中优先', low: '低优先', 1: '低优先' }
   return map[String(p)] || String(p)
-}
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    drafting_req: '草稿',
-    reviewing_req: '审核中',
-    drafting_spec: '编写规范',
-    reviewing_spec: '规范审核中',
-    drafting_tests: '编写测试用例',
-    reviewing_tests: '测试审核中',
-    approved: '已通过',
-    spec_approved: '规范已通过',
-  }
-  return map[status] || status
 }
 
 function stepClass(step: string) {
@@ -362,33 +338,6 @@ function stepCircle(step: string) {
   background: #fff;
   color: #111;
 }
-.review-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  font-size: 12px;
-  margin-bottom: 6px;
-  line-height: 1.5;
-}
-.review-item:last-child {
-  margin-bottom: 0;
-}
-.review-dot {
-  flex-shrink: 0;
-  line-height: 1.5;
-}
-.dot-pass {
-  color: #52c41a;
-}
-.dot-reject {
-  color: #ff4d4f;
-}
-.review-text {
-  color: #333;
-}
-.review-comment {
-  color: #999;
-}
 .action-buttons {
   display: flex;
   flex-direction: column;
@@ -493,6 +442,11 @@ function stepCircle(step: string) {
 }
 .prototype-preview-edit {
   margin-top: 6px;
+}
+.btn-danger {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca;
 }
 
 @media (max-width: 768px) {

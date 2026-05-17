@@ -24,7 +24,7 @@
           <p class="info-desc" data-testid="task-detail-txt-description">{{ task.description }}</p>
           <div class="info-row">
             <span class="info-row-label">状态</span>
-            <span :class="['status-badge', `badge-${task.status}`]" data-testid="task-detail-txt-status">{{ statusLabel(task.status) }}</span>
+            <span :class="['status-badge', `badge-${task.status}`]" data-testid="task-detail-txt-status">{{ taskStatusLabel(task.status) }}</span>
           </div>
           <div class="info-row">
             <span class="info-row-label">指派人</span>
@@ -70,6 +70,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { taskStatusLabel } from '@/utils/status'
 
 interface Assignee {
   id?: number
@@ -111,16 +112,6 @@ const assigneeName = computed(() => {
   if (props.task.assignee?.email) return props.task.assignee.email
   return ''
 })
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: '未开始',
-    coding: '编码中',
-    testing: '测试中',
-    completed: '已完成',
-  }
-  return map[status] || status
-}
 
 function stepClass(step: string) {
   const statusOrder = ['pending', 'coding', 'testing', 'completed']
