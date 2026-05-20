@@ -136,8 +136,8 @@ class SpecTemplate:
                         "display_name": "页面列表",
                         "type": "list",
                         "required": True,
-                        "description": "每个页面的名称、编码、元素列表（含唯一编码）、交互行为",
-                        "agent_prompt": "列出所有页面。每个页面需包含 name（页面名称）、code（页面编码，短横线格式）、route（路由路径）、elements（元素数组，每个元素含 code/type/label/interaction）",
+                        "description": "每个页面的名称、编码、元素列表（含唯一编码、ARIA 角色、可访问名称）、交互行为",
+                        "agent_prompt": "列出所有页面。每个页面需包含 name（页面名称）、code（页面编码，短横线格式）、route（路由路径）、elements（元素数组，每个元素含 code/type/label/role/accessible_name/interaction）。其中 role 为该元素的 ARIA 角色（如 button/textbox/combobox/dialog/table/tab/link/heading/alert/checkbox），accessible_name 为该元素的可访问名称，用于 E2E 测试定位（如\"提交需求审核\"、\"审核人\"、\"任务列表\"）",
                         "json_schema": {
                             "type": "array",
                             "items": {
@@ -156,6 +156,8 @@ class SpecTemplate:
                                                 "code": {"type": "string", "minLength": 1},
                                                 "type": {"type": "string", "minLength": 1},
                                                 "label": {"type": "string", "minLength": 1},
+                                                "role": {"type": "string"},
+                                                "accessible_name": {"type": "string"},
                                                 "interaction": {"type": "string"},
                                             },
                                         },

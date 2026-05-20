@@ -110,12 +110,14 @@
                   <code v-if="pg.route" class="spec-route">{{ pg.route }}</code>
                 </div>
                 <table class="spec-table nested">
-                  <thead><tr><th>元素编码</th><th>类型</th><th>标签</th><th>交互</th></tr></thead>
+                  <thead><tr><th>元素编码</th><th>类型</th><th>标签</th><th>角色</th><th>可访问名称</th><th>交互</th></tr></thead>
                   <tbody>
                     <tr v-for="(el, ei) in (pg.elements || [])" :key="ei">
                       <td><code>{{ el.code }}</code></td>
                       <td>{{ el.type }}</td>
                       <td>{{ el.label }}</td>
+                      <td><code v-if="el.role">{{ el.role }}</code><span v-else class="spec-empty">-</span></td>
+                      <td>{{ el.accessible_name || '-' }}</td>
                       <td>{{ el.interaction || '' }}</td>
                     </tr>
                   </tbody>
