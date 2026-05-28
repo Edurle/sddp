@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, date, timedelta, timezone
 
 from fastapi import FastAPI, Request
@@ -196,7 +197,8 @@ async def _seed_data():
 @app.on_event("startup")
 async def on_startup():
     await init_db()
-    await _seed_data()
+    if os.getenv("SDD_SEED_DATA", "false").lower() == "true":
+        await _seed_data()
     logger.info("Database initialized")
 
 
