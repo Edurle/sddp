@@ -152,3 +152,36 @@ class TestAgentGuideEndpoint:
         )
         body = resp.json()
         assert body["code"] == 40300
+
+
+class TestAgentGuideWithRequirement:
+    @pytest.mark.asyncio
+    async def test_agent_guide_without_requirement_id(self, client, normal_user, owner_role):
+        team = owner_role["team"]
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(f"/api/v1/teams/{team.id}/spec-template/agent-guide", headers=headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "requirement" not in body["data"]
+        assert "sections" in body["data"]
+
+    @pytest.mark.asyncio
+    async def test_agent_guide_with_requirement_id(self, client, normal_user, owner_role):
+        team = owner_role["team"]
+        headers = auth_headers(normal_user.id)
+        resp = await client.post(
+            "/api/v1/requirements",
+            json={"title": "guide test", "type": "feature", "priority": 2, "description": "test desc"},
+            headers=headers,
+        )
+        req_id = resp.json()["data"]["id"]
+
+        resp2 = await client.get(
+            f"/api/v1/teams/{team.id}/spec-template/agent-guide?requirement_id={req_id}",
+            headers=headers,
+        )
+        assert resp2.status_code == 200
+        body = resp2.json()
+        assert "requirement" in body["data"]
+        assert body["data"]["requirement"]["id"] == req_id
+        assert body["data"]["requirement"]["title"] == "guide test"

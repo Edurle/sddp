@@ -9,10 +9,13 @@ from app.deps import get_current_user, get_db_session, require_permission
 from app.exceptions import BusinessError, ERR_FORBIDDEN
 from app.models import Requirement
 from app.services import requirement as req_svc
+from app.services import requirement_guide as rg_svc
 from app.services import review_comment as rc_svc
 from app.services import specification as spec_svc
 from app.services import task as task_svc
+from app.services import task_generator as tg_svc
 from app.services import test_case as tc_svc
+from app.services import test_generator as testgen_svc
 from app.services.statistics import get_requirement_test_statistics
 
 router = APIRouter()
@@ -50,6 +53,17 @@ class CreateTaskRequest(BaseModel):
     title: str
     description: str | None = None
     assignee_id: int | None = None
+    task_type: str | None = None
+    source_section: str | None = None
+    spec_reference: dict | None = None
+
+
+class GenerateTasksRequest(BaseModel):
+    strategy: str = "hybrid"
+
+
+class GenerateTestCasesRequest(BaseModel):
+    case_types: list[str] | None = None
 
 
 class CreateTestCaseRequest(BaseModel):
@@ -95,6 +109,14 @@ def _clamp_pagination(offset: int, limit: int) -> tuple[int, int]:
     if limit > 200:
         limit = 200
     return offset, limit
+
+
+@router.get("/guide")
+async def get_requirement_guide(
+    user: Annotated[dict, Depends(get_current_user)],
+) -> dict:
+    data = rg_svc.get_requirement_guide()
+    return {"code": 0, "message": "success", "data": data}
 
 
 @router.get("")
@@ -421,7 +443,6 @@ async def get_requirement_full_context(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    from app.services import requirement as req_svc
     from app.services import specification as spec_svc
     from app.services import task as task_svc
     from app.services import test_case as tc_svc
@@ -599,7 +620,34 @@ async def create_task(
         title=body.title,
         description=body.description,
         assignee_id=body.assignee_id,
+        task_type=body.task_type,
+        source_section=body.source_section,
+        spec_reference=body.spec_reference,
     )
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.post("/{id}/generate-tasks")
+async def generate_tasks_endpoint(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    body: GenerateTasksRequest | None = None,
+) -> dict:
+    strategy = body.strategy if body else "hybrid"
+    data = await tg_svc.generate_tasks(db, id, int(user["sub"]), strategy)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.post("/{id}/generate-test-cases")
+async def generate_test_cases_endpoint(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    body: GenerateTestCasesRequest | None = None,
+) -> dict:
+    case_types = body.case_types if body else None
+    data = await testgen_svc.generate_test_cases(db, id, int(user["sub"]), case_types)
     return {"code": 0, "message": "success", "data": data}
 
 

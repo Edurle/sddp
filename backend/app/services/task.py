@@ -67,6 +67,9 @@ async def create_task(
     title: str,
     description: str | None = None,
     assignee_id: int | None = None,
+    task_type: str | None = None,
+    source_section: str | None = None,
+    spec_reference: dict | None = None,
 ) -> dict:
     if not title or not title.strip():
         raise BusinessError(ERR_VALIDATION, "任务标题不能为空")
@@ -86,6 +89,9 @@ async def create_task(
         assignee_id=assignee_id,
         status="pending",
         created_by=user_id,
+        task_type=task_type,
+        source_section=source_section,
+        spec_reference=spec_reference,
     )
     db.add(task)
     await db.commit()
@@ -381,7 +387,7 @@ async def list_tasks_by_assignee(
 
 
 def _task_to_dict(task: Task) -> dict:
-    return {
+    result = {
         "id": task.id,
         "requirement_id": task.requirement_id,
         "title": task.title,
@@ -389,6 +395,9 @@ def _task_to_dict(task: Task) -> dict:
         "assignee_id": task.assignee_id,
         "status": task.status,
         "created_by": task.created_by,
+        "task_type": task.task_type,
+        "source_section": task.source_section,
+        "spec_reference": task.spec_reference,
         "git_branch": task.git_branch,
         "commit_sha": task.commit_sha,
         "pr_url": task.pr_url,
@@ -396,3 +405,4 @@ def _task_to_dict(task: Task) -> dict:
         "created_at": task.created_at.isoformat() if task.created_at else None,
         "updated_at": task.updated_at.isoformat() if task.updated_at else None,
     }
+    return result

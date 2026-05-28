@@ -458,9 +458,9 @@ class TestSpecContentValidation:
             headers=headers,
         )
         body = resp.json()
-        assert body["code"] == 40001
-        error_data = body.get("data") or []
-        assert any("api_design" in str(e) for e in error_data)
+        assert body["code"] == 0
+        suggestions = body["data"].get("suggestions", [])
+        assert any("api_design" in str(s) for s in suggestions)
 
     @pytest.mark.asyncio
     async def test_save_spec_missing_required_field_in_section(
@@ -485,7 +485,9 @@ class TestSpecContentValidation:
             headers=headers,
         )
         body = resp.json()
-        assert body["code"] == 40001
+        assert body["code"] == 0
+        suggestions = body["data"].get("suggestions", [])
+        assert len(suggestions) > 0
 
     @pytest.mark.asyncio
     async def test_save_spec_invalid_entity_fields_format(

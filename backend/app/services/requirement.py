@@ -128,7 +128,21 @@ async def create_requirement(
     db.add(req)
     await db.commit()
     await db.refresh(req)
-    return _req_to_dict(req)
+    suggestions = []
+    if not description or not description.strip():
+        suggestions.append({"field": "description", "message": "需求描述为空，建议补充以帮助后续规范生成"})
+    if not type_detail:
+        if req_type == "bug":
+            suggestions.append({"field": "type_detail", "message": "bug 类型建议填写复现步骤和严重程度"})
+        elif req_type == "optimization":
+            suggestions.append({"field": "type_detail", "message": "optimization 类型建议填写当前问题和预期改进"})
+    if not prototype_html:
+        suggestions.append({"field": "prototype_html", "message": "未提供原型图，建议提供以使页面设计更准确"})
+
+    result = _req_to_dict(req)
+    result["errors"] = []
+    result["suggestions"] = suggestions
+    return result
 
 
 async def get_requirement_detail(

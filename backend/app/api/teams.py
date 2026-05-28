@@ -238,9 +238,10 @@ async def get_agent_guide(
     teamId: str,
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
+    requirement_id: int | None = Query(default=None),
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
-    data = await spec_svc.get_agent_guide(db, tid, int(user["sub"]))
+    data = await spec_svc.get_agent_guide(db, tid, int(user["sub"]), requirement_id)
     return {"code": 0, "message": "success", "data": data}
 
 

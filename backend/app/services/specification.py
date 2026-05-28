@@ -23,44 +23,44 @@ async def _get_template_sections(db: AsyncSession, team_id: int) -> list[dict]:
     return SpecTemplateDefaults().DEFAULT_SECTIONS
 
 
-async def _validate_spec_content(content: dict, db: AsyncSession, team_id: int) -> list[dict]:
+async def _validate_spec_content(content: dict, db: AsyncSession, team_id: int) -> tuple[list[dict], list[dict]]:
     sections = await _get_template_sections(db, team_id)
     errors = []
+    suggestions = []
 
     for section in sections:
         section_name = section["name"]
-        section_required = section.get("required", True)
+        section_display = section.get("display_name", section_name)
         section_fields = section.get("fields", [])
 
         if section_name not in content:
-            if section_required:
-                errors.append({
-                    "section": section_name,
-                    "message": f"缺少必填章节: {section.get('display_name', section_name)}",
-                })
+            suggestions.append({
+                "section": section_name,
+                "field": None,
+                "message": f"章节「{section_display}」未填写，如涉及相关内容建议补充",
+            })
             continue
 
         section_content = content[section_name]
         if not isinstance(section_content, dict):
             errors.append({
                 "section": section_name,
-                "message": f"章节 {section.get('display_name', section_name)} 的内容必须是对象",
+                "field": None,
+                "message": f"章节「{section_display}」的内容必须是对象",
             })
             continue
 
         for field_def in section_fields:
             field_name = field_def["name"]
-            field_required = field_def.get("required", True)
-            field_schema = field_def.get("json_schema")
             field_display = field_def.get("display_name", field_name)
+            field_schema = field_def.get("json_schema")
 
             if field_name not in section_content:
-                if field_required:
-                    errors.append({
-                        "section": section_name,
-                        "field": field_name,
-                        "message": f"缺少必填字段: {field_display}",
-                    })
+                suggestions.append({
+                    "section": section_name,
+                    "field": field_name,
+                    "message": f"字段「{field_display}」未填写，建议补充",
+                })
                 continue
 
             if field_schema is not None:
@@ -70,11 +70,11 @@ async def _validate_spec_content(content: dict, db: AsyncSession, team_id: int) 
                     errors.append({
                         "section": section_name,
                         "field": field_name,
-                        "message": f"字段 {field_display} 格式不正确: {e.message}",
+                        "message": f"字段「{field_display}」格式不正确: {e.message}",
                         "path": list(e.absolute_path) if e.absolute_path else [],
                     })
 
-    return errors
+    return errors, suggestions
 
 
 async def _get_team_id_by_requirement(db: AsyncSession, req_id: int) -> int:
@@ -112,9 +112,31 @@ async def get_spec_template(
 
 
 async def get_agent_guide(
-    db: AsyncSession, team_id: int, user_id: int
+    db: AsyncSession, team_id: int, user_id: int, requirement_id: int | None = None
 ) -> dict:
-    return await get_spec_template(db, team_id, user_id)
+    result = await get_spec_template(db, team_id, user_id)
+
+    if requirement_id is not None:
+        req = await _get_requirement(db, requirement_id)
+        if req is None:
+            raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+
+        req_team_id = await _get_team_id_by_requirement(db, requirement_id)
+        if req_team_id != team_id:
+            raise BusinessError(ERR_FORBIDDEN, "无权访问该需求")
+
+        result["requirement"] = {
+            "id": req.id,
+            "title": req.title,
+            "description": req.description,
+            "req_type": req.req_type,
+            "priority": req.priority,
+            "type_detail": req.type_detail,
+            "prototype_html": req.prototype_html,
+            "status": req.status,
+        }
+
+    return result
 
 
 async def update_spec_template(
@@ -171,9 +193,9 @@ async def save_spec_document(
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑规格说明")
 
     team_id = await _get_team_id_by_requirement(db, req_id)
-    errors = await _validate_spec_content(content, db, team_id)
+    errors, suggestions = await _validate_spec_content(content, db, team_id)
     if errors:
-        raise BusinessError(ERR_VALIDATION, "规范内容校验失败", errors=errors)
+        raise BusinessError(ERR_VALIDATION, "规范内容格式有误", errors=errors)
 
     stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
     result = await db.execute(stmt)
@@ -202,7 +224,11 @@ async def save_spec_document(
         doc.versions = versions
 
     await db.commit()
-    return {"version": new_version_num}
+    return {
+        "version": new_version_num,
+        "errors": [],
+        "suggestions": suggestions,
+    }
 
 
 async def list_spec_versions(

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -30,6 +31,9 @@ class Task(Base):
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     git_branch: Mapped[str | None] = mapped_column(String(255), default=None)
     commit_sha: Mapped[str | None] = mapped_column(String(40), default=None)
+    task_type: Mapped[str | None] = mapped_column(String(20), default=None)
+    source_section: Mapped[str | None] = mapped_column(String(50), default=None)
+    spec_reference: Mapped[dict | None] = mapped_column(JSONB, default=None)
     pr_url: Mapped[str | None] = mapped_column(String(500), default=None)
     artifact_url: Mapped[str | None] = mapped_column(String(500), default=None)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
