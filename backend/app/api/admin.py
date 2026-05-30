@@ -34,6 +34,10 @@ class UpdateUserStatusRequest(BaseModel):
         return v
 
 
+class ResetUserPasswordRequest(BaseModel):
+    new_password: str = Field(min_length=8, max_length=64)
+
+
 class CreateApiKeyRequest(BaseModel):
     user_id: int
     name: str = Field(min_length=1, max_length=100)
@@ -72,6 +76,17 @@ async def update_user_status(
     admin_user_id = int(user["sub"])
     data = await user_service.toggle_user_status(db, id, body.is_active, admin_user_id)
     return {"code": 0, "message": "success", "data": data}
+
+
+@router.put("/users/{id}/password")
+async def reset_user_password(
+    id: int,
+    body: ResetUserPasswordRequest,
+    user: Annotated[dict, Depends(require_admin)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    data = await user_service.reset_user_password(db, id, body.new_password)
+    return {"code": 0, "message": data["message"], "data": None}
 
 
 @router.post("/api-keys")

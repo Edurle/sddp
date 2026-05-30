@@ -303,6 +303,19 @@ async def toggle_user_status(db: AsyncSession, target_user_id: int, is_active: b
     }
 
 
+async def reset_user_password(db: AsyncSession, user_id: int, new_password: str) -> dict:
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise BusinessError(ERR_NOT_FOUND, "用户不存在")
+
+    user.password_hash = hash_password(new_password)
+    await db.commit()
+
+    return {"message": "密码重置成功"}
+
+
 async def get_projects_tree(db: AsyncSession, user_id: int) -> list[dict]:
     team_ids_stmt = (
         select(TeamMember.team_id)

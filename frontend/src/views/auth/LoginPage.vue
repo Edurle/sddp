@@ -42,15 +42,10 @@
             />
             <span>记住我</span>
           </label>
-          <router-link to="/forgot-password" class="forgot-link" data-testid="login-link-forgot">忘记密码？</router-link>
         </div>
         <div v-if="error" class="error-message">{{ error }}</div>
         <button type="submit" class="login-btn" data-testid="login-btn-submit">登录</button>
       </form>
-      <div class="login-footer">
-        <span>还没有账号？</span>
-        <router-link to="/register" data-testid="login-link-register">注册账号</router-link>
-      </div>
     </div>
   </div>
 </template>
@@ -101,7 +96,7 @@ async function handleLogin() {
 
 .login-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(24px);
   border-radius: 20px;
@@ -177,19 +172,9 @@ async function handleLogin() {
   cursor: pointer;
 }
 
-.forgot-link {
-  color: #888;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.forgot-link:hover {
-  color: #111;
-}
-
 .login-btn {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   background: #111;
   color: #fff;
   border: none;
@@ -199,6 +184,7 @@ async function handleLogin() {
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
   margin: 0;
+  display: block;
 }
 
 .login-btn:hover {
@@ -209,26 +195,6 @@ async function handleLogin() {
 
 .login-btn:active {
   transform: translateY(0.5px);
-}
-
-.login-footer {
-  text-align: center;
-  margin-top: 1.5rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  font-size: 13px;
-  color: #999;
-}
-
-.login-footer a {
-  color: #111;
-  font-weight: 500;
-  text-decoration: none;
-  margin-left: 4px;
-}
-
-.login-footer a:hover {
-  text-decoration: underline;
 }
 
 .password-wrapper {

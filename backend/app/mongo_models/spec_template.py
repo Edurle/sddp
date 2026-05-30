@@ -53,7 +53,7 @@ class SpecTemplate:
                         "type": "list",
                         "required": True,
                         "description": "实体包含的字段定义（字段名、类型、约束）",
-                        "agent_prompt": "列出实体的所有字段。每个字段需包含 name（字段名，英文小写下划线）、type（数据类型，如 string/integer/boolean/datetime/json）、constraints（约束数组，如 ['required', 'unique', 'max:255'])",
+                        "agent_prompt": "列出实体的所有字段。每个字段需包含 name（字段名，英文小写下划线）、type（数据类型，如 string/integer/boolean/datetime/json）、description（字段含义的中文描述）、constraints（约束数组，如 ['required', 'unique', 'max:255'])",
                         "json_schema": {
                             "type": "array",
                             "items": {
@@ -62,6 +62,7 @@ class SpecTemplate:
                                 "properties": {
                                     "name": {"type": "string", "minLength": 1},
                                     "type": {"type": "string", "minLength": 1},
+                                    "description": {"type": "string"},
                                     "constraints": {"type": "array", "items": {"type": "string"}},
                                 },
                             },

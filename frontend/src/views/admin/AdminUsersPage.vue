@@ -27,12 +27,19 @@
           <td>{{ u.id }}</td>
           <td>{{ u.email }}</td>
           <td>{{ u.nickname }}</td>
-          <td>
+          <td class="action-cell">
             <button
               :data-testid="`user-mgmt-btn-toggle-status-${u.id}`"
               @click="toggleStatus(u)"
             >
               {{ u.is_active ? '禁用' : '启用' }}
+            </button>
+            <button
+              :data-testid="`user-mgmt-btn-reset-pw-${u.id}`"
+              class="btn-reset-pw"
+              @click="openResetDialog(u)"
+            >
+              重置密码
             </button>
           </td>
         </tr>
@@ -64,6 +71,25 @@
         <button @click="showCreateDialog = false">关闭</button>
       </div>
     </dialog>
+
+    <dialog :open="showResetDialog" data-testid="user-mgmt-dlg-reset-pw">
+      <div>
+        <h3>重置密码 — {{ resetTargetUser?.email }}</h3>
+        <div class="form-group">
+          <label>新密码</label>
+          <input v-model="resetPw.newPassword" type="password" placeholder="至少 8 位" />
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <input v-model="resetPw.confirmPassword" type="password" placeholder="再次输入新密码" />
+        </div>
+        <div v-if="resetError" class="error-message">{{ resetError }}</div>
+        <div v-if="resetSuccess" class="success-message">密码已重置</div>
+        <button @click="resetPassword">确认重置</button>
+        <button @click="showResetDialog = false">关闭</button>
+      </div>
+    </dialog>
+
     <div v-if="errorMsg" class="error-message">{{ errorMsg }}</div>
     </template>
   </div>
@@ -87,11 +113,16 @@ const page = ref(1)
 const total = ref(0)
 const pageSize = 20
 const showCreateDialog = ref(false)
+const showResetDialog = ref(false)
 const errorMsg = ref('')
 const createError = ref('')
+const resetError = ref('')
+const resetSuccess = ref(false)
 const accessDenied = ref(false)
+const resetTargetUser = ref<UserItem | null>(null)
 
 const newUser = reactive({ email: '', nickname: '', password: '' })
+const resetPw = reactive({ newPassword: '', confirmPassword: '' })
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -159,5 +190,159 @@ async function toggleStatus(u: UserItem) {
   }
 }
 
+function openResetDialog(u: UserItem) {
+  resetTargetUser.value = u
+  resetPw.newPassword = ''
+  resetPw.confirmPassword = ''
+  resetError.value = ''
+  resetSuccess.value = false
+  showResetDialog.value = true
+}
+
+async function resetPassword() {
+  resetError.value = ''
+  resetSuccess.value = false
+  if (!resetPw.newPassword || resetPw.newPassword.length < 8) {
+    resetError.value = '密码至少 8 位'
+    return
+  }
+  if (resetPw.newPassword !== resetPw.confirmPassword) {
+    resetError.value = '两次密码不一致'
+    return
+  }
+  try {
+    await apiClient.put(`/api/v1/admin/users/${resetTargetUser.value!.id}/password`, {
+      new_password: resetPw.newPassword,
+    })
+    resetSuccess.value = true
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '重置失败'
+    resetError.value = msg
+  }
+}
+
 onMounted(() => fetchUsers())
 </script>
+
+<style scoped>
+.admin-users-page {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.toolbar input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.action-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-cell button {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  margin: 0;
+}
+
+.action-cell button:hover {
+  border-color: #999;
+}
+
+.btn-reset-pw {
+  color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.btn-reset-pw:hover {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+dialog {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1.5rem;
+  min-width: 360px;
+}
+
+dialog h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.form-group {
+  margin-bottom: 0.75rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #666;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+dialog button {
+  padding: 8px 20px;
+  margin-right: 8px;
+  margin-top: 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.success-message {
+  color: #16a34a;
+  font-size: 13px;
+  margin-top: 8px;
+}
+</style>

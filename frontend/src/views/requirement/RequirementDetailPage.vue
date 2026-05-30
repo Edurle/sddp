@@ -53,11 +53,12 @@
               <h3 class="section-title">实体定义</h3>
               <p v-if="getFieldText('entity_definition', 'description')" class="spec-description">{{ getFieldText('entity_definition', 'description') }}</p>
               <table v-if="getFieldList('entity_definition', 'fields').length" class="spec-table">
-                <thead><tr><th>字段名</th><th>类型</th><th>约束</th></tr></thead>
+                <thead><tr><th>字段名</th><th>类型</th><th>描述</th><th>约束</th></tr></thead>
                 <tbody>
                   <tr v-for="(f, i) in getFieldList('entity_definition', 'fields')" :key="i">
                     <td><code>{{ f.name }}</code></td>
                     <td><span class="spec-type">{{ f.type }}</span></td>
+                    <td>{{ f.description || '' }}</td>
                     <td>
                       <span v-for="c in (f.constraints || [])" :key="c" class="spec-tag" :style="constraintStyle(c)">{{ c }}</span>
                     </td>
