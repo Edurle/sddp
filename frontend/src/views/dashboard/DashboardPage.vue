@@ -434,11 +434,13 @@ onMounted(async () => {
   font-weight: 500;
   font-family: inherit;
 }
-.tabs button:hover { color: #333; }
+.tabs button:hover { color: #2563eb; }
 .tabs button.active {
-  color: #111;
-  border-bottom-color: #111;
+  color: #fff;
+  background: #2563eb;
+  border-bottom-color: #2563eb;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 .sub-tabs {
   display: flex;

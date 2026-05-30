@@ -54,8 +54,9 @@ class SDDClient:
         resp = self._http.patch(path, json=json, headers=self._headers())
         return self._unwrap(resp)
 
-    def delete(self, path: str):
-        resp = self._http.delete(path, headers=self._headers())
+    def delete(self, path: str, headers: dict | None = None):
+        merged = {**self._headers(), **(headers or {})}
+        resp = self._http.delete(path, headers=merged)
         return self._unwrap(resp)
 
 

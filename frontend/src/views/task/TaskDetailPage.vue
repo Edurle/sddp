@@ -58,7 +58,10 @@
             <tbody>
               <tr v-for="rec in testRecords" :key="rec.id">
                 <td>{{ rec.test_case?.title || '' }}</td>
-                <td><span :data-testid="`task-detail-txt-record-status-${rec.id}`" :class="['rec-status', `rec-${rec.status}`]">{{ recStatusLabel(rec.status) }}</span></td>
+                <td>
+                  <span :data-testid="`task-detail-txt-record-status-${rec.id}`" :class="['rec-status', `rec-${rec.status}`]">{{ recStatusLabel(rec.status) }}</span>
+                  <div v-if="rec.failure_reason" class="failure-reason">原因: {{ rec.failure_reason }}</div>
+                </td>
                 <td><button :data-testid="`task-detail-btn-record-${rec.id}`" class="update-btn" @click="openRecordDialog(rec)">更新</button></td>
               </tr>
             </tbody>
@@ -85,7 +88,10 @@
                 <tbody>
                   <tr v-for="r in roundRecords" :key="r.id" :data-testid="`task-detail-row-record-${r.id}`">
                     <td>{{ r.test_case?.title || '' }}</td>
-                    <td>{{ recStatusLabel(r.status) }}</td>
+                    <td>
+                      {{ recStatusLabel(r.status) }}
+                      <div v-if="r.failure_reason" class="failure-reason">原因: {{ r.failure_reason }}</div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -369,6 +375,12 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.failure-reason {
+  font-size: 11px;
+  color: #ff4d4f;
+  margin-top: 2px;
+  line-height: 1.4;
+}
 .task-detail-page {
   min-height: 100vh;
 }

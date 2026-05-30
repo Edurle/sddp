@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import config
-from app.exceptions import BusinessError, ERR_EMAIL_EXISTS, ERR_CREDENTIALS, ERR_EMAIL_UNVERIFIED, ERR_NOT_FOUND
+from app.exceptions import BusinessError, ERR_EMAIL_EXISTS, ERR_CREDENTIALS, ERR_EMAIL_UNVERIFIED, ERR_FORBIDDEN, ERR_NOT_FOUND
 from app.models.password_reset_token import PasswordResetToken
 from app.models.role import MemberRole, Role, RolePermission
 from app.models.team import TeamMember
@@ -110,6 +110,8 @@ async def login(db: AsyncSession, email: str, password: str, remember: bool = Fa
         raise BusinessError(ERR_CREDENTIALS, "邮箱或密码错误")
     if not user.email_verified:
         raise BusinessError(ERR_EMAIL_UNVERIFIED, "邮箱未验证")
+    if not user.is_active:
+        raise BusinessError(ERR_FORBIDDEN, "账号已被禁用")
 
     permissions = await _collect_user_permissions(db, user.id)
 

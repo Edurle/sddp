@@ -40,6 +40,18 @@
             >{{ task.requirement.title }}</router-link>
             <span v-else data-testid="task-detail-txt-linked-requirement"></span>
           </div>
+          <div v-if="task.git_branch" class="info-row">
+            <span class="info-row-label">分支</span>
+            <span class="info-row-value">{{ task.git_branch }}</span>
+          </div>
+          <div v-if="task.commit_sha" class="info-row">
+            <span class="info-row-label">提交</span>
+            <span class="info-row-value mono">{{ task.commit_sha.slice(0, 7) }}</span>
+          </div>
+          <div v-if="task.pr_url" class="info-row">
+            <span class="info-row-label">PR</span>
+            <a class="info-link" :href="task.pr_url" target="_blank">查看 PR</a>
+          </div>
         </template>
         <template v-else>
           <div class="form-group">
@@ -90,6 +102,9 @@ interface TaskData {
   status: string
   assignee?: Assignee | null
   requirement?: Requirement | null
+  git_branch?: string | null
+  commit_sha?: string | null
+  pr_url?: string | null
 }
 
 const props = defineProps<{
@@ -236,6 +251,13 @@ function stepCircle(step: string) {
 }
 .info-row-value {
   color: #333;
+}
+.info-row-value.mono {
+  font-family: monospace;
+  font-size: 11px;
+  background: #f5f5f5;
+  padding: 1px 6px;
+  border-radius: 3px;
 }
 .info-link {
   color: #1677ff;

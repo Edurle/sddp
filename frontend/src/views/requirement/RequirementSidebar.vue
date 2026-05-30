@@ -154,9 +154,12 @@ defineEmits(['edit', 'save', 'delete', 'submit-review', 'approve', 'reject'])
 const showPrototypeModal = ref(false)
 
 const steps = [
-  { key: 'req', label: '需求' },
-  { key: 'spec', label: '规范' },
-  { key: 'tests', label: '测试' },
+  { key: 'drafting_req', label: '编写需求' },
+  { key: 'reviewing_req', label: '需求审核' },
+  { key: 'drafting_spec', label: '编写规范' },
+  { key: 'reviewing_spec', label: '规范审核' },
+  { key: 'drafting_tests', label: '编写测试' },
+  { key: 'reviewing_tests', label: '测试审核' },
   { key: 'approved', label: '已通过' },
 ]
 
@@ -189,23 +192,13 @@ function priorityLabel(p: string | number) {
 
 function stepClass(step: string) {
   const s = props.req.status || ''
-  if (step === 'req') {
-    if (s === 'drafting_req') return 'current'
-    if (s === 'reviewing_req') return 'current review'
-    if (['drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved', 'spec_approved'].includes(s)) return 'done'
-  }
-  if (step === 'spec') {
-    if (s === 'drafting_spec') return 'current'
-    if (s === 'reviewing_spec') return 'current review'
-    if (['drafting_tests', 'reviewing_tests', 'approved', 'spec_approved'].includes(s)) return 'done'
-  }
-  if (step === 'tests') {
-    if (s === 'drafting_tests') return 'current'
-    if (s === 'reviewing_tests') return 'current review'
-    if (['approved', 'spec_approved'].includes(s)) return 'done'
-  }
-  if (step === 'approved') {
-    if (s === 'approved' || s === 'spec_approved') return 'done current'
+  const order = ['drafting_req', 'reviewing_req', 'drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved']
+  const currentIdx = order.indexOf(s)
+  const stepIdx = order.indexOf(step)
+  if (currentIdx < 0) return ''
+  if (stepIdx < currentIdx) return 'done'
+  if (stepIdx === currentIdx) {
+    return step.includes('reviewing') ? 'current review' : 'current'
   }
   return ''
 }

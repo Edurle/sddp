@@ -13,7 +13,8 @@
     <nav class="app-layout-nav" v-if="authStore.isAuthenticated">
       <router-link to="/dashboard">仪表盘</router-link>
       <router-link to="/teams">我的团队</router-link>
-      <router-link v-if="authStore.user?.is_admin" to="/admin">管理</router-link>
+      <router-link to="/profile/api-keys">API Keys</router-link>
+      <router-link v-if="authStore.user?.is_admin" to="/admin/users">管理</router-link>
     </nav>
     <div v-if="authStore.isAuthenticated && breadcrumbItems.length > 0" class="breadcrumb-bar">
       <router-link to="/dashboard">仪表盘</router-link>

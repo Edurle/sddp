@@ -402,3 +402,56 @@ def create_task(
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
         raise typer.Exit(code=1)
+
+
+@app.command("guide")
+def get_guide() -> None:
+    try:
+        client = get_client()
+        data = client.get("/requirements/guide")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("review-comments")
+def get_review_comments(id: int) -> None:
+    try:
+        client = get_client()
+        data = client.get(f"/requirements/{id}/review-comments")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("generate-tasks")
+def generate_tasks(
+    id: int,
+    strategy: str = typer.Option("hybrid", "--strategy", "-s"),
+) -> None:
+    try:
+        client = get_client()
+        data = client.post(f"/requirements/{id}/generate-tasks", json={"strategy": strategy})
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("generate-test-cases")
+def generate_test_cases(
+    id: int,
+    case_types: Optional[str] = typer.Option(None, "--case-types"),
+) -> None:
+    try:
+        client = get_client()
+        body: dict = {}
+        if case_types:
+            body["case_types"] = [x.strip() for x in case_types.split(",")]
+        data = client.post(f"/requirements/{id}/generate-test-cases", json=body if body else None)
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)

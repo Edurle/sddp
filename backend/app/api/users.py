@@ -1,10 +1,16 @@
+import hashlib
+import secrets
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_current_user, get_db_session
+from app.exceptions import BusinessError, ERR_NOT_FOUND, ERR_VALIDATION
+from app.models.api_key import ApiKey
 from app.services import user as user_service
 from app.services import task as task_service
 
@@ -25,6 +31,11 @@ class UpdateProfileRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str = Field(min_length=8, max_length=64)
+
+
+class CreateUserApiKeyRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    expires_at: str | None = None
 
 
 @router.get("")
@@ -126,3 +137,91 @@ async def get_my_work(
     user_id = int(user["sub"])
     data = await user_service.get_user_work(db, user_id)
     return {"code": 0, "message": "success", "data": data}
+
+
+@router.post("/me/api-keys")
+async def create_user_api_key(
+    body: CreateUserApiKeyRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    user_id = int(user["sub"])
+
+    raw_key = f"sdd_{secrets.token_urlsafe(32)}"
+    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    key_prefix = raw_key[:8]
+
+    expires_at = None
+    if body.expires_at:
+        try:
+            expires_at = datetime.fromisoformat(body.expires_at)
+        except (ValueError, TypeError):
+            raise BusinessError(ERR_VALIDATION, "无效的过期时间格式")
+
+    api_key = ApiKey(
+        name=body.name,
+        key_hash=key_hash,
+        key_prefix=key_prefix,
+        user_id=user_id,
+        expires_at=expires_at,
+    )
+    db.add(api_key)
+    await db.commit()
+    await db.refresh(api_key)
+
+    return {
+        "code": 0,
+        "message": "success",
+        "data": {
+            "id": api_key.id,
+            "name": api_key.name,
+            "raw_key": raw_key,
+            "key_prefix": key_prefix,
+            "expires_at": api_key.expires_at.isoformat() if api_key.expires_at else None,
+            "created_at": api_key.created_at.isoformat() if api_key.created_at else None,
+        },
+    }
+
+
+@router.get("/me/api-keys")
+async def list_user_api_keys(
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    user_id = int(user["sub"])
+    stmt = select(ApiKey).where(ApiKey.user_id == user_id).order_by(ApiKey.created_at.desc())
+    result = await db.execute(stmt)
+    keys = result.scalars().all()
+
+    items = []
+    for k in keys:
+        items.append({
+            "id": k.id,
+            "name": k.name,
+            "key_prefix": k.key_prefix,
+            "is_active": k.is_active,
+            "expires_at": k.expires_at.isoformat() if k.expires_at else None,
+            "created_at": k.created_at.isoformat() if k.created_at else None,
+        })
+
+    return {"code": 0, "message": "success", "data": items}
+
+
+@router.delete("/me/api-keys/{id}")
+async def revoke_user_api_key(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    user_id = int(user["sub"])
+    stmt = select(ApiKey).where(ApiKey.id == id, ApiKey.user_id == user_id)
+    result = await db.execute(stmt)
+    api_key = result.scalar_one_or_none()
+
+    if api_key is None:
+        raise BusinessError(ERR_NOT_FOUND, "API Key 不存在")
+
+    api_key.is_active = False
+    await db.commit()
+
+    return {"code": 0, "message": "success", "data": {"id": api_key.id, "is_active": False}}

@@ -120,3 +120,53 @@ def _print_drafts(items: list) -> None:
     typer.echo(typer.style("\n✏️ 待起草", fg=typer.colors.CYAN, bold=True))
     for item in items:
         typer.echo(f"  #{item.get('id')} {item.get('title', '')} [{item.get('status', '')}] → {item.get('next_action', '')}")
+
+
+@app.command(name="update-profile")
+def update_profile(
+    nickname: Optional[str] = typer.Option(None, "--nickname"),
+    avatar: Optional[str] = typer.Option(None, "--avatar"),
+) -> None:
+    try:
+        client = get_client()
+        body: dict = {}
+        if nickname is not None:
+            body["nickname"] = nickname
+        if avatar is not None:
+            body["avatar"] = avatar
+        if not body:
+            typer.echo("Error: at least one of --nickname or --avatar is required", err=True)
+            raise typer.Exit(code=1)
+        data = client.put("/users/me", json=body)
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command(name="change-password")
+def change_password(
+    old_password: str = typer.Option(..., "--old-password", prompt=True),
+    new_password: str = typer.Option(..., "--new-password", prompt=True),
+) -> None:
+    try:
+        client = get_client()
+        data = client.put("/users/me/password", json={
+            "old_password": old_password,
+            "new_password": new_password,
+        })
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command(name="projects-tree")
+def projects_tree() -> None:
+    try:
+        client = get_client()
+        data = client.get("/users/me/projects-tree")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)

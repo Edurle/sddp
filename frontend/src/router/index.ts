@@ -69,6 +69,11 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminUsers',
         component: () => import('@/views/admin/AdminUsersPage.vue'),
       },
+      {
+        path: 'profile/api-keys',
+        name: 'ApiKeys',
+        component: () => import('@/views/profile/ApiKeyPage.vue'),
+      },
     ],
   },
 ]

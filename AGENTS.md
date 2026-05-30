@@ -65,3 +65,5 @@ cd frontend && npx vue-tsc -b && npx vite build
 - **CSS: Button styling**: Global `button` in `main.css` sets `background: #111; color: #fff`. Any scoped override with a light `background` MUST also set `color` to a dark value. Always set both together.
 - **Spec content validation**: `save_spec_document` validates content against JSON Schemas defined in `spec_template.py`'s `DEFAULT_SECTIONS`. Each section defines `json_schema` on its fields. Uses `jsonschema` library.
 - **No code comments** in implementation files unless explicitly requested.
+- **No Docker**: 除正式部署外，禁止使用 Docker。开发、测试、调试一律在本地环境直接运行。
+- **服务启停顺序**: 启动或重载服务时，必须先执行 `./scripts/services.sh stop` 终止旧进程，再执行 `./scripts/services.sh start` 启动新服务，确保后端端口 8000 和前端端口 5173 不变。禁止直接 start 而不先 stop。

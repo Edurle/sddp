@@ -243,9 +243,12 @@
             <tbody>
               <tr v-for="tc in filteredTestCases" :key="tc.id">
                 <td>{{ tc.case_number }}</td>
-                <td>{{ tc.title }}</td>
+                <td>
+                  <span class="tc-title" @click="viewTestCase = tc">{{ tc.title }}</span>
+                </td>
                 <td>{{ tc.case_type }}</td>
                 <td>
+                  <button @click="viewTestCase = tc">查看</button>
                   <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="openEditTestCase(tc)">编辑</button>
                   <button :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" @click="deleteTestCase(tc.id)">删除</button>
                 </td>
@@ -390,6 +393,19 @@
         <button @click="showTestCaseDialog = false">取消</button>
       </div>
     </div>
+
+    <div v-if="viewTestCase" class="dialog-overlay" @click.self="viewTestCase = null">
+      <div class="dialog" style="max-width:560px;">
+        <h3>测试用例详情</h3>
+        <div class="form-group"><label>标题</label><p class="view-field">{{ viewTestCase.title }}</p></div>
+        <div class="form-group"><label>类型</label><p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : 'E2E' }}</p></div>
+        <div class="form-group"><label>前置条件</label><p class="view-field">{{ viewTestCase.precondition || '无' }}</p></div>
+        <div class="form-group"><label>步骤</label><pre class="view-field">{{ viewTestCase.steps || '无' }}</pre></div>
+        <div class="form-group"><label>预期结果</label><pre class="view-field">{{ viewTestCase.expected_result || '无' }}</pre></div>
+        <div class="form-group"><label>关联 API</label><p class="view-field">{{ viewTestCase.related_api || '无' }}</p></div>
+        <button @click="viewTestCase = null">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -485,6 +501,7 @@ const showSubmitSpecReviewDialog = ref(false)
 const showSubmitTestsReviewDialog = ref(false)
 const showAddTaskDialog = ref(false)
 const showTestCaseDialog = ref(false)
+const viewTestCase = ref<any>(null)
 const submitReviewForm = reactive({ reviewer_id: '' })
 const submitSpecReviewForm = reactive({ reviewer_id: '' })
 const submitTestsReviewForm = reactive({ reviewer_id: '' })
@@ -969,6 +986,24 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.view-field {
+  margin: 0;
+  padding: 8px 12px;
+  background: #f7f8fa;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #333;
+}
+.tc-title {
+  cursor: pointer;
+  color: #1677ff;
+}
+.tc-title:hover {
+  text-decoration: underline;
+}
 .requirement-detail-page {
   min-height: 100vh;
 }

@@ -63,13 +63,17 @@ def update(
 def delete(
     team_id: str,
     confirm: bool = typer.Option(False, "--confirm"),
+    confirm_name: Optional[str] = typer.Option(None, "--confirm-name"),
 ) -> None:
     try:
         if not confirm:
             typer.echo("Error: --confirm is required", err=True)
             raise typer.Exit(code=1)
         client = get_client()
-        data = client.delete(f"/teams/{team_id}")
+        headers = {}
+        if confirm_name:
+            headers["X-Confirm-Delete"] = confirm_name
+        data = client.delete(f"/teams/{team_id}", headers=headers or None)
         print_response(data)
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
@@ -79,7 +83,7 @@ def delete(
 @app.command()
 def transfer(
     team_id: str,
-    new_owner_id: str = typer.Option(..., "--new-owner-id"),
+    new_owner_id: int = typer.Option(..., "--new-owner-id"),
 ) -> None:
     try:
         client = get_client()
