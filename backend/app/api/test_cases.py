@@ -100,7 +100,66 @@ async def update_test_case(
 async def delete_test_case(
     id: int,
     user: Annotated[dict, Depends(get_current_user)],
-    db: Annotated = Depends(get_db_session),
+    db=Depends(get_db_session),
 ) -> dict:
     data = await tc_svc.delete_test_case(db, id)
     return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/requirement/{requirement_id}/execution-results")
+async def get_test_case_execution_results(
+    requirement_id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    from sqlalchemy import select
+    from app.models import TestCase as TCModel, TestExecutionRecord, TestExecutionRound
+
+    tc_stmt = select(TCModel).where(
+        TCModel.requirement_id == requirement_id,
+        TCModel.is_deleted == False,
+    ).order_by(TCModel.id)
+    tc_result = await db.execute(tc_stmt)
+    test_cases = tc_result.scalars().all()
+
+    items = []
+    for tc in test_cases:
+        rec_stmt = (
+            select(TestExecutionRecord)
+            .where(TestExecutionRecord.test_case_id == tc.id)
+            .order_by(TestExecutionRecord.executed_at.desc())
+        )
+        rec_result = await db.execute(rec_stmt)
+        records = rec_result.scalars().all()
+
+        latest = None
+        all_records = []
+        for rec in records:
+            round_stmt = select(TestExecutionRound).where(TestExecutionRound.id == rec.round_id)
+            round_result = await db.execute(round_stmt)
+            rnd = round_result.scalar_one_or_none()
+
+            rec_data = {
+                "id": rec.id,
+                "status": rec.status,
+                "actual_result": rec.actual_result,
+                "failure_reason": rec.failure_reason,
+                "log_output": rec.log_output,
+                "duration_ms": rec.duration_ms,
+                "executed_at": rec.executed_at.isoformat() if rec.executed_at else None,
+                "round_id": rec.round_id,
+                "executed_by": rnd.executed_by if rnd else None,
+            }
+            all_records.append(rec_data)
+            if latest is None:
+                latest = rec_data
+
+        items.append({
+            "test_case_id": tc.id,
+            "title": tc.title,
+            "latest_result": latest,
+            "execution_count": len(all_records),
+            "all_results": all_records,
+        })
+
+    return {"code": 0, "message": "success", "data": items}

@@ -25,6 +25,18 @@ from app.models import (
 from app.services import review_comment as rc_svc
 from app.services import webhook as wh_svc
 
+VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
+    "drafting_req": {"reviewing_req"},
+    "reviewing_req": {"drafting_req", "drafting_spec"},
+    "drafting_spec": {"reviewing_spec", "drafting_req"},
+    "reviewing_spec": {"drafting_spec", "drafting_tests"},
+    "drafting_tests": {"reviewing_tests", "drafting_spec"},
+    "reviewing_tests": {"drafting_tests", "approved"},
+    "approved": set(),
+}
+
+EDITABLE_STATUSES = {"drafting_req"}
+
 
 async def list_requirements(
     db: AsyncSession,

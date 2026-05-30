@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_current_user, get_db_session, require_permission
-from app.exceptions import BusinessError, ERR_FORBIDDEN
+from app.exceptions import BusinessError, ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS
 from app.models import Requirement
 from app.services import requirement as req_svc
 from app.services import requirement_guide as rg_svc
@@ -257,15 +257,25 @@ async def patch_requirement(
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     from app.models import Requirement
+    from app.services.requirement import VALID_STATUS_TRANSITIONS, EDITABLE_STATUSES
     stmt = select(Requirement).where(Requirement.id == id, Requirement.is_deleted == False)
     result = await db.execute(stmt)
     req = result.scalar_one_or_none()
     if req is None:
-        from app.exceptions import BusinessError, ERR_NOT_FOUND
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    if body.status is not None:
+    has_field_edits = any(v is not None for v in [
+        body.title, body.description, body.type_detail, body.prototype_html
+    ])
+    if has_field_edits and req.status not in EDITABLE_STATUSES:
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑")
+
+    if body.status is not None and body.status != req.status:
+        allowed = VALID_STATUS_TRANSITIONS.get(req.status, set())
+        if body.status not in allowed:
+            raise BusinessError(ERR_REQUIREMENT_STATUS, f"不允许从 {req.status} 转换到 {body.status}")
         req.status = body.status
+
     if body.title is not None:
         req.title = body.title
     if body.description is not None:

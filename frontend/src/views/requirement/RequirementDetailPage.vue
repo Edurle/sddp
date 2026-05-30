@@ -159,12 +159,12 @@
                   </div>
                   <div v-if="ep.response" class="spec-sub">
                     <div class="spec-sub-title">响应</div>
-                    <div class="spec-response-block">
+                    <div class="spec-json-tree">
+                      <div class="json-line"><span class="spec-key">code</span>: <span class="spec-val">{{ ep.response.code }}</span></div>
+                      <div class="json-line"><span class="spec-key">message</span>: <span class="spec-val">"{{ ep.response.message }}"</span></div>
                       <template v-if="ep.response.data">
-                        <span v-for="(v, k) in ep.response.data" :key="k"><span class="spec-key">{{ k }}</span>: <span class="spec-val">{{ typeof v === 'object' ? JSON.stringify(v) : v }}</span> · </span>
+                        <div class="json-line"><span class="spec-key">data</span>: <JsonTree :value="ep.response.data" :indent="1" /></div>
                       </template>
-                      <span class="spec-key">code</span>: <span class="spec-val">{{ ep.response.code }}</span> ·
-                      <span class="spec-key">message</span>: <span class="spec-val">{{ ep.response.message }}</span>
                     </div>
                   </div>
                   <div v-if="ep.errors && ep.errors.length" class="spec-sub">
@@ -206,7 +206,8 @@
             </div>
           </div>
           <div v-if="selectedVersionContent" data-testid="req-detail-txt-spec-version-content" class="version-content">
-            <pre>{{ selectedVersionContent }}</pre>
+            <template v-if="typeof selectedVersionContent === 'string'"><pre>{{ selectedVersionContent }}</pre></template>
+            <JsonTree v-else :value="selectedVersionContent" :indent="1" />
           </div>
         </div>
 
@@ -239,7 +240,7 @@
           </div>
           <table data-testid="req-detail-tbl-test-cases">
             <thead>
-              <tr><th>编号</th><th>标题</th><th>类型</th><th>操作</th></tr>
+              <tr><th>编号</th><th>标题</th><th>类型</th><th>最新结果</th><th>操作</th></tr>
             </thead>
             <tbody>
               <tr v-for="tc in filteredTestCases" :key="tc.id">
@@ -249,7 +250,11 @@
                 </td>
                 <td>{{ tc.case_type }}</td>
                 <td>
-                  <button @click="viewTestCase = tc">查看</button>
+                  <span v-if="tcExecutionMap[tc.id]" class="spec-tag" :style="resultTagStyle(tcExecutionMap[tc.id].status)">{{ tcResultText(tcExecutionMap[tc.id].status) }}</span>
+                  <span v-else class="tc-no-result">未执行</span>
+                </td>
+                <td>
+                  <button @click="openTestCaseDetail(tc)">查看</button>
                   <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="openEditTestCase(tc)">编辑</button>
                   <button :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" @click="deleteTestCase(tc.id)">删除</button>
                 </td>
@@ -396,14 +401,32 @@
     </div>
 
     <div v-if="viewTestCase" class="dialog-overlay" @click.self="viewTestCase = null">
-      <div class="dialog" style="max-width:560px;">
+      <div class="dialog" style="max-width:640px;">
         <h3>测试用例详情</h3>
         <div class="form-group"><label>标题</label><p class="view-field">{{ viewTestCase.title }}</p></div>
-        <div class="form-group"><label>类型</label><p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : 'E2E' }}</p></div>
+        <div class="form-group"><label>类型</label><p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : viewTestCase.case_type === 'functional' ? '功能测试' : viewTestCase.case_type }}</p></div>
         <div class="form-group"><label>前置条件</label><p class="view-field">{{ viewTestCase.precondition || '无' }}</p></div>
         <div class="form-group"><label>步骤</label><pre class="view-field">{{ viewTestCase.steps || '无' }}</pre></div>
         <div class="form-group"><label>预期结果</label><pre class="view-field">{{ viewTestCase.expected_result || '无' }}</pre></div>
         <div class="form-group"><label>关联 API</label><p class="view-field">{{ viewTestCase.related_api || '无' }}</p></div>
+
+        <div v-if="tcExecutionMap[viewTestCase.id]" class="form-group">
+          <label>执行记录</label>
+          <div v-if="tcExecutionMap[viewTestCase.id].all_results && tcExecutionMap[viewTestCase.id].all_results.length" class="tc-exec-records">
+            <div v-for="(rec, ri) in tcExecutionMap[viewTestCase.id].all_results" :key="ri" class="tc-exec-item">
+              <div class="tc-exec-header">
+                <span class="spec-tag" :style="resultTagStyle(rec.status)">{{ tcResultText(rec.status) }}</span>
+                <span class="tc-exec-time">{{ rec.executed_at || '' }}</span>
+              </div>
+              <div v-if="rec.actual_result" class="tc-exec-field"><strong>实际结果：</strong>{{ rec.actual_result }}</div>
+              <div v-if="rec.failure_reason" class="tc-exec-field tc-exec-fail"><strong>失败原因：</strong>{{ rec.failure_reason }}</div>
+              <div v-if="rec.duration_ms" class="tc-exec-field"><strong>耗时：</strong>{{ rec.duration_ms }}ms</div>
+            </div>
+          </div>
+          <p v-else class="view-field">暂无执行记录</p>
+        </div>
+        <div v-else class="form-group"><label>执行记录</label><p class="view-field">暂无执行记录</p></div>
+
         <button @click="viewTestCase = null">关闭</button>
       </div>
     </div>
@@ -417,6 +440,7 @@ import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { taskStatusLabel } from '@/utils/status'
 import RequirementSidebar from './RequirementSidebar.vue'
+import JsonTree from '@/components/JsonTree.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -548,11 +572,12 @@ const specSections = ref<any[]>([
 const specFormData = ref<Record<string, Record<string, any>>>({})
 const specRawContent = ref<Record<string, any>>({})
 const specVersions = ref<SpecVersion[]>([])
-const selectedVersionContent = ref('')
+const selectedVersionContent = ref<any>(null)
 const tasks = ref<TaskItem[]>([])
 const testCases = ref<TestCaseItem[]>([])
 const testCaseTypeFilter = ref('')
 const editingTestCase = ref<TestCaseItem | null>(null)
+const tcExecutionMap = ref<Record<number, { status: string; all_results: Array<{ status: string; actual_result?: string; failure_reason?: string; duration_ms?: number; executed_at?: string }> }>>({})
 const testCaseForm = reactive({
   title: '',
   case_type: 'api',
@@ -600,11 +625,8 @@ const filteredTestCases = computed(() => {
   return testCases.value.filter((tc) => tc.case_type === testCaseTypeFilter.value)
 })
 
-function getVersionText(ver: SpecVersion): string {
-  if (typeof ver.content === 'string') return ver.content
-  if (ver.content && typeof ver.content === 'object') {
-    return JSON.stringify(ver.content, null, 2)
-  }
+function getVersionText(ver: SpecVersion): any {
+  if (ver.content) return ver.content
   return ''
 }
 
@@ -910,9 +932,42 @@ async function fetchTestCases() {
     const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/test-cases`, { params })
     const data = res.data?.data
     testCases.value = data?.items || data?.list || data || []
+    fetchTestCaseExecutions()
   } catch {
     testCases.value = []
   }
+}
+
+async function fetchTestCaseExecutions() {
+  try {
+    const res = await apiClient.get(`/api/v1/test-cases/requirement/${reqId.value}/execution-results`)
+    const items = res.data?.data || []
+    const map: Record<number, any> = {}
+    for (const item of items) {
+      map[item.test_case_id] = item
+    }
+    tcExecutionMap.value = map
+  } catch {
+    tcExecutionMap.value = {}
+  }
+}
+
+function tcResultText(status: string) {
+  if (status === 'passed') return '通过'
+  if (status === 'failed') return '失败'
+  if (status === 'skipped') return '跳过'
+  return status
+}
+
+function resultTagStyle(status: string) {
+  if (status === 'passed') return 'background: #dcfce7; color: #166534'
+  if (status === 'failed') return 'background: #fee2e2; color: #991b1b'
+  if (status === 'skipped') return 'background: #f3f4f6; color: #6b7280'
+  return ''
+}
+
+function openTestCaseDetail(tc: TestCaseItem) {
+  viewTestCase.value = tc
 }
 
 function openEditTestCase(tc: TestCaseItem) {
@@ -1004,6 +1059,40 @@ onMounted(async () => {
 }
 .tc-title:hover {
   text-decoration: underline;
+}
+.tc-no-result {
+  color: #9ca3af;
+  font-size: 13px;
+}
+.tc-exec-records {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.tc-exec-item {
+  padding: 0.5rem 0.75rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+.tc-exec-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.tc-exec-time {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.tc-exec-field {
+  font-size: 13px;
+  color: #374151;
+  margin-top: 0.25rem;
+}
+.tc-exec-fail {
+  color: #991b1b;
 }
 .requirement-detail-page {
   min-height: 100vh;
@@ -1389,6 +1478,17 @@ onMounted(async () => {
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
+}
+.spec-json-tree {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  line-height: 1.6;
+}
+.spec-json-tree .json-line {
+  margin-bottom: 2px;
 }
 .spec-key {
   color: #4f46e5;

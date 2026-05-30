@@ -446,3 +446,33 @@ async def test_complete_task_wrong_status_coding(client, db, sample_task, normal
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 40204
+
+
+class TestTaskDirectCreateStatusCheck:
+    @pytest.mark.asyncio
+    async def test_cannot_create_task_for_drafting_requirement(self, client, normal_user, sample_requirement):
+        headers = auth_headers(normal_user.id, permissions=["task:create"])
+        resp = await client.post(
+            "/api/v1/tasks",
+            json={
+                "title": "should fail",
+                "requirement_id": sample_requirement.id,
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] != 0
+
+    @pytest.mark.asyncio
+    async def test_can_create_task_for_approved_requirement(self, client, normal_user, approved_requirement):
+        headers = auth_headers(normal_user.id, permissions=["task:create"])
+        resp = await client.post(
+            "/api/v1/tasks",
+            json={
+                "title": "valid task",
+                "requirement_id": approved_requirement.id,
+            },
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0

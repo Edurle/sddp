@@ -1006,3 +1006,76 @@ class TestRequirementPrototypeHtml:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
+
+
+class TestRequirementStatusTransitionSecurity:
+    @pytest.mark.asyncio
+    async def test_patch_cannot_edit_title_in_reviewing_status(self, client, normal_user, sample_requirement):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"status": "reviewing_req"},
+            headers=headers,
+        )
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"title": "hacked"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] != 0
+
+    @pytest.mark.asyncio
+    async def test_patch_cannot_jump_to_approved(self, client, normal_user, sample_requirement):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"status": "approved"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] != 0
+
+    @pytest.mark.asyncio
+    async def test_patch_can_edit_in_drafting_req(self, client, normal_user, sample_requirement):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"title": "new title"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_patch_valid_transition_to_reviewing(self, client, normal_user, sample_requirement):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"status": "reviewing_req"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+        assert body["data"]["status"] == "reviewing_req"
+
+    @pytest.mark.asyncio
+    async def test_patch_reject_then_re_edit(self, client, normal_user, sample_requirement):
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"status": "reviewing_req"},
+            headers=headers,
+        )
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"status": "drafting_req"},
+            headers=headers,
+        )
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"title": "revised title"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0

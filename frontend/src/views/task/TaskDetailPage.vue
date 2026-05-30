@@ -22,7 +22,10 @@
         </div>
 
         <div v-if="activeTab === 'spec'" class="tab-panel">
-          <div class="spec-content" data-testid="task-detail-txt-spec-content">{{ specContent }}</div>
+          <div class="spec-content" data-testid="task-detail-txt-spec-content">
+            <template v-if="typeof specContent === 'string'">{{ specContent }}</template>
+            <JsonTree v-else-if="specContent" :value="specContent" :indent="1" />
+          </div>
         </div>
 
         <div v-if="activeTab === 'test-exec'" class="tab-panel">
@@ -131,6 +134,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import TaskSidebar from './TaskSidebar.vue'
+import JsonTree from '@/components/JsonTree.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -180,7 +184,7 @@ const task = ref<TaskData | null>(null)
 const editing = ref(false)
 const editForm = reactive({ title: '', description: '' })
 const activeTab = ref('spec')
-const specContent = ref('')
+const specContent = ref<any>(null)
 const testRecords = ref<TestRecord[]>([])
 const execHistory = ref<TestRound[]>([])
 const execRounds = ref<TestRound[]>([])
@@ -256,7 +260,7 @@ async function fetchSpec(reqId: number) {
     const res = await apiClient.get(`/api/v1/requirements/${reqId}/specification`)
     const data = res.data?.data || res.data
     if (data?.content) {
-      specContent.value = typeof data.content === 'string' ? data.content : data.content.text || JSON.stringify(data.content, null, 2)
+      specContent.value = typeof data.content === 'string' ? data.content : data.content.text || data.content
     }
   } catch (e: any) {
     notification.showError(e?.response?.data?.message || e?.message || '获取规范失败')

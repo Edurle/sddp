@@ -223,7 +223,7 @@ async function removeMember(userId: number | string) {
 
 function openRoleDialog(member: Member) {
   currentRoleMemberId.value = member.user_id
-  selectedRoleIds.value = (member as Record<string, unknown>).role_ids as (string | number)[] || (member.roles as (string | number)[]) || []
+  selectedRoleIds.value = (member as unknown as Record<string, unknown>).role_ids as (string | number)[] || (member.roles as (string | number)[]) || []
   showRoleDialog.value = true
 }
 

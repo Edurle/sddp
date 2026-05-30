@@ -13,6 +13,7 @@ async def setup_approved_requirement_with_spec(client, normal_user):
     )
     req_id = resp.json()["data"]["id"]
 
+    await client.patch(f"/api/v1/requirements/{req_id}", json={"status": "reviewing_req"}, headers=headers)
     await client.patch(f"/api/v1/requirements/{req_id}", json={"status": "drafting_spec"}, headers=headers)
 
     await client.put(
@@ -42,6 +43,9 @@ async def setup_approved_requirement_with_spec(client, normal_user):
         headers=headers,
     )
 
+    await client.patch(f"/api/v1/requirements/{req_id}", json={"status": "reviewing_spec"}, headers=headers)
+    await client.patch(f"/api/v1/requirements/{req_id}", json={"status": "drafting_tests"}, headers=headers)
+    await client.patch(f"/api/v1/requirements/{req_id}", json={"status": "reviewing_tests"}, headers=headers)
     await client.patch(f"/api/v1/requirements/{req_id}", json={"status": "approved"}, headers=headers)
 
     return req_id

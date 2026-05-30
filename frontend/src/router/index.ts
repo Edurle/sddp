@@ -78,7 +78,7 @@ function decodeTokenPayload(token: string): Record<string, unknown> | null {
   }
 }
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   if (to.path.startsWith('/admin')) {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     if (!token) {
