@@ -5,7 +5,7 @@ asyncpg
 aiosqlite
 pydantic[email]
 python-jose[cryptography]
-passlib[bcrypt]
+bcrypt
 python-multipart
 httpx
 pytest
