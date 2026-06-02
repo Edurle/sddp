@@ -17,7 +17,7 @@ Use this skill to discover what work is available in the SDD project management 
 ### Step 1: Check Who You Are
 
 ```bash
-sdd auth whoami
+sdd me
 ```
 
 Verify your identity and permissions. If this fails with "Not authenticated", set your API key:
