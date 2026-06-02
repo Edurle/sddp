@@ -85,3 +85,16 @@ def delete_test_case(id: int) -> None:
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
         raise typer.Exit(code=1)
+
+
+@app.command("execution-results")
+def execution_results(
+    requirement_id: int = typer.Option(..., "--requirement", "-r"),
+) -> None:
+    try:
+        client = get_client()
+        data = client.get(f"/test-cases/requirement/{requirement_id}/execution-results")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)

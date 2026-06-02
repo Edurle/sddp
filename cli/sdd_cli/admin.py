@@ -55,6 +55,20 @@ def toggle_user(
         raise typer.Exit(code=1)
 
 
+@app.command("reset-password")
+def reset_password(
+    id: int,
+    password: str = typer.Option(..., "--password", "-p"),
+) -> None:
+    try:
+        client = get_client()
+        data = client.put(f"/admin/users/{id}/password", json={"new_password": password})
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
 @app.command("create-api-key")
 def create_api_key(
     user: int = typer.Option(..., "--user", "-u"),
