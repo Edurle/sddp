@@ -5,10 +5,9 @@ from tests.conftest import auth_headers
 class TestDefaultTemplateAgentPrompt:
     @pytest.mark.asyncio
     async def test_default_template_has_agent_prompt_on_all_fields(self):
-        from app.mongo_models.spec_template import SpecTemplate
+        from app.services.specification import DEFAULT_SECTIONS
 
-        template = SpecTemplate()
-        sections = template.DEFAULT_SECTIONS
+        sections = DEFAULT_SECTIONS
 
         expected_prompts = {
             ("entity_definition", "description"): "用一段话描述该实体的用途和核心职责",
@@ -79,36 +78,6 @@ class TestAgentPromptSerialization:
         assert body2["code"] == 0
         field_data2 = body2["data"]["sections"][0]["fields"][0]
         assert field_data2["agent_prompt"] == "请描述自定义内容"
-
-    @pytest.mark.asyncio
-    async def test_to_document_includes_agent_prompt(self):
-        from app.mongo_models.spec_template import SpecTemplate, SpecTemplateField, SpecTemplateSection
-
-        template = SpecTemplate(team_id=1)
-        template.sections = [
-            SpecTemplateSection(
-                name="test_section",
-                display_name="Test Section",
-                fields=[
-                    SpecTemplateField(
-                        name="f1",
-                        display_name="Field 1",
-                        type="text",
-                        agent_prompt="prompt for f1",
-                    ),
-                    SpecTemplateField(
-                        name="f2",
-                        display_name="Field 2",
-                        type="text",
-                    ),
-                ],
-            )
-        ]
-
-        doc = template.to_document()
-        fields = doc["sections"][0]["fields"]
-        assert fields[0]["agent_prompt"] == "prompt for f1"
-        assert fields[1]["agent_prompt"] is None
 
 
 class TestAgentGuideEndpoint:

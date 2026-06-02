@@ -10,10 +10,10 @@ SDD is a full-stack project management and spec-driven development tool. It prov
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Python 3.12, FastAPI, SQLAlchemy (async), SQLite (aiosqlite), Motor/MongoDB, Pydantic, JWT |
+| Backend | Python 3.12, FastAPI, SQLAlchemy (async), SQLite (aiosqlite), Pydantic, JWT |
 | Frontend | Vue 3, TypeScript, Pinia, Vue Router, Axios, Vite |
 | Testing | pytest + pytest-asyncio (backend), Playwright (frontend E2E) |
-| Database | SQLite (relational data) + MongoDB (spec documents & templates) |
+| Database | SQLite (relational data & spec documents) |
 
 ## Features
 
@@ -32,7 +32,6 @@ SDD is a full-stack project management and spec-driven development tool. It prov
 
 - Python 3.12 + Conda
 - Node.js 18+
-- MongoDB (spec document storage, default `localhost:27017`)
 
 ### Installation
 
@@ -103,7 +102,6 @@ sdd/
 │   │   ├── schemas/         # Pydantic request/response models
 │   │   ├── services/        # Business logic
 │   │   ├── models/          # SQLAlchemy ORM models
-│   │   ├── mongo_models/    # Motor/MongoDB document models
 │   │   ├── deps.py          # Auth dependencies (JWT, permission checks)
 │   │   ├── exceptions.py    # Business error codes
 │   │   └── config.py        # Environment config
@@ -125,8 +123,7 @@ sdd/
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./test.db` | SQLite connection string |
-| `MONGO_URL` | `mongodb://localhost:27017` | MongoDB connection string |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./sdd.db` | SQLite connection string |
 | `JWT_SECRET` | `dev-secret-key` | JWT signing secret |
 | `ACCESS_TOKEN_EXPIRE_HOURS` | `24` | Token expiry (hours) |
 | `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` | empty | Email service (password reset) |
