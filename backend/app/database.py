@@ -4,12 +4,13 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config import DATABASE_URL
 from app.cache import cache_instance
 
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    pool_size=20,
-    max_overflow=10,
-)
+_is_sqlite = DATABASE_URL.startswith("sqlite")
+
+engine_kwargs = {"echo": False}
+if not _is_sqlite:
+    engine_kwargs.update(pool_size=20, max_overflow=10)
+
+engine = create_async_engine(DATABASE_URL, **engine_kwargs)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
