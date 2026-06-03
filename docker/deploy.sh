@@ -13,7 +13,7 @@ if [ ! -f "$SCRIPT_DIR/.env" ]; then
     exit 1
 fi
 
-source "$SCRIPT_DIR/.env"
+source "$SCRIPT_DIR/.env" 2>/dev/null || true
 
 echo "[1/3] Building images..."
 docker compose -f "$SCRIPT_DIR/docker-compose.yml" build
