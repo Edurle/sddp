@@ -9,7 +9,7 @@ from app.database import get_db
 from app.exceptions import BusinessError, ERR_UNAUTHORIZED, ERR_TOKEN_EXPIRED, ERR_FORBIDDEN
 from app.models.api_key import ApiKey
 from app.models.user import User
-from app.services.auth import _collect_user_permissions
+from app.services.auth import _collect_user_permissions, _collect_team_permissions
 from app.utils.security import decode_access_token, TokenExpired, TokenInvalid
 
 
@@ -96,3 +96,70 @@ def require_permission(permission: str):
         return user
 
     return _check
+
+
+async def check_team_permission(
+    db: AsyncSession, user: dict, team_id: int, permission: str,
+) -> dict:
+    if user.get("is_admin"):
+        return user
+    user_id = int(user["sub"])
+    perms = await _collect_team_permissions(db, user_id, team_id)
+    if permission not in perms:
+        raise BusinessError(ERR_FORBIDDEN, "无权限")
+    return user
+
+
+async def _team_id_from_project(db: AsyncSession, project_id: int) -> int:
+    from app.models import Project
+    stmt = select(Project).where(Project.id == project_id, Project.is_deleted == False)
+    result = await db.execute(stmt)
+    project = result.scalar_one_or_none()
+    if project is None:
+        raise BusinessError(ERR_FORBIDDEN, "项目不存在")
+    return project.team_id
+
+
+async def _team_id_from_iteration(db: AsyncSession, iteration_id: int) -> int:
+    from app.models import Iteration as IterModel
+    stmt = select(IterModel).where(IterModel.id == iteration_id)
+    result = await db.execute(stmt)
+    iteration = result.scalar_one_or_none()
+    if iteration is None:
+        raise BusinessError(ERR_FORBIDDEN, "迭代不存在")
+    return await _team_id_from_project(db, iteration.project_id)
+
+
+async def _team_id_from_requirement(db: AsyncSession, req_id: int) -> int:
+    from app.models import Requirement as ReqModel
+    stmt = select(ReqModel).where(ReqModel.id == req_id, ReqModel.is_deleted == False)
+    result = await db.execute(stmt)
+    req = result.scalar_one_or_none()
+    if req is None:
+        raise BusinessError(ERR_FORBIDDEN, "需求不存在")
+    return await _team_id_from_iteration(db, req.iteration_id)
+
+
+async def _team_id_from_task(db: AsyncSession, task_id: int) -> int:
+    from app.models import Task as TaskModel
+    stmt = select(TaskModel).where(TaskModel.id == task_id, TaskModel.is_deleted == False)
+    result = await db.execute(stmt)
+    task = result.scalar_one_or_none()
+    if task is None:
+        raise BusinessError(ERR_FORBIDDEN, "任务不存在")
+    return await _team_id_from_requirement(db, task.requirement_id)
+
+
+async def _team_id_from_execution_record(db: AsyncSession, record_id: int) -> int:
+    from app.models import TestExecutionRecord, TestExecutionRound
+    stmt = select(TestExecutionRecord).where(TestExecutionRecord.id == record_id)
+    result = await db.execute(stmt)
+    record = result.scalar_one_or_none()
+    if record is None:
+        raise BusinessError(ERR_FORBIDDEN, "执行记录不存在")
+    round_stmt = select(TestExecutionRound).where(TestExecutionRound.id == record.round_id)
+    round_result = await db.execute(round_stmt)
+    round_obj = round_result.scalar_one_or_none()
+    if round_obj is None:
+        raise BusinessError(ERR_FORBIDDEN, "执行轮次不存在")
+    return await _team_id_from_task(db, round_obj.task_id)

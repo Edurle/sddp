@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session, check_team_permission
 from app.services import webhook as wh_svc
 
 router = APIRouter()
@@ -29,9 +29,10 @@ class UpdateWebhookRequest(BaseModel):
 async def create_webhook(
     teamId: int,
     body: CreateWebhookRequest,
-    user: Annotated[dict, Depends(require_permission("member:invite"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, teamId, "member:invite")
     data = await wh_svc.create_webhook(
         db, teamId, body.url, int(user["sub"]),
         events=body.events, secret=body.secret,
@@ -54,9 +55,10 @@ async def update_webhook(
     teamId: int,
     webhook_id: int,
     body: UpdateWebhookRequest,
-    user: Annotated[dict, Depends(require_permission("member:invite"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, teamId, "member:invite")
     data = await wh_svc.update_webhook(
         db, webhook_id,
         url=body.url, events=body.events, secret=body.secret, is_active=body.is_active,
@@ -68,9 +70,10 @@ async def update_webhook(
 async def delete_webhook(
     teamId: int,
     webhook_id: int,
-    user: Annotated[dict, Depends(require_permission("member:invite"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, teamId, "member:invite")
     data = await wh_svc.delete_webhook(db, webhook_id)
     return {"code": 0, "message": "success", "data": data}
 

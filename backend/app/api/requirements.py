@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_iteration, _team_id_from_requirement
 from app.exceptions import BusinessError, ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS
 from app.models import Requirement
 from app.services import requirement as req_svc
@@ -426,9 +426,10 @@ async def list_iteration_requirements(
 async def create_iteration_requirement(
     iterationId: int,
     body: CreateRequirementRequest,
-    user: Annotated[dict, Depends(require_permission("requirement:create"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_iteration(db, iterationId), "requirement:create")
     data = await req_svc.create_requirement(
         db, iterationId, int(user["sub"]),
         body.title, body.req_type, body.priority,
@@ -497,9 +498,10 @@ async def get_requirement(
 async def update_requirement(
     id: int,
     body: UpdateRequirementRequest,
-    user: Annotated[dict, Depends(require_permission("requirement:edit"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:edit")
     data = await req_svc.update_requirement(
         db, id, int(user["sub"]),
         body.title, body.req_type, body.priority,
@@ -512,9 +514,10 @@ async def update_requirement(
 @router.delete("/{id}")
 async def delete_requirement(
     id: int,
-    user: Annotated[dict, Depends(require_permission("requirement:delete"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:delete")
     data = await req_svc.delete_requirement(db, id, int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 
@@ -523,9 +526,10 @@ async def delete_requirement(
 async def submit_review(
     id: int,
     body: SubmitReviewRequest,
-    user: Annotated[dict, Depends(require_permission("requirement:edit"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:edit")
     req_stmt = select(Requirement).where(Requirement.id == id, Requirement.is_deleted == False)
     req_result = await db.execute(req_stmt)
     req = req_result.scalar_one_or_none()
@@ -622,9 +626,10 @@ async def list_tasks(
 async def create_task(
     reqId: int,
     body: CreateTaskRequest,
-    user: Annotated[dict, Depends(require_permission("task:create"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "task:create")
     data = await task_svc.create_task(
         db, reqId, int(user["sub"]),
         title=body.title,

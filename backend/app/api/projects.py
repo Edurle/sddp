@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_project
 from app.services import project as project_service
 
 router = APIRouter()
@@ -39,9 +39,10 @@ async def list_team_projects(
 async def create_team_project(
     teamId: int,
     body: CreateProjectRequest,
-    user: Annotated[dict, Depends(require_permission("project:create"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, teamId, "project:create")
     data = await project_service.create_project(
         db, teamId, int(user["sub"]), body.name, body.description, body.start_date
     )
@@ -62,9 +63,10 @@ async def get_project(
 async def update_project(
     id: int,
     body: UpdateProjectRequest,
-    user: Annotated[dict, Depends(require_permission("project:edit"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_project(db, id), "project:edit")
     data = await project_service.update_project(
         db, id, int(user["sub"]), body.name, body.description, body.start_date
     )
@@ -74,9 +76,10 @@ async def update_project(
 @router.put("/{id}/archive")
 async def archive_project(
     id: int,
-    user: Annotated[dict, Depends(require_permission("project:archive"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_project(db, id), "project:archive")
     data = await project_service.archive_project(db, id, int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 
@@ -84,9 +87,10 @@ async def archive_project(
 @router.delete("/{id}")
 async def delete_project(
     id: int,
-    user: Annotated[dict, Depends(require_permission("project:delete"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_project(db, id), "project:delete")
     data = await project_service.delete_project(db, id, int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 

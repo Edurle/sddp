@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_project, _team_id_from_iteration
 from app.services import iteration as iteration_service
 
 router = APIRouter()
@@ -95,9 +95,10 @@ async def list_project_iterations(
 async def create_project_iteration(
     projectId: int,
     body: CreateIterationRequest,
-    user: Annotated[dict, Depends(require_permission("iteration:create"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_project(db, projectId), "iteration:create")
     data = await iteration_service.create_iteration(
         db,
         projectId,
@@ -124,9 +125,10 @@ async def get_iteration(
 async def update_iteration(
     id: int,
     body: UpdateIterationRequest,
-    user: Annotated[dict, Depends(require_permission("iteration:edit"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_iteration(db, id), "iteration:edit")
     data = await iteration_service.update_iteration(
         db,
         id,
@@ -142,9 +144,10 @@ async def update_iteration(
 @router.post("/{id}/start")
 async def start_iteration(
     id: int,
-    user: Annotated[dict, Depends(require_permission("iteration:start"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_iteration(db, id), "iteration:start")
     data = await iteration_service.start_iteration(db, id, int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 
@@ -152,9 +155,10 @@ async def start_iteration(
 @router.post("/{id}/complete")
 async def complete_iteration(
     id: int,
-    user: Annotated[dict, Depends(require_permission("iteration:complete"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_iteration(db, id), "iteration:complete")
     data = await iteration_service.complete_iteration(db, id, int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 

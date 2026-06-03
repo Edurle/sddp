@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement
 from app.exceptions import BusinessError, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS, ERR_VALIDATION
 from app.services import task as task_svc
 from app.services.test_execution import list_execution_rounds
@@ -28,7 +28,7 @@ class PatchTaskRequest(BaseModel):
 @router.post("")
 async def direct_create_task(
     body: DirectCreateTaskRequest,
-    user: Annotated[dict, Depends(require_permission("task:create"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
     from app.models import Requirement, Task
@@ -37,6 +37,7 @@ async def direct_create_task(
     req = req_result.scalar_one_or_none()
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+    await check_team_permission(db, user, await _team_id_from_requirement(db, body.requirement_id), "task:create")
     if req.status != "approved":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "需求未通过审核，无法创建任务")
     task = Task(

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Header, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.deps import get_current_user, get_db_session, require_permission
+from app.deps import get_current_user, get_db_session, check_team_permission
 from app.exceptions import BusinessError, ERR_NOT_FOUND
 from app.services import team as team_svc
 from app.services import role as role_svc
@@ -93,10 +93,11 @@ async def get_team(
 async def update_team(
     id: str,
     body: UpdateTeamRequest,
-    user: Annotated[dict, Depends(require_permission("member:assign_role"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     team_id = await _resolve_team_id(db, id)
+    await check_team_permission(db, user, team_id, "member:assign_role")
     data = await team_svc.update_team(db, team_id, body.name, body.description)
     return {"code": 0, "message": "success", "data": data}
 
@@ -141,10 +142,11 @@ async def get_team_members(
 async def invite_member(
     id: str,
     body: InviteMemberRequest,
-    user: Annotated[dict, Depends(require_permission("member:invite"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     team_id = await _resolve_team_id(db, id)
+    await check_team_permission(db, user, team_id, "member:invite")
     data = await team_svc.invite_member(db, team_id, int(user["sub"]), body.identifier)
     return {"code": 0, "message": "success", "data": data}
 
@@ -153,10 +155,11 @@ async def invite_member(
 async def remove_member(
     teamId: str,
     userId: int,
-    user: Annotated[dict, Depends(require_permission("member:remove"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
+    await check_team_permission(db, user, tid, "member:remove")
     data = await team_svc.remove_member(db, tid, userId)
     return {"code": 0, "message": "success", "data": data}
 
@@ -166,10 +169,11 @@ async def assign_roles(
     teamId: str,
     userId: int,
     body: AssignRolesRequest,
-    user: Annotated[dict, Depends(require_permission("member:assign_role"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
+    await check_team_permission(db, user, tid, "member:assign_role")
     data = await team_svc.assign_roles(db, tid, userId, body.role_ids)
     return {"code": 0, "message": "success", "data": data}
 
@@ -189,10 +193,11 @@ async def list_roles(
 async def create_role(
     teamId: str,
     body: CreateRoleRequest,
-    user: Annotated[dict, Depends(require_permission("member:assign_role"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
+    await check_team_permission(db, user, tid, "member:assign_role")
     data = await role_svc.create_role(db, tid, body.name, body.description, body.permissions)
     return {"code": 0, "message": "success", "data": data}
 
@@ -202,10 +207,11 @@ async def update_role(
     teamId: str,
     roleId: int,
     body: UpdateRoleRequest,
-    user: Annotated[dict, Depends(require_permission("member:assign_role"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
+    await check_team_permission(db, user, tid, "member:assign_role")
     data = await role_svc.update_role(db, tid, roleId, body.name, body.description, body.permissions)
     return {"code": 0, "message": "success", "data": data}
 
@@ -214,10 +220,11 @@ async def update_role(
 async def delete_role(
     teamId: str,
     roleId: int,
-    user: Annotated[dict, Depends(require_permission("member:assign_role"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
+    await check_team_permission(db, user, tid, "member:assign_role")
     data = await role_svc.delete_role(db, tid, roleId)
     return {"code": 0, "message": "success", "data": data}
 
@@ -249,9 +256,10 @@ async def get_agent_guide(
 async def update_spec_template(
     teamId: str,
     body: UpdateSpecTemplateRequest,
-    user: Annotated[dict, Depends(require_permission("spec_template:edit"))],
+    user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     tid = await _resolve_team_id(db, teamId)
+    await check_team_permission(db, user, tid, "spec_template:edit")
     data = await spec_svc.update_spec_template(db, tid, int(user["sub"]), body.sections)
     return {"code": 0, "message": "success", "data": data}

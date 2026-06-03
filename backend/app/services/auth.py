@@ -34,6 +34,32 @@ async def _collect_user_permissions(db: AsyncSession, user_id: int) -> list[str]
     return sorted(all_perms)
 
 
+async def _collect_team_permissions(db: AsyncSession, user_id: int, team_id: int) -> list[str]:
+    stmt = select(TeamMember).where(
+        TeamMember.user_id == user_id,
+        TeamMember.team_id == team_id,
+        TeamMember.is_deleted == False,
+    )
+    result = await db.execute(stmt)
+    member = result.scalar_one_or_none()
+    if member is None:
+        return []
+
+    perms: set[str] = set()
+    mr_stmt = select(MemberRole).where(MemberRole.member_id == member.id)
+    mr_result = await db.execute(mr_stmt)
+    member_roles = mr_result.scalars().all()
+
+    for mr in member_roles:
+        rp_stmt = select(RolePermission).where(RolePermission.role_id == mr.role_id)
+        rp_result = await db.execute(rp_stmt)
+        role_perms = rp_result.scalars().all()
+        for rp in role_perms:
+            perms.add(rp.permission)
+
+    return sorted(perms)
+
+
 async def login(db: AsyncSession, email: str, password: str, remember: bool = False) -> dict:
     stmt = select(User).where(User.email == email)
     result = await db.execute(stmt)
