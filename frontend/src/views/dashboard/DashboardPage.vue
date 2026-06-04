@@ -337,7 +337,7 @@ async function fetchData() {
 
 async function acceptInvitation(id: number) {
   try {
-    await apiClient.post(`/api/v1/invitations/${id}/accept`)
+    await apiClient.put(`/api/v1/invitations/${id}`, { action: 'accept' })
     pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
   } catch (e: any) {
     notification.showError(e?.response?.data?.message || e?.message || '操作失败')
@@ -346,7 +346,7 @@ async function acceptInvitation(id: number) {
 
 async function rejectInvitation(id: number) {
   try {
-    await apiClient.post(`/api/v1/invitations/${id}/reject`)
+    await apiClient.put(`/api/v1/invitations/${id}`, { action: 'reject' })
     pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
   } catch (e: any) {
     notification.showError(e?.response?.data?.message || e?.message || '操作失败')
