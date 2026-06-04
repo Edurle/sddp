@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_iteration, _team_id_from_requirement
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_iteration, _team_id_from_requirement, _team_id_from_test_case
 from app.exceptions import BusinessError, ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS
 from app.models import Requirement
 from app.services import requirement as req_svc
@@ -594,6 +594,7 @@ async def create_test_case(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "test_case:create")
     data = await tc_svc.create_test_case(
         db, reqId,
         title=body.title,
@@ -661,6 +662,7 @@ async def generate_test_cases_endpoint(
     db: Annotated[AsyncSession, Depends(get_db_session)],
     body: GenerateTestCasesRequest | None = None,
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "test_case:create")
     case_types = body.case_types if body else None
     data = await testgen_svc.generate_test_cases(db, id, int(user["sub"]), case_types)
     return {"code": 0, "message": "success", "data": data}

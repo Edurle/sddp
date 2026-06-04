@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.deps import get_current_user, get_db_session
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement, _team_id_from_test_case
 from app.services import test_case as tc_svc
 
 router = APIRouter()
@@ -26,6 +26,7 @@ async def direct_create_test_case(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, body.requirement_id), "test_case:create")
     import time
     import random
     from app.models import TestCase as TCModel
@@ -83,6 +84,7 @@ async def update_test_case(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated = Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_test_case(db, id), "test_case:edit")
     data = await tc_svc.update_test_case(
         db, id,
         title=body.title,
@@ -102,6 +104,7 @@ async def delete_test_case(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_test_case(db, id), "test_case:delete")
     data = await tc_svc.delete_test_case(db, id)
     return {"code": 0, "message": "success", "data": data}
 

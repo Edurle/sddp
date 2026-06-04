@@ -103,11 +103,21 @@ const confirmDeleteRole = ref<Role | null>(null)
 
 const permissionGroups = [
   {
-    label: '任务',
+    label: '项目',
     items: [
-      { value: 'task:create', label: '创建' },
-      { value: 'task:edit', label: '编辑' },
-      { value: 'task:delete', label: '删除' },
+      { value: 'project:create', label: '创建' },
+      { value: 'project:edit', label: '编辑' },
+      { value: 'project:archive', label: '归档' },
+      { value: 'project:delete', label: '删除' },
+    ],
+  },
+  {
+    label: '迭代',
+    items: [
+      { value: 'iteration:create', label: '创建' },
+      { value: 'iteration:edit', label: '编辑' },
+      { value: 'iteration:start', label: '启动' },
+      { value: 'iteration:complete', label: '完成' },
     ],
   },
   {
@@ -116,6 +126,27 @@ const permissionGroups = [
       { value: 'requirement:create', label: '创建' },
       { value: 'requirement:edit', label: '编辑' },
       { value: 'requirement:delete', label: '删除' },
+      { value: 'requirement:review_req', label: '评审需求' },
+      { value: 'requirement:review_spec', label: '评审规范' },
+      { value: 'requirement:review_tests', label: '评审测试' },
+    ],
+  },
+  {
+    label: '测试用例',
+    items: [
+      { value: 'test_case:create', label: '创建' },
+      { value: 'test_case:edit', label: '编辑' },
+      { value: 'test_case:delete', label: '删除' },
+    ],
+  },
+  {
+    label: '任务',
+    items: [
+      { value: 'task:create', label: '创建' },
+      { value: 'task:edit', label: '编辑' },
+      { value: 'task:delete', label: '删除' },
+      { value: 'task:test', label: '执行测试' },
+      { value: 'task:complete', label: '完成任务' },
     ],
   },
   {
@@ -123,14 +154,13 @@ const permissionGroups = [
     items: [
       { value: 'member:invite', label: '邀请' },
       { value: 'member:remove', label: '移除' },
+      { value: 'member:assign_role', label: '分配角色' },
     ],
   },
   {
-    label: '角色',
+    label: '规范模板',
     items: [
-      { value: 'role:create', label: '创建' },
-      { value: 'role:edit', label: '编辑' },
-      { value: 'role:delete', label: '删除' },
+      { value: 'spec_template:edit', label: '编辑' },
     ],
   },
 ]
@@ -208,7 +238,7 @@ onMounted(() => fetchRoles())
 
 <style scoped>
 .dialog {
-  max-width: 520px;
+  max-width: 560px;
 }
 
 .permission-group {

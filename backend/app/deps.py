@@ -163,3 +163,13 @@ async def _team_id_from_execution_record(db: AsyncSession, record_id: int) -> in
     if round_obj is None:
         raise BusinessError(ERR_FORBIDDEN, "执行轮次不存在")
     return await _team_id_from_task(db, round_obj.task_id)
+
+
+async def _team_id_from_test_case(db: AsyncSession, test_case_id: int) -> int:
+    from app.models import TestCase as TCModel
+    stmt = select(TCModel).where(TCModel.id == test_case_id, TCModel.is_deleted == False)
+    result = await db.execute(stmt)
+    tc = result.scalar_one_or_none()
+    if tc is None:
+        raise BusinessError(ERR_FORBIDDEN, "测试用例不存在")
+    return await _team_id_from_requirement(db, tc.requirement_id)
