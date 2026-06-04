@@ -224,16 +224,20 @@ onMounted(() => fetchRoles())
 }
 
 .permission-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
 }
 
 .permission-grid label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  margin-bottom: 0;
   font-size: 13px;
   cursor: pointer;
+  color: #333;
+  font-weight: 400;
+  white-space: nowrap;
 }
 </style>
