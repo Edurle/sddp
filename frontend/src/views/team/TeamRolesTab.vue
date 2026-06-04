@@ -43,20 +43,23 @@
         </div>
         <div class="form-group">
           <label>描述</label>
-          <textarea v-model="formData.description" data-testid="team-roles-dlg-edit-txtarea-desc"></textarea>
+          <textarea v-model="formData.description" rows="2" data-testid="team-roles-dlg-edit-txtarea-desc"></textarea>
         </div>
         <div class="form-group">
           <label>权限</label>
-          <div v-for="p in allPermissions" :key="p">
-            <label>
-              <input
-                type="checkbox"
-                :data-testid="`team-roles-dlg-edit-chk-permission-${p}`"
-                :value="p"
-                v-model="formData.permissions"
-              />
-              {{ p }}
-            </label>
+          <div v-for="group in permissionGroups" :key="group.label" class="permission-group">
+            <div class="permission-group-label">{{ group.label }}</div>
+            <div class="permission-grid">
+              <label v-for="p in group.items" :key="p.value">
+                <input
+                  type="checkbox"
+                  :data-testid="`team-roles-dlg-edit-chk-permission-${p.value}`"
+                  :value="p.value"
+                  v-model="formData.permissions"
+                />
+                {{ p.label }}
+              </label>
+            </div>
           </div>
         </div>
         <div v-if="editError" class="error-message" data-testid="team-roles-dlg-edit-txt-error">{{ editError }}</div>
@@ -98,11 +101,38 @@ const editingRole = ref<Role | null>(null)
 const editError = ref('')
 const confirmDeleteRole = ref<Role | null>(null)
 
-const allPermissions = [
-  'task:create', 'task:edit', 'task:delete',
-  'requirement:create', 'requirement:edit', 'requirement:delete',
-  'member:invite', 'member:remove',
-  'role:create', 'role:edit', 'role:delete',
+const permissionGroups = [
+  {
+    label: '任务',
+    items: [
+      { value: 'task:create', label: '创建' },
+      { value: 'task:edit', label: '编辑' },
+      { value: 'task:delete', label: '删除' },
+    ],
+  },
+  {
+    label: '需求',
+    items: [
+      { value: 'requirement:create', label: '创建' },
+      { value: 'requirement:edit', label: '编辑' },
+      { value: 'requirement:delete', label: '删除' },
+    ],
+  },
+  {
+    label: '成员',
+    items: [
+      { value: 'member:invite', label: '邀请' },
+      { value: 'member:remove', label: '移除' },
+    ],
+  },
+  {
+    label: '角色',
+    items: [
+      { value: 'role:create', label: '创建' },
+      { value: 'role:edit', label: '编辑' },
+      { value: 'role:delete', label: '删除' },
+    ],
+  },
 ]
 
 const formData = reactive({
@@ -175,3 +205,35 @@ function deleteRole(roleId: string) {
 watch(() => props.teamId, () => fetchRoles())
 onMounted(() => fetchRoles())
 </script>
+
+<style scoped>
+.dialog {
+  max-width: 520px;
+}
+
+.permission-group {
+  margin-bottom: 0.5rem;
+}
+
+.permission-group-label {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 12px;
+}
+
+.permission-grid label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+</style>
