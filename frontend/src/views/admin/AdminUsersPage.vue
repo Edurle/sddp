@@ -51,8 +51,8 @@
       <button v-show="page * pageSize < total" @click="page++; fetchUsers()">下一页</button>
     </div>
 
-    <dialog :open="showCreateDialog" data-testid="user-mgmt-dlg-create">
-      <div>
+    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
+      <div class="dialog" data-testid="user-mgmt-dlg-create">
         <h3>创建用户</h3>
         <div class="form-group">
           <label>邮箱</label>
@@ -67,13 +67,15 @@
           <input v-model="newUser.password" data-testid="admin-users-dlg-create-inp-password" type="password" />
         </div>
         <div v-if="createError" class="error-message">{{ createError }}</div>
-        <button data-testid="admin-users-dlg-create-btn-submit" @click="createUser">确认创建</button>
-        <button @click="showCreateDialog = false">关闭</button>
+        <div class="dialog-actions">
+          <button data-testid="admin-users-dlg-create-btn-submit" @click="createUser">确认创建</button>
+          <button class="btn-cancel" @click="showCreateDialog = false">关闭</button>
+        </div>
       </div>
-    </dialog>
+    </div>
 
-    <dialog :open="showResetDialog" data-testid="user-mgmt-dlg-reset-pw">
-      <div>
+    <div v-if="showResetDialog" class="dialog-overlay" @click.self="showResetDialog = false">
+      <div class="dialog" data-testid="user-mgmt-dlg-reset-pw">
         <h3>重置密码 — {{ resetTargetUser?.email }}</h3>
         <div class="form-group">
           <label>新密码</label>
@@ -85,10 +87,12 @@
         </div>
         <div v-if="resetError" class="error-message">{{ resetError }}</div>
         <div v-if="resetSuccess" class="success-message">密码已重置</div>
-        <button @click="resetPassword">确认重置</button>
-        <button @click="showResetDialog = false">关闭</button>
+        <div class="dialog-actions">
+          <button @click="resetPassword">确认重置</button>
+          <button class="btn-cancel" @click="showResetDialog = false">关闭</button>
+        </div>
       </div>
-    </dialog>
+    </div>
 
     <div v-if="errorMsg" class="error-message">{{ errorMsg }}</div>
     </template>
@@ -293,16 +297,50 @@ th, td {
   color: #fff !important;
 }
 
-dialog {
-  border: 1px solid #ddd;
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: #fff;
   border-radius: 12px;
   padding: 1.5rem;
   min-width: 360px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
 
-dialog h3 {
+.dialog h3 {
   margin: 0 0 1rem;
   font-size: 1.1rem;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dialog-actions button {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: #fff;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.btn-cancel:hover {
+  border-color: #999;
 }
 
 .form-group {
@@ -325,14 +363,7 @@ dialog h3 {
   box-sizing: border-box;
 }
 
-dialog button {
-  padding: 8px 20px;
-  margin-right: 8px;
-  margin-top: 8px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
+
 
 .error-message {
   color: #dc2626;
