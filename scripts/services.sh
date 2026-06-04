@@ -63,14 +63,16 @@ stop_backend() {
     pid=$(backend_pid)
     if is_running "$pid"; then
         echo "Stopping backend (PID $pid)..."
-        kill "$pid" 2>/dev/null || true
+        kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
         sleep 1
-        kill -9 "$pid" 2>/dev/null || true
-        rm -f "$PID_DIR/backend.pid"
-        echo "Backend stopped"
-    else
-        echo "Backend not running"
     fi
+    pids=$(lsof -ti:8000 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        echo "Killing remaining processes on port 8000: $pids"
+        echo "$pids" | xargs kill -9 2>/dev/null || true
+    fi
+    rm -f "$PID_DIR/backend.pid"
+    echo "Backend stopped"
     rm -f "$BACKEND_DIR/test.db"
 }
 
@@ -78,14 +80,16 @@ stop_frontend() {
     pid=$(frontend_pid)
     if is_running "$pid"; then
         echo "Stopping frontend (PID $pid)..."
-        kill "$pid" 2>/dev/null || true
+        kill -- -"$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
         sleep 1
-        kill -9 "$pid" 2>/dev/null || true
-        rm -f "$PID_DIR/frontend.pid"
-        echo "Frontend stopped"
-    else
-        echo "Frontend not running"
     fi
+    pids=$(lsof -ti:5173 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        echo "Killing remaining processes on port 5173: $pids"
+        echo "$pids" | xargs kill -9 2>/dev/null || true
+    fi
+    rm -f "$PID_DIR/frontend.pid"
+    echo "Frontend stopped"
 }
 
 stop_all() {
