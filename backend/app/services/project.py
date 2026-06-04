@@ -13,6 +13,7 @@ from app.exceptions import (
 from app.models import Iteration, Project, Team, TeamMember
 from app.models.requirement import Requirement
 from app.models.task import Task
+from app.services import statistics as stat_svc
 
 
 async def list_team_projects(
@@ -254,12 +255,23 @@ async def _get_project_statistics(db: AsyncSession, project_id: int) -> dict:
         ct_result = await db.execute(ct_stmt)
         completed_tasks = ct_result.scalar_one()
 
+    test_pass_rate = 0.0
+    if req_ids:
+        total_cases = 0
+        total_passed = 0
+        for iid in iter_ids:
+            iter_stat = await stat_svc.get_iteration_test_statistics(db, iid)
+            total_cases += iter_stat["total_cases"]
+            total_passed += iter_stat.get("latest_pass_rate", 0) * iter_stat["total_cases"]
+        if total_cases > 0:
+            test_pass_rate = total_passed / total_cases
+
     return {
         "total_requirements": total_reqs,
         "completed_requirements": completed_reqs,
         "total_tasks": total_tasks,
         "completed_tasks": completed_tasks,
-        "test_pass_rate": 0,
+        "test_pass_rate": test_pass_rate,
     }
 
 

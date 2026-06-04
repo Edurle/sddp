@@ -1,4 +1,5 @@
 from typing import Annotated
+import logging
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -464,7 +465,7 @@ async def get_requirement_full_context(
     try:
         spec = await spec_svc.get_spec_document(db, id)
     except Exception:
-        pass
+        logging.getLogger(__name__).exception("failed to load spec for requirement %s", id)
 
     task_list = await task_svc.list_tasks(db, id)
     task_items = task_list["items"]

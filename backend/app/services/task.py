@@ -1,5 +1,6 @@
 """Task service."""
 
+import logging
 from datetime import datetime, timezone
 
 from sqlalchemy import func, select
@@ -15,6 +16,8 @@ from app.exceptions import (
 )
 from app.models import Requirement, Task, TestCase, TestExecutionRecord, TestExecutionRound
 from app.services import webhook as wh_svc
+
+logger = logging.getLogger(__name__)
 
 
 async def list_tasks(
@@ -116,7 +119,7 @@ async def create_task(
                             "assignee_id": task.assignee_id, "requirement_id": req_obj.id,
                         })
         except Exception:
-            pass
+            logger.exception("webhook delivery failed for task %s", task.id)
     return _task_to_dict(task)
 
 
@@ -289,7 +292,7 @@ async def complete_task(db: AsyncSession, task_id: int) -> dict:
                         "requirement_id": req_obj.id,
                     })
     except Exception:
-        pass
+        logger.exception("webhook delivery failed for task %s on complete", task.id)
     return _task_to_dict(task)
 
 

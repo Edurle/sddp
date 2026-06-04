@@ -14,6 +14,7 @@ from app.models.requirement_review import RequirementReview
 from app.models.task import Task
 from app.utils.security import hash_password, verify_password
 from app.utils.pagination import paginate
+from app.services import invitation as inv_svc
 
 
 async def get_user_info(db: AsyncSession, user_id: int) -> dict:
@@ -140,7 +141,7 @@ async def get_pending_items(db: AsyncSession, user_id: int) -> dict:
         "assigned_tasks": assigned_tasks,
         "pending_reviews": pending_reviews,
         "pending_tasks": assigned_tasks,
-        "pending_invitations": [],
+        "pending_invitations": await inv_svc.get_pending_invitations(db, user_id),
     }
 
 

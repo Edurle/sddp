@@ -27,43 +27,16 @@ async def direct_create_test_case(
     db=Depends(get_db_session),
 ) -> dict:
     await check_team_permission(db, user, await _team_id_from_requirement(db, body.requirement_id), "test_case:create")
-    import time
-    import random
-    from app.models import TestCase as TCModel
-
-    if not body.title or not body.title.strip():
-        from app.exceptions import BusinessError, ERR_VALIDATION
-        raise BusinessError(ERR_VALIDATION, "用例标题不能为空")
-
-    case_number = f"TC-{int(time.time() * 1000)}-{random.randint(100, 999)}"
-
-    tc = TCModel(
-        requirement_id=body.requirement_id,
-        case_number=case_number,
+    data = await tc_svc.create_test_case(
+        db, body.requirement_id,
         title=body.title,
         case_type=body.case_type,
-        precondition=body.precondition or "",
-        steps=body.steps or "",
-        expected_result=body.expected or "",
+        precondition=body.precondition,
+        steps=body.steps,
+        expected_result=body.expected,
         related_api=body.related_api,
         related_element=body.related_element,
     )
-    db.add(tc)
-    await db.commit()
-    await db.refresh(tc)
-    data = {
-        "id": tc.id,
-        "requirement_id": tc.requirement_id,
-        "case_number": tc.case_number,
-        "title": tc.title,
-        "case_type": tc.case_type,
-        "precondition": tc.precondition,
-        "steps": tc.steps,
-        "expected_result": tc.expected_result,
-        "related_api": tc.related_api,
-        "related_element": tc.related_element,
-        "created_at": tc.created_at.isoformat() if tc.created_at else None,
-    }
     return {"code": 0, "message": "success", "data": data}
 
 

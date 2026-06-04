@@ -16,6 +16,7 @@ from app.exceptions import (
 from app.models import Iteration, Project, Requirement, Task, TeamMember
 from app.models.test_case import TestCase
 from app.models.test_execution import TestExecutionRecord, TestExecutionRound
+from app.services import statistics as stat_svc
 
 
 KANBAN_COLUMNS = [
@@ -385,12 +386,15 @@ async def _get_iteration_statistics(db: AsyncSession, iteration_id: int) -> dict
         )
         completed_tasks = (await db.execute(ct_stmt)).scalar_one()
 
+    iter_test_stat = await stat_svc.get_iteration_test_statistics(db, iteration_id)
+    test_pass_rate = iter_test_stat["latest_pass_rate"]
+
     return {
         "total_requirements": total_reqs,
         "approved_requirements": approved_reqs,
         "total_tasks": total_tasks,
         "completed_tasks": completed_tasks,
-        "test_pass_rate": 0,
+        "test_pass_rate": test_pass_rate,
     }
 
 
@@ -411,7 +415,6 @@ async def _get_full_statistics(db: AsyncSession, iteration_id: int) -> dict:
     total_tasks = 0
     completed_tasks = 0
     total_cases = 0
-    latest_pass_rate = 0.0
 
     if req_ids:
         tt_stmt = select(func.count()).select_from(Task).where(
@@ -432,6 +435,9 @@ async def _get_full_statistics(db: AsyncSession, iteration_id: int) -> dict:
             TestCase.is_deleted == False,
         )
         total_cases = (await db.execute(tc_stmt)).scalar_one()
+
+    iter_test_stat = await stat_svc.get_iteration_test_statistics(db, iteration_id)
+    latest_pass_rate = iter_test_stat["latest_pass_rate"]
 
     return {
         "requirements": {
