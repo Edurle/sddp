@@ -11,6 +11,7 @@ from app.exceptions import BusinessError, ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_REQU
 from app.models import Requirement
 from app.services import requirement as req_svc
 from app.services import requirement_guide as rg_svc
+from app.services import requirement_link as link_svc
 from app.services import review_comment as rc_svc
 from app.services import specification as spec_svc
 from app.services import task as task_svc
@@ -708,4 +709,62 @@ async def get_specification_version(
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
     data = await spec_svc.get_spec_version_detail(db, reqId, version)
+    return {"code": 0, "message": "success", "data": data}
+
+
+class SupersedeRequest(BaseModel):
+    title: str | None = None
+    description: str | None = None
+
+
+class CreateLinkRequest(BaseModel):
+    target_id: int
+    link_type: str
+
+
+@router.post("/{id}/supersede")
+async def supersede_requirement(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+    body: SupersedeRequest | None = None,
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:create")
+    title = body.title if body else None
+    description = body.description if body else None
+    data = await link_svc.supersede_requirement(db, id, int(user["sub"]), title, description)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.post("/{id}/links")
+async def create_requirement_link(
+    id: int,
+    body: CreateLinkRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:edit")
+    data = await link_svc.create_link(db, id, body.target_id, body.link_type, int(user["sub"]))
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/{id}/links")
+async def list_requirement_links(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    data = await link_svc.list_links(db, id)
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.delete("/{id}/links/{linkId}")
+async def delete_requirement_link(
+    id: int,
+    linkId: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:edit")
+    data = await link_svc.delete_link(db, id, linkId)
     return {"code": 0, "message": "success", "data": data}

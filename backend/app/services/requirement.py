@@ -17,6 +17,7 @@ from app.models import (
     Iteration,
     Project,
     Requirement,
+    RequirementLink,
     RequirementReview,
     Task,
     TeamMember,
@@ -24,6 +25,7 @@ from app.models import (
 )
 from app.services import review_comment as rc_svc
 from app.services import webhook as wh_svc
+from app.services import requirement_link as link_svc
 
 VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "drafting_req": {"reviewing_req"},
@@ -32,7 +34,8 @@ VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "reviewing_spec": {"drafting_spec", "drafting_tests"},
     "drafting_tests": {"reviewing_tests", "drafting_spec"},
     "reviewing_tests": {"drafting_tests", "approved"},
-    "approved": set(),
+    "approved": {"deprecated"},
+    "deprecated": set(),
 }
 
 EDITABLE_STATUSES = {"drafting_req"}
@@ -186,6 +189,7 @@ async def get_requirement_detail(
     result["current_step"] = req.status
     result["reviews"] = reviews
     result["tasks"] = tasks
+    result["links"] = await link_svc.list_links(db, req.id)
     return result
 
 

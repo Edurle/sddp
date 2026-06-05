@@ -110,6 +110,8 @@ async def update_test_case(
     req_stmt = select(Requirement).where(Requirement.id == tc.requirement_id, Requirement.is_deleted == False)
     req_result = await db.execute(req_stmt)
     req = req_result.scalar_one_or_none()
+    if req and req.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "需求已废弃，不可编辑测试用例")
     if req and req.status != "drafting_tests":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "需求状态不允许编辑测试用例")
 
@@ -139,6 +141,8 @@ async def delete_test_case(db: AsyncSession, test_case_id: int) -> dict:
     req_stmt = select(Requirement).where(Requirement.id == tc.requirement_id, Requirement.is_deleted == False)
     req_result = await db.execute(req_stmt)
     req = req_result.scalar_one_or_none()
+    if req and req.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "需求已废弃，不可删除测试用例")
     if req and req.status != "drafting_tests":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "需求状态不允许删除测试用例")
 
