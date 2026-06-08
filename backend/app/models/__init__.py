@@ -14,6 +14,7 @@ from app.models.api_key import ApiKey
 from app.models.spec import SpecTemplate, SpecDocument
 from app.models.review_comment import ReviewComment
 from app.models.webhook import Webhook, WebhookDelivery
+from app.models.requirement_link import RequirementLink
 
 __all__ = [
     "User",
@@ -38,4 +39,5 @@ __all__ = [
     "ReviewComment",
     "Webhook",
     "WebhookDelivery",
+    "RequirementLink",
 ]

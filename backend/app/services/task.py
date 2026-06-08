@@ -174,6 +174,12 @@ async def update_task(
     if task.status not in ("pending", "coding"):
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前任务状态不允许编辑")
 
+    req_stmt = select(Requirement).where(Requirement.id == task.requirement_id, Requirement.is_deleted == False)
+    req_result = await db.execute(req_stmt)
+    req = req_result.scalar_one_or_none()
+    if req and req.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "需求已废弃，不可编辑任务")
+
     if title is not None:
         task.title = title
     if description is not None:
@@ -190,6 +196,12 @@ async def delete_task(db: AsyncSession, task_id: int) -> dict:
     task = await _get_task_or_fail(db, task_id)
     if task.status not in ("pending", "coding"):
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前任务状态不允许删除")
+
+    req_stmt = select(Requirement).where(Requirement.id == task.requirement_id, Requirement.is_deleted == False)
+    req_result = await db.execute(req_stmt)
+    req = req_result.scalar_one_or_none()
+    if req and req.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "需求已废弃，不可删除任务")
 
     task.is_deleted = True
     task.deleted_at = datetime.now(timezone.utc)

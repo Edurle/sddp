@@ -402,6 +402,9 @@ async def save_spec_document(
     if req.status != "drafting_spec":
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑规格说明")
 
+    if req.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "需求已废弃，不可编辑规格说明")
+
     team_id = await _get_team_id_by_requirement(db, req_id)
     errors, suggestions = await _validate_spec_content(content, db, team_id)
     if errors:
