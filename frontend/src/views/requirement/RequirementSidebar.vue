@@ -169,7 +169,9 @@ const canEdit = computed(() => props.req.status === 'drafting_req')
 const canReview = computed(() =>
   ['reviewing_req', 'reviewing_spec', 'reviewing_tests'].includes(props.req.status),
 )
-const canSupersede = computed(() => props.req.status === 'approved')
+const canSupersede = computed(() =>
+  ['drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved'].includes(props.req.status),
+)
 
 const reviewHistory = computed(() =>
   (props.req.reviews || []).map((r) => ({
