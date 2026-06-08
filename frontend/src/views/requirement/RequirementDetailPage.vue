@@ -15,26 +15,13 @@
         @supersede="showSupersedeDialog = true"
       />
 
-      <div v-if="reviewComments.length > 0" class="review-timeline">
-        <h4>审核历史</h4>
-        <div v-for="rc in reviewComments" :key="rc.id" class="review-timeline-item">
-          <div class="review-timeline-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
-          <div class="review-timeline-content">
-            <div class="review-timeline-header">
-              <span class="review-timeline-action" :class="rc.action">{{ rc.action === 'approve' ? '通过' : '拒绝' }}</span>
-              <span class="review-timeline-time">{{ formatTime(rc.created_at) }}</span>
-            </div>
-            <div v-if="rc.comment" class="review-timeline-comment">{{ rc.comment }}</div>
-          </div>
-        </div>
-      </div>
-
       <div class="detail-main">
         <div class="detail-tabs">
           <button data-testid="req-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
           <button data-testid="req-detail-tab-spec-versions" :class="['tab-btn', { active: activeTab === 'spec-versions' }]" @click="activeTab = 'spec-versions'; fetchSpecVersions()">版本历史 ({{ specVersions.length || 0 }})</button>
           <button data-testid="req-detail-tab-tasks" :class="['tab-btn', { active: activeTab === 'tasks' }]" @click="activeTab = 'tasks'; fetchTasks()">任务 ({{ tasks.length || 0 }})</button>
           <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例 ({{ testCases.length || 0 }})</button>
+          <button data-testid="req-detail-tab-review-history" :class="['tab-btn', { active: activeTab === 'review-history' }]" @click="activeTab = 'review-history'">审核历史 ({{ reviewComments.length || 0 }})</button>
           <button data-testid="req-detail-tab-links" :class="['tab-btn', { active: activeTab === 'links' }]" @click="activeTab = 'links'; fetchLinks()">关联 ({{ links.length || 0 }})</button>
         </div>
 
@@ -288,6 +275,52 @@
             </div>
           </div>
         </div>
+
+        <div v-if="activeTab === 'review-history'" class="tab-panel">
+          <div v-if="reviewComments.length === 0" class="spec-empty">暂无审核记录</div>
+          <div v-else class="review-history-list">
+            <div v-for="rc in reviewComments" :key="rc.id" class="review-history-item">
+              <div class="review-history-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
+              <div class="review-history-body">
+                <div class="review-history-header">
+                  <span class="review-history-action" :class="rc.action">{{ rc.action === 'approve' ? '通过' : '拒绝' }}</span>
+                  <span class="review-history-time">{{ formatTime(rc.created_at) }}</span>
+                </div>
+                <div v-if="rc.comment" class="review-history-comment">{{ rc.comment }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'links'" class="tab-panel">
+          <div class="tab-toolbar">
+            <button data-testid="req-detail-btn-add-link" @click="showAddLinkDialog = true">添加关联</button>
+          </div>
+          <table data-testid="req-detail-tbl-links">
+            <thead>
+              <tr><th>方向</th><th>类型</th><th>关联需求</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="link in links" :key="link.id">
+                <td>
+                  <span class="link-direction" :class="link.direction">{{ link.direction === 'outgoing' ? '→ 指向' : '← 来自' }}</span>
+                </td>
+                <td>
+                  <span class="spec-tag" :style="linkTypeStyle(link.link_type)">{{ linkTypeLabel(link.link_type) }}</span>
+                </td>
+                <td>
+                  <router-link :to="`/requirements/${link.related_req_id}`" class="task-link">需求 #{{ link.related_req_id }}</router-link>
+                </td>
+                <td>{{ formatTime(link.created_at) }}</td>
+                <td>
+                  <button v-if="link.link_type === 'relates_to'" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
+                  <span v-else class="spec-muted">系统关联</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
+        </div>
       </div>
     </div>
 
@@ -465,37 +498,7 @@
         <button @click="showAddLinkDialog = false">取消</button>
       </div>
     </div>
-
-        <div v-if="activeTab === 'links'" class="tab-panel">
-          <div class="tab-toolbar">
-            <button data-testid="req-detail-btn-add-link" @click="showAddLinkDialog = true">添加关联</button>
-          </div>
-          <table data-testid="req-detail-tbl-links">
-            <thead>
-              <tr><th>方向</th><th>类型</th><th>关联需求</th><th>创建时间</th><th>操作</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="link in links" :key="link.id">
-                <td>
-                  <span class="link-direction" :class="link.direction">{{ link.direction === 'outgoing' ? '→ 指向' : '← 来自' }}</span>
-                </td>
-                <td>
-                  <span class="spec-tag" :style="linkTypeStyle(link.link_type)">{{ linkTypeLabel(link.link_type) }}</span>
-                </td>
-                <td>
-                  <router-link :to="`/requirements/${link.related_req_id}`" class="task-link">需求 #{{ link.related_req_id }}</router-link>
-                </td>
-                <td>{{ formatTime(link.created_at) }}</td>
-                <td>
-                  <button v-if="link.link_type === 'relates_to'" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
-                  <span v-else class="spec-muted">系统关联</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
-        </div>
-      </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -1737,64 +1740,67 @@ onMounted(async () => {
   white-space: pre-wrap;
   word-break: break-word;
 }
-.review-timeline {
-  margin-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding-top: 16px;
-}
-.review-timeline h4 {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 12px;
-}
-.review-timeline-item {
+.review-history-list {
   display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.review-timeline-dot {
-  width: 8px;
-  height: 8px;
+.review-history-item {
+  display: flex;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+}
+.review-history-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  margin-top: 5px;
+  margin-top: 4px;
   flex-shrink: 0;
 }
 .dot-approve { background: #22c55e; }
 .dot-reject { background: #ef4444; }
-.review-timeline-content {
+.review-history-body {
   flex: 1;
   min-width: 0;
 }
-.review-timeline-header {
+.review-history-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
-.review-timeline-action {
+.review-history-action {
   font-size: 12px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
   white-space: nowrap;
 }
-.review-timeline-action.approve {
+.review-history-action.approve {
   background: #dcfce7;
   color: #166534;
 }
-.review-timeline-action.reject {
+.review-history-action.reject {
   background: #fef2f2;
   color: #991b1b;
 }
-.review-timeline-time {
-  font-size: 11px;
+.review-history-time {
+  font-size: 12px;
   color: #aaa;
   white-space: nowrap;
 }
-.review-timeline-comment {
+.review-history-comment {
   font-size: 13px;
   color: #555;
+  line-height: 1.6;
   word-break: break-word;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  margin-top: 4px;
 }
 .loading-state {
   display: flex;
