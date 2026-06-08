@@ -199,7 +199,7 @@ function stepClass(step: string) {
   const order = ['drafting_req', 'reviewing_req', 'drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved']
   const currentIdx = order.indexOf(s)
   const stepIdx = order.indexOf(step)
-  if (currentIdx < 0) return ''
+  if (currentIdx < 0 || stepIdx < 0) return ''
   if (stepIdx < currentIdx) return 'done'
   if (stepIdx === currentIdx) {
     return step.includes('reviewing') ? 'current review' : 'current'
