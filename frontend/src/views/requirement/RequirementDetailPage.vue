@@ -12,6 +12,7 @@
         @submit-review="openSubmitReviewDialog"
         @approve="approveReview"
         @reject="showRejectDialog = true"
+        @supersede="showSupersedeDialog = true"
       />
 
       <div v-if="reviewComments.length > 0" class="review-timeline">
@@ -34,6 +35,7 @@
           <button data-testid="req-detail-tab-spec-versions" :class="['tab-btn', { active: activeTab === 'spec-versions' }]" @click="activeTab = 'spec-versions'; fetchSpecVersions()">版本历史 ({{ specVersions.length || 0 }})</button>
           <button data-testid="req-detail-tab-tasks" :class="['tab-btn', { active: activeTab === 'tasks' }]" @click="activeTab = 'tasks'; fetchTasks()">任务 ({{ tasks.length || 0 }})</button>
           <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例 ({{ testCases.length || 0 }})</button>
+          <button data-testid="req-detail-tab-links" :class="['tab-btn', { active: activeTab === 'links' }]" @click="activeTab = 'links'; fetchLinks()">关联 ({{ links.length || 0 }})</button>
         </div>
 
         <div v-if="activeTab === 'spec'" class="tab-panel">
@@ -430,7 +432,70 @@
         <button @click="viewTestCase = null">关闭</button>
       </div>
     </div>
-  </div>
+
+    <div v-if="showSupersedeDialog" class="dialog-overlay" @click.self="showSupersedeDialog = false">
+      <div data-testid="req-detail-dlg-supersede" class="dialog">
+        <h3>创建变更需求</h3>
+        <p class="dialog-hint">将当前已通过需求标记为废弃，并创建一个新的变更需求</p>
+        <div class="form-group">
+          <label>新需求标题</label>
+          <input v-model="supersedeForm.title" data-testid="req-detail-dlg-supersede-inp-title" :placeholder="`${req?.title || ''}（变更）`" />
+        </div>
+        <div class="form-group">
+          <label>新需求描述</label>
+          <textarea v-model="supersedeForm.description" data-testid="req-detail-dlg-supersede-txtarea-desc" :placeholder="req?.description || ''"></textarea>
+        </div>
+        <button data-testid="req-detail-dlg-supersede-btn-confirm" @click="supersedeReq">确认</button>
+        <button @click="showSupersedeDialog = false">取消</button>
+      </div>
+    </div>
+
+    <div v-if="showAddLinkDialog" class="dialog-overlay" @click.self="showAddLinkDialog = false">
+      <div data-testid="req-detail-dlg-add-link" class="dialog">
+        <h3>添加关联</h3>
+        <div class="form-group">
+          <label>目标需求 ID</label>
+          <input v-model.number="addLinkForm.target_id" type="number" data-testid="req-detail-dlg-add-link-inp-target" />
+        </div>
+        <div class="form-group">
+          <label>关联类型</label>
+          <span class="spec-tag" style="background:#eff6ff;color:#3b82f6">relates_to（关联）</span>
+        </div>
+        <button data-testid="req-detail-dlg-add-link-btn-confirm" @click="createLink">确认</button>
+        <button @click="showAddLinkDialog = false">取消</button>
+      </div>
+    </div>
+
+        <div v-if="activeTab === 'links'" class="tab-panel">
+          <div class="tab-toolbar">
+            <button data-testid="req-detail-btn-add-link" @click="showAddLinkDialog = true">添加关联</button>
+          </div>
+          <table data-testid="req-detail-tbl-links">
+            <thead>
+              <tr><th>方向</th><th>类型</th><th>关联需求</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="link in links" :key="link.id">
+                <td>
+                  <span class="link-direction" :class="link.direction">{{ link.direction === 'outgoing' ? '→ 指向' : '← 来自' }}</span>
+                </td>
+                <td>
+                  <span class="spec-tag" :style="linkTypeStyle(link.link_type)">{{ linkTypeLabel(link.link_type) }}</span>
+                </td>
+                <td>
+                  <router-link :to="`/requirements/${link.related_req_id}`" class="task-link">需求 #{{ link.related_req_id }}</router-link>
+                </td>
+                <td>{{ formatTime(link.created_at) }}</td>
+                <td>
+                  <button v-if="link.link_type === 'relates_to'" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
+                  <span v-else class="spec-muted">系统关联</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
+        </div>
+      </div>
 </template>
 
 <script setup lang="ts">
@@ -590,6 +655,23 @@ const testStats = ref<TestStats>({})
 const dropdownOpen = ref('')
 const isLoading = ref(true)
 const reviewComments = ref<Array<{ id: number; reviewer_id: number; action: string; comment: string | null; created_at: string }>>([])
+
+interface LinkItem {
+  id: number
+  source_id: number
+  target_id: number
+  link_type: string
+  direction: 'incoming' | 'outgoing'
+  related_req_id: number
+  created_by: number
+  created_at: string | null
+}
+
+const links = ref<LinkItem[]>([])
+const showSupersedeDialog = ref(false)
+const showAddLinkDialog = ref(false)
+const supersedeForm = reactive({ title: '', description: '' })
+const addLinkForm = reactive({ target_id: 0 })
 
 async function fetchReviewComments() {
   try {
@@ -1029,6 +1111,76 @@ async function fetchTestStats() {
   }
 }
 
+async function fetchLinks() {
+  try {
+    const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/links`)
+    links.value = res.data?.data || []
+  } catch {
+    links.value = []
+  }
+}
+
+async function createLink() {
+  if (!addLinkForm.target_id) {
+    notification.showError('请输入目标需求 ID')
+    return
+  }
+  try {
+    await apiClient.post(`/api/v1/requirements/${reqId.value}/links`, {
+      target_id: addLinkForm.target_id,
+      link_type: 'relates_to',
+    })
+    showAddLinkDialog.value = false
+    addLinkForm.target_id = 0
+    await fetchLinks()
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '添加关联失败')
+  }
+}
+
+async function deleteLink(linkId: number) {
+  if (!confirm('确定要删除此关联吗？')) return
+  try {
+    await apiClient.delete(`/api/v1/requirements/${reqId.value}/links/${linkId}`)
+    await fetchLinks()
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '删除关联失败')
+  }
+}
+
+async function supersedeReq() {
+  try {
+    const body: Record<string, string> = {}
+    if (supersedeForm.title) body.title = supersedeForm.title
+    if (supersedeForm.description) body.description = supersedeForm.description
+    const res = await apiClient.post(`/api/v1/requirements/${reqId.value}/supersede`, body)
+    showSupersedeDialog.value = false
+    supersedeForm.title = ''
+    supersedeForm.description = ''
+    const newReq = res.data?.data?.new_requirement
+    if (newReq) {
+      router.push(`/requirements/${newReq.id}`)
+    } else {
+      await fetchReq()
+    }
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '创建变更失败')
+  }
+}
+
+function linkTypeLabel(type: string): string {
+  const map: Record<string, string> = { supersede: '变更', relates_to: '关联' }
+  return map[type] || type
+}
+
+function linkTypeStyle(type: string): string {
+  const map: Record<string, string> = {
+    supersede: 'background:#fef3c7;color:#92400e',
+    relates_to: 'background:#eff6ff;color:#3b82f6',
+  }
+  return map[type] || 'background:#f3f4f6;color:#666'
+}
+
 onMounted(async () => {
   isLoading.value = true
   try {
@@ -1347,6 +1499,25 @@ onMounted(async () => {
   padding: 3rem 1rem;
   color: #999;
   font-size: 14px;
+}
+.link-direction {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.link-direction.outgoing {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+.link-direction.incoming {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+.dialog-hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 1rem;
 }
 .spec-description {
   color: #555;
