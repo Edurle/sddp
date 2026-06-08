@@ -455,3 +455,63 @@ def generate_test_cases(
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
         raise typer.Exit(code=1)
+
+
+@app.command("links")
+def list_links(id: int) -> None:
+    try:
+        client = get_client()
+        data = client.get(f"/requirements/{id}/links")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("link")
+def create_link(
+    id: int,
+    target: int = typer.Option(..., "--target", "-t"),
+    type: str = typer.Option("relates_to", "--type"),
+) -> None:
+    try:
+        client = get_client()
+        data = client.post(f"/requirements/{id}/links", json={"target_id": target, "link_type": type})
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("unlink")
+def delete_link(
+    id: int,
+    link_id: int = typer.Option(..., "--link-id"),
+) -> None:
+    try:
+        client = get_client()
+        data = client.delete(f"/requirements/{id}/links/{link_id}")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("supersede")
+def supersede_requirement(
+    id: int,
+    title: Optional[str] = typer.Option(None, "--title", "-t"),
+    description: Optional[str] = typer.Option(None, "--description", "-d"),
+) -> None:
+    try:
+        client = get_client()
+        body: dict = {}
+        if title:
+            body["title"] = title
+        if description:
+            body["description"] = description
+        data = client.post(f"/requirements/{id}/supersede", json=body if body else None)
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)

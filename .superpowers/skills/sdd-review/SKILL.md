@@ -38,7 +38,27 @@ sdd requirements full-context REQUIREMENT_ID
 
 Review all sections: `requirement`, `spec`, `test_cases`, `tasks`.
 
-### Step 3: Review by Type
+### Step 2A: Check Related Requirements
+
+Check if this requirement is linked to others (dependencies, supersede chain):
+
+```bash
+sdd requirements links REQUIREMENT_ID
+```
+
+Each link has `direction` (`incoming` / `outgoing`), `link_type` (`relates_to` / `supersede`), and `related_req_id`. This helps understand context — e.g., if reviewing a requirement that supersedes an older one, check the original's spec for reference.
+
+### Step 3: Check Previous Review Comments
+
+If the requirement was previously reviewed and rejected, check prior feedback:
+
+```bash
+sdd requirements review-comments REQUIREMENT_ID
+```
+
+This returns all review comments from previous rounds. Use this to understand whether prior issues have been addressed.
+
+### Step 4: Review by Type
 
 **Requirement Review (`review_type: requirement`):**
 
@@ -71,7 +91,7 @@ Evaluate:
 - Are test steps reproducible?
 - Are expected results verifiable?
 
-### Step 4: Submit Your Decision
+### Step 5: Submit Your Decision
 
 **Approve:**
 ```bash
@@ -91,13 +111,22 @@ sdd requirements review REQUIREMENT_ID --action reject --comment "Issues found: 
 
 Always provide specific, actionable feedback when rejecting.
 
-### Step 5: Verify Status Change
+### Step 6: Verify Status Change
 
 ```bash
 sdd requirements get REQUIREMENT_ID
 ```
 
 ## Common Patterns
+
+### Review a previously rejected submission
+
+```bash
+sdd requirements review-comments REQUIREMENT_ID
+# Check if prior feedback was addressed, then proceed with review
+sdd requirements full-context REQUIREMENT_ID
+sdd requirements review REQUIREMENT_ID --action approve
+```
 
 ### Quick approve
 
@@ -113,6 +142,17 @@ sdd requirements review REQUIREMENT_ID --action reject --comment "Issues:
 2. Table 'users' lacks 'created_at' timestamp
 Please address these and resubmit."
 ```
+
+### Reject and suggest creating a change (supersede)
+
+If the requirement needs significant rework after approval, suggest creating a supersede:
+
+```bash
+sdd requirements review REQUIREMENT_ID --action reject --comment "Major scope change needed."
+sdd requirements supersede REQUIREMENT_ID --title "Requirement Title (v2)" --description "Updated description"
+```
+
+This marks the original as `deprecated` and creates a new drafting requirement linked via `supersede`.
 
 ## Error Handling
 
