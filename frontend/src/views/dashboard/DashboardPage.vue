@@ -393,7 +393,7 @@ async function changePassword() {
 onMounted(async () => {
   isLoading.value = true
   try {
-    if (authStore.isAuthenticated && !authStore.user) {
+    if (authStore.isAuthenticated) {
       await authStore.fetchUser()
     }
     await Promise.all([fetchData(), fetchProjectsTree()])
