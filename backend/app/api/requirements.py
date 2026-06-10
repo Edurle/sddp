@@ -280,6 +280,7 @@ async def patch_requirement(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:edit")
     from app.models import Requirement
     from app.services.requirement import VALID_STATUS_TRANSITIONS, EDITABLE_STATUSES
     stmt = select(Requirement).where(Requirement.id == id, Requirement.is_deleted == False)
@@ -313,6 +314,13 @@ async def patch_requirement(
     return {"code": 0, "message": "success", "data": {"id": req.id, "status": req.status}}
 
 
+_REVIEW_PERM_MAP = {
+    "reviewing_req": "requirement:review_req",
+    "reviewing_spec": "requirement:review_spec",
+    "reviewing_tests": "requirement:review_tests",
+}
+
+
 @router.post("/{id}/approve")
 async def approve_requirement_direct(
     id: int,
@@ -326,6 +334,10 @@ async def approve_requirement_direct(
     req = result.scalar_one_or_none()
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+
+    review_perm = _REVIEW_PERM_MAP.get(req.status)
+    if review_perm:
+        await check_team_permission(db, user, await _team_id_from_requirement(db, id), review_perm)
 
     approve_map = {
         "reviewing_req": "drafting_spec",
@@ -360,6 +372,7 @@ async def save_spec_direct(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "specification:edit")
     content = body.get("content", "")
     if isinstance(content, str):
         content = {"text": content}
@@ -385,6 +398,7 @@ async def approve_spec_direct(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:review_spec")
     from app.exceptions import BusinessError, ERR_NOT_FOUND
     from app.models import Requirement as ReqModel, RequirementReview
     stmt = select(ReqModel).where(ReqModel.id == id, ReqModel.is_deleted == False)
@@ -671,6 +685,7 @@ async def generate_tasks_endpoint(
     db: Annotated[AsyncSession, Depends(get_db_session)],
     body: GenerateTasksRequest | None = None,
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "task:create")
     strategy = body.strategy if body else "hybrid"
     data = await tg_svc.generate_tasks(db, id, int(user["sub"]), strategy)
     return {"code": 0, "message": "success", "data": data}
@@ -706,6 +721,7 @@ async def update_specification(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "specification:edit")
     data = await spec_svc.save_spec_document(db, reqId, int(user["sub"]), body.content)
     return {"code": 0, "message": "success", "data": data}
 

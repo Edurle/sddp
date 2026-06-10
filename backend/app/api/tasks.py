@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement, _team_id_from_task
 from app.exceptions import BusinessError, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS, ERR_VALIDATION
 from app.services import task as task_svc
 from app.services.test_execution import list_execution_rounds
@@ -70,6 +70,7 @@ async def patch_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     task = await task_svc._get_task_or_fail(db, id)
     if body.status is not None and body.status != task.status:
         if body.status not in VALID_TRANSITIONS.get(task.status, set()):
@@ -92,6 +93,7 @@ async def create_test_record(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:test")
     from app.models import TestExecutionRound, TestExecutionRecord
     task = await task_svc._get_task_or_fail(db, id)
 
@@ -130,6 +132,7 @@ async def create_test_round(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:test")
     from app.models import TestExecutionRound, TestExecutionRecord
     from sqlalchemy import select as sel
 
@@ -181,6 +184,7 @@ async def update_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.update_task(
         db, id,
         title=body.title,
@@ -196,6 +200,7 @@ async def delete_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:delete")
     data = await task_svc.delete_task(db, id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -206,6 +211,7 @@ async def start_testing(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:test")
     data = await task_svc.start_testing(db, id, user_id=int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 
@@ -216,6 +222,7 @@ async def complete_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:complete")
     data = await task_svc.complete_task(db, id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -226,6 +233,7 @@ async def start_coding(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.start_coding(db, id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -244,6 +252,7 @@ async def update_git_info(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.update_git_info(db, id, **body.model_dump(exclude_none=True))
     return {"code": 0, "message": "success", "data": data}
 

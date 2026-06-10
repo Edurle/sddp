@@ -16,6 +16,7 @@ ALL_PERMISSIONS = [
     "requirement:review_req",
     "requirement:review_spec",
     "requirement:review_tests",
+    "specification:edit",
     "test_case:create",
     "test_case:edit",
     "test_case:delete",

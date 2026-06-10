@@ -38,6 +38,8 @@ async def create_team(db: AsyncSession, user_id: int, name: str, description: st
         "requirement:create", "requirement:edit", "requirement:delete",
         "requirement:submit_review_req", "requirement:submit_review_spec", "requirement:submit_review_tests",
         "requirement:review_req", "requirement:review_spec", "requirement:review_tests",
+        "specification:edit",
+        "test_case:create", "test_case:edit", "test_case:delete",
         "task:create", "task:edit", "task:delete", "task:test", "task:complete",
         "member:invite", "member:remove", "member:assign_role",
         "spec_template:edit",

@@ -126,9 +126,16 @@ const permissionGroups = [
       { value: 'requirement:create', label: '创建' },
       { value: 'requirement:edit', label: '编辑' },
       { value: 'requirement:delete', label: '删除' },
+      { value: 'requirement:submit_review_req', label: '提交评审' },
       { value: 'requirement:review_req', label: '评审需求' },
+    ],
+  },
+  {
+    label: '规范',
+    items: [
+      { value: 'specification:edit', label: '编辑' },
+      { value: 'requirement:submit_review_spec', label: '提交评审' },
       { value: 'requirement:review_spec', label: '评审规范' },
-      { value: 'requirement:review_tests', label: '评审测试' },
     ],
   },
   {
@@ -137,6 +144,8 @@ const permissionGroups = [
       { value: 'test_case:create', label: '创建' },
       { value: 'test_case:edit', label: '编辑' },
       { value: 'test_case:delete', label: '删除' },
+      { value: 'requirement:submit_review_tests', label: '提交评审' },
+      { value: 'requirement:review_tests', label: '评审测试' },
     ],
   },
   {
@@ -238,7 +247,7 @@ onMounted(() => fetchRoles())
 
 <style scoped>
 .dialog {
-  max-width: 560px;
+  max-width: 720px;
 }
 
 .permission-group {
