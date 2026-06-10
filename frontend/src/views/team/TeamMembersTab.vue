@@ -251,3 +251,43 @@ onMounted(() => {
   fetchTeamOwner()
 })
 </script>
+
+<style scoped>
+input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked {
+  background: #111;
+  border-color: #111;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+}
+
+.dialog label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 6px;
+}
+</style>

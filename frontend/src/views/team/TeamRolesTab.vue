@@ -270,4 +270,31 @@ onMounted(() => fetchRoles())
   font-weight: 400;
   white-space: nowrap;
 }
+
+.permission-grid input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.permission-grid input[type="checkbox"]:checked {
+  background: #111;
+  border-color: #111;
+}
+
+.permission-grid input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+}
 </style>
