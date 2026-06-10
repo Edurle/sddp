@@ -186,11 +186,11 @@
         </div>
 
         <div v-if="activeTab === 'spec-versions'" class="tab-panel">          <div data-testid="req-detail-list-spec-versions" class="version-list">
-            <div v-for="(ver, idx) in specVersions" :key="idx" class="version-card" :class="{ selected: selectedVersionContent === getVersionText(ver) }" @click="viewSpecVersion(ver)">
+            <div v-for="(ver, idx) in specVersions" :key="idx" class="version-card" :class="{ selected: selectedVersionContent === getVersionContent(ver) }" @click="viewSpecVersion(ver)">
               <div class="version-header">
                 <span class="version-num">v{{ ver.version || idx + 1 }}</span>
               </div>
-              <div class="version-preview">{{ getVersionText(ver).slice(0, 100) }}{{ getVersionText(ver).length > 100 ? '...' : '' }}</div>
+              <div class="version-preview">{{ getVersionPreview(ver) }}</div>
               <button :data-testid="`req-detail-btn-spec-version-${ver.version || idx + 1}`" class="version-view-btn">查看</button>
             </div>
           </div>
@@ -590,7 +590,7 @@ interface Member {
 
 interface SpecVersion {
   id?: number
-  content?: string
+  content?: any
   version?: number
 }
 
@@ -737,9 +737,15 @@ const filteredTestCases = computed(() => {
   return testCases.value.filter((tc) => tc.case_type === testCaseTypeFilter.value)
 })
 
-function getVersionText(ver: SpecVersion): any {
-  if (ver.content) return ver.content
-  return ''
+function getVersionContent(ver: SpecVersion): any {
+  return ver.content || null
+}
+
+function getVersionPreview(ver: SpecVersion): string {
+  const content = ver.content
+  if (!content) return ''
+  const text = typeof content === 'string' ? content : JSON.stringify(content)
+  return text.length > 100 ? text.slice(0, 100) + '...' : text
 }
 
 function getSpecField(sectionName: string, fieldName: string): any {
@@ -1007,7 +1013,7 @@ async function fetchSpecVersions() {
 }
 
 function viewSpecVersion(ver: SpecVersion) {
-  selectedVersionContent.value = getVersionText(ver)
+  selectedVersionContent.value = getVersionContent(ver)
 }
 
 async function fetchTasks() {
