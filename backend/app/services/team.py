@@ -64,6 +64,7 @@ async def get_team(db: AsyncSession, team_id: int, user_id: int) -> dict:
 
     result = _team_to_dict(team)
     result["owner"] = _user_to_dict(owner_user) if owner_user else None
+    result["owner_nickname"] = owner_user.nickname if owner_user else None
     result["member_count"] = member_count
     return result
 
