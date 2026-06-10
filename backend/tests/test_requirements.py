@@ -636,6 +636,73 @@ class TestSubmitReview:
         body = resp.json()
         assert body["code"] == 40300
 
+    @pytest.mark.asyncio
+    async def test_submit_review_creator_without_permission(
+        self, client, normal_user, another_user, sample_requirement
+    ):
+        headers = auth_headers(normal_user.id, permissions=[])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_submit_review_non_creator_with_db_permission(
+        self, client, another_user, sample_requirement, owner_role, db
+    ):
+        from app.models import TeamMember, MemberRole, Role, RolePermission
+
+        team = owner_role["team"]
+        member = TeamMember(team_id=team.id, user_id=another_user.id)
+        db.add(member)
+        await db.flush()
+        role = Role(team_id=team.id, name="提交审核", is_builtin=False)
+        db.add(role)
+        await db.flush()
+        db.add(RolePermission(role_id=role.id, permission="requirement:submit_review_req"))
+        await db.flush()
+        db.add(MemberRole(member_id=member.id, role_id=role.id))
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=[])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+
+    @pytest.mark.asyncio
+    async def test_submit_review_non_creator_wrong_permission(
+        self, client, another_user, sample_requirement, owner_role, db
+    ):
+        from app.models import TeamMember, MemberRole, Role, RolePermission
+
+        team = owner_role["team"]
+        member = TeamMember(team_id=team.id, user_id=another_user.id)
+        db.add(member)
+        await db.flush()
+        role = Role(team_id=team.id, name="编辑需求", is_builtin=False)
+        db.add(role)
+        await db.flush()
+        db.add(RolePermission(role_id=role.id, permission="requirement:edit"))
+        await db.flush()
+        db.add(MemberRole(member_id=member.id, role_id=role.id))
+        await db.commit()
+
+        headers = auth_headers(another_user.id, permissions=[])
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/submit-review",
+            json={"reviewer_id": another_user.id},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40300
+
 
 class TestReview:
     @pytest.mark.asyncio

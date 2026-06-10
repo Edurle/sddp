@@ -23,6 +23,28 @@ from app.services.statistics import get_requirement_test_statistics
 router = APIRouter()
 
 
+_SUBMIT_REVIEW_PERM_MAP = {
+    "drafting_req": "requirement:submit_review_req",
+    "drafting_spec": "requirement:submit_review_spec",
+    "drafting_tests": "requirement:submit_review_tests",
+}
+
+
+async def _check_submit_review_permission(
+    db: AsyncSession, req_id: int, user: dict, fallback_perm: str,
+) -> None:
+    req_stmt = select(Requirement).where(Requirement.id == req_id, Requirement.is_deleted == False)
+    req_result = await db.execute(req_stmt)
+    req = req_result.scalar_one_or_none()
+    if req is not None and req.created_by == int(user["sub"]):
+        return
+    if user.get("is_admin"):
+        return
+    team_id = await _team_id_from_requirement(db, req_id)
+    perm = _SUBMIT_REVIEW_PERM_MAP.get(req.status if req else None) or fallback_perm
+    await check_team_permission(db, user, team_id, perm)
+
+
 class CreateRequirementRequest(BaseModel):
     title: str
     req_type: str
@@ -352,6 +374,7 @@ async def submit_spec_review_direct(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await _check_submit_review_permission(db, id, user, "requirement:submit_review_spec")
     data = await req_svc.submit_review(db, id, int(user["sub"]), body.reviewer_id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -400,6 +423,7 @@ async def submit_tests_review_direct(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
+    await _check_submit_review_permission(db, id, user, "requirement:submit_review_tests")
     data = await req_svc.submit_review(db, id, int(user["sub"]), body.reviewer_id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -531,12 +555,7 @@ async def submit_review(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
-    await check_team_permission(db, user, await _team_id_from_requirement(db, id), "requirement:edit")
-    req_stmt = select(Requirement).where(Requirement.id == id, Requirement.is_deleted == False)
-    req_result = await db.execute(req_stmt)
-    req = req_result.scalar_one_or_none()
-    if req is not None and req.created_by != int(user["sub"]) and not user.get("is_admin"):
-        raise BusinessError(ERR_FORBIDDEN, "只能由需求创建人提交审核")
+    await _check_submit_review_permission(db, id, user, "requirement:submit_review_req")
     data = await req_svc.submit_review(db, id, int(user["sub"]), body.reviewer_id, user.get("is_admin", False))
     return {"code": 0, "message": "success", "data": data}
 
