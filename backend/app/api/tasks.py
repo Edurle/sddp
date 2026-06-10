@@ -112,6 +112,21 @@ async def create_test_record(
     actual_result = body.get("actual_result")
     failure_reason = body.get("failure_reason")
 
+    existing_stmt = select(TestExecutionRecord).where(
+        TestExecutionRecord.round_id == latest_round.id,
+        TestExecutionRecord.test_case_id == test_case_id,
+    )
+    existing_result = await db.execute(existing_stmt)
+    existing_rec = existing_result.scalar_one_or_none()
+
+    if existing_rec:
+        existing_rec.status = status
+        existing_rec.actual_result = actual_result
+        existing_rec.failure_reason = failure_reason
+        await db.commit()
+        await db.refresh(existing_rec)
+        return {"code": 0, "message": "success", "data": {"id": existing_rec.id, "status": existing_rec.status, "round_id": latest_round.id}}
+
     rec = TestExecutionRecord(
         round_id=latest_round.id,
         test_case_id=test_case_id,

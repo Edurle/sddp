@@ -318,6 +318,14 @@ async def test_start_testing_coding_to_testing(client, db, sample_task, sample_t
     assert len(data["records"]) >= 1
     record = data["records"][0]
     assert record["status"] == "pending"
+    assert "test_case_id" in record
+
+    from app.models import TestExecutionRecord
+    from sqlalchemy import select
+    rec_count = (await db.execute(
+        select(TestExecutionRecord).where(TestExecutionRecord.round_id == data["round_id"])
+    )).scalars().all()
+    assert len(rec_count) == 0
 
 
 @pytest.mark.asyncio

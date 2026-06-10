@@ -225,32 +225,18 @@ async def start_testing(db: AsyncSession, task_id: int, user_id: int) -> dict:
     db.add(round_)
     await db.flush()
 
-    records = []
-    for tc in test_cases:
-        rec = TestExecutionRecord(
-            round_id=round_.id,
-            test_case_id=tc.id,
-            status="pending",
-        )
-        db.add(rec)
-        records.append(rec)
-    await db.flush()
-
     task.status = "testing"
     await db.commit()
     await db.refresh(round_)
-    for rec in records:
-        await db.refresh(rec)
 
     return {
         "round_id": round_.id,
         "records": [
             {
-                "id": r.id,
-                "test_case_id": r.test_case_id,
-                "status": r.status,
+                "test_case_id": tc.id,
+                "status": "pending",
             }
-            for r in records
+            for tc in test_cases
         ],
     }
 
