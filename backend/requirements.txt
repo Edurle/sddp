@@ -11,4 +11,3 @@ pytest
 pytest-asyncio
 pydantic-settings
 jsonschema
-alembic
