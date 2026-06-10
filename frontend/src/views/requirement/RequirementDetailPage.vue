@@ -436,33 +436,59 @@
     </div>
 
     <div v-if="viewTestCase" class="dialog-overlay" @click.self="viewTestCase = null">
-      <div class="dialog" style="max-width:640px;">
-        <h3>测试用例详情</h3>
-        <div class="form-group"><label>标题</label><p class="view-field">{{ viewTestCase.title }}</p></div>
-        <div class="form-group"><label>类型</label><p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : viewTestCase.case_type === 'functional' ? '功能测试' : viewTestCase.case_type }}</p></div>
-        <div class="form-group"><label>前置条件</label><p class="view-field">{{ viewTestCase.precondition || '无' }}</p></div>
-        <div class="form-group"><label>步骤</label><pre class="view-field">{{ viewTestCase.steps || '无' }}</pre></div>
-        <div class="form-group"><label>预期结果</label><pre class="view-field">{{ viewTestCase.expected_result || '无' }}</pre></div>
-        <div class="form-group"><label>关联 API</label><p class="view-field">{{ viewTestCase.related_api || '无' }}</p></div>
-
-        <div v-if="tcExecutionMap[viewTestCase.id]" class="form-group">
-          <label>执行记录</label>
-          <div v-if="tcExecutionMap[viewTestCase.id].all_results && tcExecutionMap[viewTestCase.id].all_results.length" class="tc-exec-records">
-            <div v-for="(rec, ri) in tcExecutionMap[viewTestCase.id].all_results" :key="ri" class="tc-exec-item">
-              <div class="tc-exec-header">
-                <span class="spec-tag" :style="resultTagStyle(rec.status)">{{ tcResultText(rec.status) }}</span>
-                <span class="tc-exec-time">{{ rec.executed_at || '' }}</span>
+      <div class="tc-detail-dialog">
+        <div class="tc-detail-header">
+          <h3>测试用例详情</h3>
+          <button class="tc-detail-close" @click="viewTestCase = null">&times;</button>
+        </div>
+        <div class="tc-detail-body">
+          <div class="tc-detail-section">
+            <div class="tc-section-title">基本信息</div>
+            <div class="tc-detail-grid">
+              <div class="tc-detail-field">
+                <label>标题</label>
+                <p class="view-field">{{ viewTestCase.title }}</p>
               </div>
-              <div v-if="rec.actual_result" class="tc-exec-field"><strong>实际结果：</strong>{{ rec.actual_result }}</div>
-              <div v-if="rec.failure_reason" class="tc-exec-field tc-exec-fail"><strong>失败原因：</strong>{{ rec.failure_reason }}</div>
-              <div v-if="rec.duration_ms" class="tc-exec-field"><strong>耗时：</strong>{{ rec.duration_ms }}ms</div>
+              <div class="tc-detail-field">
+                <label>类型</label>
+                <p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : viewTestCase.case_type === 'functional' ? '功能测试' : viewTestCase.case_type }}</p>
+              </div>
+              <div class="tc-detail-field">
+                <label>关联 API</label>
+                <p class="view-field">{{ viewTestCase.related_api || '无' }}</p>
+              </div>
             </div>
           </div>
-          <p v-else class="view-field">暂无执行记录</p>
+          <div class="tc-detail-section">
+            <div class="tc-section-title">测试内容</div>
+            <TestDslFlow
+              :case-type="viewTestCase.case_type"
+              :precondition="viewTestCase.precondition"
+              :steps="viewTestCase.steps"
+              :expected-result="viewTestCase.expected_result"
+            />
+          </div>
+          <div class="tc-detail-section">
+            <div class="tc-section-title">执行记录</div>
+            <template v-if="tcExecutionMap[viewTestCase.id] && tcExecutionMap[viewTestCase.id].all_results && tcExecutionMap[viewTestCase.id].all_results.length">
+              <div class="tc-exec-records">
+                <details v-for="(rec, ri) in tcExecutionMap[viewTestCase.id].all_results" :key="ri" class="tc-exec-collapsible" :open="ri === 0">
+                  <summary class="tc-exec-summary">
+                    <span class="spec-tag" :style="resultTagStyle(rec.status)">{{ tcResultText(rec.status) }}</span>
+                    <span class="tc-exec-time">{{ rec.executed_at || '' }}</span>
+                    <span v-if="rec.duration_ms" class="tc-exec-dur">{{ rec.duration_ms }}ms</span>
+                  </summary>
+                  <div class="tc-exec-detail">
+                    <div v-if="rec.actual_result" class="tc-exec-field"><strong>实际结果：</strong>{{ rec.actual_result }}</div>
+                    <div v-if="rec.failure_reason" class="tc-exec-field tc-exec-fail"><strong>失败原因：</strong>{{ rec.failure_reason }}</div>
+                    <div v-if="rec.duration_ms" class="tc-exec-field"><strong>耗时：</strong>{{ rec.duration_ms }}ms</div>
+                  </div>
+                </details>
+              </div>
+            </template>
+            <p v-else class="tc-empty-hint">暂无执行记录</p>
+          </div>
         </div>
-        <div v-else class="form-group"><label>执行记录</label><p class="view-field">暂无执行记录</p></div>
-
-        <button @click="viewTestCase = null">关闭</button>
       </div>
     </div>
 
@@ -509,6 +535,7 @@ import { useNotificationStore } from '@/stores/notification'
 import { taskStatusLabel } from '@/utils/status'
 import RequirementSidebar from './RequirementSidebar.vue'
 import JsonTree from '@/components/JsonTree.vue'
+import TestDslFlow from '@/components/TestDslFlow.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -1219,32 +1246,158 @@ onMounted(async () => {
   color: #9ca3af;
   font-size: 13px;
 }
+.tc-detail-dialog {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  width: 780px;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tc-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.tc-detail-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+.tc-detail-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #999;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.tc-detail-close:hover {
+  background: #f3f4f6;
+  color: #333;
+}
+.tc-detail-body {
+  padding: 1rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.tc-detail-section {
+  margin-bottom: 1.25rem;
+}
+.tc-detail-section:last-child {
+  margin-bottom: 0;
+}
+.tc-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.tc-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.tc-detail-grid .tc-detail-field:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.tc-detail-field label {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.tc-empty-hint {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 0;
+  padding: 0.5rem 0;
+}
 .tc-exec-records {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.25rem;
 }
-.tc-exec-item {
-  padding: 0.5rem 0.75rem;
-  background: #f9fafb;
-  border-radius: 6px;
+.tc-exec-collapsible {
   border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
 }
-.tc-exec-header {
+.tc-exec-collapsible summary {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: #fafbfc;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tc-exec-collapsible summary::before {
+  content: '▸';
+  font-size: 11px;
+  transition: transform 0.15s;
+  display: inline-block;
+  color: #9ca3af;
+}
+.tc-exec-collapsible[open] summary::before {
+  transform: rotate(90deg);
+}
+.tc-exec-collapsible summary:hover {
+  background: #f3f4f6;
+}
+.tc-exec-summary {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
 }
 .tc-exec-time {
   font-size: 12px;
   color: #9ca3af;
 }
+.tc-exec-dur {
+  font-size: 11px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+.tc-exec-detail {
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  background: #fff;
+}
 .tc-exec-field {
   font-size: 13px;
   color: #374151;
   margin-top: 0.25rem;
+  line-height: 1.5;
+}
+.tc-exec-field:first-child {
+  margin-top: 0;
 }
 .tc-exec-fail {
   color: #991b1b;
