@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./sdd.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost/sdd")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "")
 REDIS_URL = os.getenv("REDIS_URL", "")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key")
