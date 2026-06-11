@@ -393,7 +393,7 @@ async function changePassword() {
 onMounted(async () => {
   isLoading.value = true
   try {
-    if (authStore.isAuthenticated && !authStore.user) {
+    if (authStore.isAuthenticated) {
       await authStore.fetchUser()
     }
     await Promise.all([fetchData(), fetchProjectsTree()])
@@ -547,6 +547,7 @@ onMounted(async () => {
 .req-status-drafting_spec { background: #eff6ff; color: #1e40af; }
 .req-status-drafting_tests { background: #fef3c7; color: #92400e; }
 .req-status-approved { background: #dcfce7; color: #166534; }
+.req-status-deprecated { background: #fee2e2; color: #991b1b; text-decoration: line-through; }
 .priority-dot {
   width: 8px;
   height: 8px;

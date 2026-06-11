@@ -127,8 +127,6 @@ test.describe('Project Detail', () => {
   test('E2E-PROJ-007: View iteration list from project detail', async ({
     authenticatedPage: page,
   }) => {
-    await page.getByTestId('project-detail-tab-iterations').click()
-
     const iterationTable = page.getByTestId('iteration-list-tbl-iterations')
     await expect(iterationTable).toBeVisible()
   })

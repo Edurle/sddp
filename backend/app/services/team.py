@@ -36,7 +36,10 @@ async def create_team(db: AsyncSession, user_id: int, name: str, description: st
         "project:create", "project:edit", "project:archive", "project:delete",
         "iteration:create", "iteration:edit", "iteration:start", "iteration:complete",
         "requirement:create", "requirement:edit", "requirement:delete",
+        "requirement:submit_review_req", "requirement:submit_review_spec", "requirement:submit_review_tests",
         "requirement:review_req", "requirement:review_spec", "requirement:review_tests",
+        "specification:edit",
+        "test_case:create", "test_case:edit", "test_case:delete",
         "task:create", "task:edit", "task:delete", "task:test", "task:complete",
         "member:invite", "member:remove", "member:assign_role",
         "spec_template:edit",
@@ -61,6 +64,7 @@ async def get_team(db: AsyncSession, team_id: int, user_id: int) -> dict:
 
     result = _team_to_dict(team)
     result["owner"] = _user_to_dict(owner_user) if owner_user else None
+    result["owner_nickname"] = owner_user.nickname if owner_user else None
     result["member_count"] = member_count
     return result
 

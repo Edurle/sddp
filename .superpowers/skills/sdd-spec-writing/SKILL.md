@@ -27,6 +27,23 @@ Study the output carefully:
 - `tasks` — existing tasks for this requirement
 - `test_cases` — existing test cases
 
+### Step 1A: Check Linked Requirements
+
+If this requirement may be part of a supersede chain or have dependencies:
+
+```bash
+sdd requirements links REQUIREMENT_ID
+```
+
+If there is an outgoing `supersede` link, the original (deprecated) requirement's spec is a valuable reference. Fetch it:
+
+```bash
+sdd requirements spec ORIGINAL_REQ_ID
+sdd requirements spec-version ORIGINAL_REQ_ID VERSION
+```
+
+Use the original spec as a starting point and modify only what changed.
+
 ### Step 2: Get the Spec Template Agent Guide
 
 Find your team ID from Step 1 output (look at the project → team chain), then:
@@ -121,11 +138,29 @@ sdd requirements spec-versions REQUIREMENT_ID
 ### Creating a new spec from scratch
 
 1. `full-context` → understand the requirement
-2. `agent-guide` → get template with prompts
-3. Write content following each `agent_prompt`
-4. `save-spec` → validate and save
-5. Fix validation errors if any
-6. `submit-spec-review` → send for review
+2. `links` → check for supersede chain or related requirements
+3. If supersede: fetch original spec as reference
+4. `agent-guide` → get template with prompts
+5. Write content following each `agent_prompt`
+6. `save-spec` → validate and save
+7. Fix validation errors if any
+8. `submit-spec-review` → send for review
+
+### Writing a spec for a supersede (change request)
+
+1. `links` → find the original deprecated requirement
+2. `spec-version ORIGINAL_ID VERSION` → get the original spec content
+3. Modify only the sections that changed
+4. `save-spec` → create new version
+5. `submit-spec-review` → send for review
+
+### Linking related requirements
+
+After writing a spec, you can manually link related requirements:
+
+```bash
+sdd requirements link REQUIREMENT_ID --target OTHER_REQ_ID --type relates_to
+```
 
 ### Updating an existing spec
 

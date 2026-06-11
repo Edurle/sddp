@@ -12,28 +12,24 @@
         @submit-review="openSubmitReviewDialog"
         @approve="approveReview"
         @reject="showRejectDialog = true"
+        @supersede="showSupersedeDialog = true"
       />
-
-      <div v-if="reviewComments.length > 0" class="review-timeline">
-        <h4>审核历史</h4>
-        <div v-for="rc in reviewComments" :key="rc.id" class="review-timeline-item">
-          <div class="review-timeline-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
-          <div class="review-timeline-content">
-            <div class="review-timeline-header">
-              <span class="review-timeline-action" :class="rc.action">{{ rc.action === 'approve' ? '通过' : '拒绝' }}</span>
-              <span class="review-timeline-time">{{ formatTime(rc.created_at) }}</span>
-            </div>
-            <div v-if="rc.comment" class="review-timeline-comment">{{ rc.comment }}</div>
-          </div>
-        </div>
-      </div>
 
       <div class="detail-main">
         <div class="detail-tabs">
+          <button data-testid="req-detail-tab-story" :class="['tab-btn', { active: activeTab === 'story' }]" @click="activeTab = 'story'">用户故事</button>
           <button data-testid="req-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
-          <button data-testid="req-detail-tab-spec-versions" :class="['tab-btn', { active: activeTab === 'spec-versions' }]" @click="activeTab = 'spec-versions'; fetchSpecVersions()">版本历史 ({{ specVersions.length || 0 }})</button>
-          <button data-testid="req-detail-tab-tasks" :class="['tab-btn', { active: activeTab === 'tasks' }]" @click="activeTab = 'tasks'; fetchTasks()">任务 ({{ tasks.length || 0 }})</button>
-          <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例 ({{ testCases.length || 0 }})</button>
+          <button data-testid="req-detail-tab-spec-versions" :class="['tab-btn', { active: activeTab === 'spec-versions' }]" @click="activeTab = 'spec-versions'; fetchSpecVersions()">版本历史</button>
+          <button data-testid="req-detail-tab-tasks" :class="['tab-btn', { active: activeTab === 'tasks' }]" @click="activeTab = 'tasks'; fetchTasks()">任务</button>
+          <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例</button>
+          <button data-testid="req-detail-tab-review-history" :class="['tab-btn', { active: activeTab === 'review-history' }]" @click="activeTab = 'review-history'">审核历史</button>
+          <button data-testid="req-detail-tab-links" :class="['tab-btn', { active: activeTab === 'links' }]" @click="activeTab = 'links'; fetchLinks()">关联</button>
+          <button data-testid="req-detail-tab-commits" :class="['tab-btn', { active: activeTab === 'commits' }]" @click="activeTab = 'commits'; fetchCommits()">提交记录</button>
+        </div>
+
+        <div v-if="activeTab === 'story'" class="tab-panel">
+          <div v-if="req.description" class="markdown-body" v-html="renderedDescription"></div>
+          <div v-else class="spec-empty">暂无需求描述</div>
         </div>
 
         <div v-if="activeTab === 'spec'" class="tab-panel">
@@ -197,11 +193,11 @@
         </div>
 
         <div v-if="activeTab === 'spec-versions'" class="tab-panel">          <div data-testid="req-detail-list-spec-versions" class="version-list">
-            <div v-for="(ver, idx) in specVersions" :key="idx" class="version-card" :class="{ selected: selectedVersionContent === getVersionText(ver) }" @click="viewSpecVersion(ver)">
+            <div v-for="(ver, idx) in specVersions" :key="idx" class="version-card" :class="{ selected: selectedVersionContent === getVersionContent(ver) }" @click="viewSpecVersion(ver)">
               <div class="version-header">
                 <span class="version-num">v{{ ver.version || idx + 1 }}</span>
               </div>
-              <div class="version-preview">{{ getVersionText(ver).slice(0, 100) }}{{ getVersionText(ver).length > 100 ? '...' : '' }}</div>
+              <div class="version-preview">{{ getVersionPreview(ver) }}</div>
               <button :data-testid="`req-detail-btn-spec-version-${ver.version || idx + 1}`" class="version-view-btn">查看</button>
             </div>
           </div>
@@ -285,6 +281,72 @@
               <div class="stat-label">通过率</div>
             </div>
           </div>
+        </div>
+
+        <div v-if="activeTab === 'review-history'" class="tab-panel">
+          <div v-if="reviewComments.length === 0" class="spec-empty">暂无审核记录</div>
+          <div v-else class="review-history-list">
+            <div v-for="rc in reviewComments" :key="rc.id" class="review-history-item">
+              <div class="review-history-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
+              <div class="review-history-body">
+                <div class="review-history-header">
+                  <span class="review-history-action" :class="rc.action">{{ rc.action === 'approve' ? '通过' : '拒绝' }}</span>
+                  <span class="review-history-time">{{ formatTime(rc.created_at) }}</span>
+                </div>
+                <div v-if="rc.comment" class="review-history-comment">{{ rc.comment }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'links'" class="tab-panel">
+          <div class="tab-toolbar">
+            <button data-testid="req-detail-btn-add-link" @click="showAddLinkDialog = true">添加关联</button>
+          </div>
+          <table data-testid="req-detail-tbl-links">
+            <thead>
+              <tr><th>方向</th><th>类型</th><th>关联需求</th><th>创建时间</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="link in links" :key="link.id">
+                <td>
+                  <span class="link-direction" :class="link.direction">{{ link.direction === 'outgoing' ? '→ 指向' : '← 来自' }}</span>
+                </td>
+                <td>
+                  <span class="spec-tag" :style="linkTypeStyle(link.link_type)">{{ linkTypeLabel(link.link_type) }}</span>
+                </td>
+                <td>
+                  <router-link :to="`/requirements/${link.related_req_id}`" class="task-link">需求 #{{ link.related_req_id }}</router-link>
+                </td>
+                <td>{{ formatTime(link.created_at) }}</td>
+                <td>
+                  <button v-if="link.link_type === 'relates_to'" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
+                  <span v-else class="spec-muted">系统关联</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
+        </div>
+
+        <div v-if="activeTab === 'commits'" class="tab-panel">
+          <table data-testid="req-detail-tbl-commits">
+            <thead>
+              <tr><th>Commit</th><th>消息</th><th>作者</th><th>任务</th><th>提交时间</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="c in commits" :key="c.id">
+                <td><code>{{ c.commit_sha }}</code></td>
+                <td>{{ c.message || '' }}</td>
+                <td>{{ c.author || '' }}</td>
+                <td>
+                  <router-link :to="`/tasks/${c.task_id}`" class="task-link">任务 #{{ c.task_id }}</router-link>
+                </td>
+                <td>{{ formatTime(c.committed_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="commits.length === 0" class="spec-empty">暂无提交记录</div>
         </div>
       </div>
     </div>
@@ -401,33 +463,92 @@
     </div>
 
     <div v-if="viewTestCase" class="dialog-overlay" @click.self="viewTestCase = null">
-      <div class="dialog" style="max-width:640px;">
-        <h3>测试用例详情</h3>
-        <div class="form-group"><label>标题</label><p class="view-field">{{ viewTestCase.title }}</p></div>
-        <div class="form-group"><label>类型</label><p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : viewTestCase.case_type === 'functional' ? '功能测试' : viewTestCase.case_type }}</p></div>
-        <div class="form-group"><label>前置条件</label><p class="view-field">{{ viewTestCase.precondition || '无' }}</p></div>
-        <div class="form-group"><label>步骤</label><pre class="view-field">{{ viewTestCase.steps || '无' }}</pre></div>
-        <div class="form-group"><label>预期结果</label><pre class="view-field">{{ viewTestCase.expected_result || '无' }}</pre></div>
-        <div class="form-group"><label>关联 API</label><p class="view-field">{{ viewTestCase.related_api || '无' }}</p></div>
-
-        <div v-if="tcExecutionMap[viewTestCase.id]" class="form-group">
-          <label>执行记录</label>
-          <div v-if="tcExecutionMap[viewTestCase.id].all_results && tcExecutionMap[viewTestCase.id].all_results.length" class="tc-exec-records">
-            <div v-for="(rec, ri) in tcExecutionMap[viewTestCase.id].all_results" :key="ri" class="tc-exec-item">
-              <div class="tc-exec-header">
-                <span class="spec-tag" :style="resultTagStyle(rec.status)">{{ tcResultText(rec.status) }}</span>
-                <span class="tc-exec-time">{{ rec.executed_at || '' }}</span>
+      <div class="tc-detail-dialog">
+        <div class="tc-detail-header">
+          <h3>测试用例详情</h3>
+          <button class="tc-detail-close" @click="viewTestCase = null">&times;</button>
+        </div>
+        <div class="tc-detail-body">
+          <div class="tc-detail-section">
+            <div class="tc-section-title">基本信息</div>
+            <div class="tc-detail-grid">
+              <div class="tc-detail-field">
+                <label>标题</label>
+                <p class="view-field">{{ viewTestCase.title }}</p>
               </div>
-              <div v-if="rec.actual_result" class="tc-exec-field"><strong>实际结果：</strong>{{ rec.actual_result }}</div>
-              <div v-if="rec.failure_reason" class="tc-exec-field tc-exec-fail"><strong>失败原因：</strong>{{ rec.failure_reason }}</div>
-              <div v-if="rec.duration_ms" class="tc-exec-field"><strong>耗时：</strong>{{ rec.duration_ms }}ms</div>
+              <div class="tc-detail-field">
+                <label>类型</label>
+                <p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : viewTestCase.case_type === 'functional' ? '功能测试' : viewTestCase.case_type }}</p>
+              </div>
+              <div class="tc-detail-field">
+                <label>关联 API</label>
+                <p class="view-field">{{ viewTestCase.related_api || '无' }}</p>
+              </div>
             </div>
           </div>
-          <p v-else class="view-field">暂无执行记录</p>
+          <div class="tc-detail-section">
+            <div class="tc-section-title">测试内容</div>
+            <TestDslFlow
+              :case-type="viewTestCase.case_type"
+              :precondition="viewTestCase.precondition"
+              :steps="viewTestCase.steps"
+              :expected-result="viewTestCase.expected_result"
+            />
+          </div>
+          <div class="tc-detail-section">
+            <div class="tc-section-title">执行记录</div>
+            <template v-if="tcExecutionMap[viewTestCase.id] && tcExecutionMap[viewTestCase.id].all_results && tcExecutionMap[viewTestCase.id].all_results.length">
+              <div class="tc-exec-records">
+                <details v-for="(rec, ri) in tcExecutionMap[viewTestCase.id].all_results" :key="ri" class="tc-exec-collapsible" :open="ri === 0">
+                  <summary class="tc-exec-summary">
+                    <span class="spec-tag" :style="resultTagStyle(rec.status)">{{ tcResultText(rec.status) }}</span>
+                    <span class="tc-exec-time">{{ rec.executed_at || '' }}</span>
+                    <span v-if="rec.duration_ms" class="tc-exec-dur">{{ rec.duration_ms }}ms</span>
+                  </summary>
+                  <div class="tc-exec-detail">
+                    <div v-if="rec.actual_result" class="tc-exec-field"><strong>实际结果：</strong>{{ rec.actual_result }}</div>
+                    <div v-if="rec.failure_reason" class="tc-exec-field tc-exec-fail"><strong>失败原因：</strong>{{ rec.failure_reason }}</div>
+                    <div v-if="rec.duration_ms" class="tc-exec-field"><strong>耗时：</strong>{{ rec.duration_ms }}ms</div>
+                  </div>
+                </details>
+              </div>
+            </template>
+            <p v-else class="tc-empty-hint">暂无执行记录</p>
+          </div>
         </div>
-        <div v-else class="form-group"><label>执行记录</label><p class="view-field">暂无执行记录</p></div>
+      </div>
+    </div>
 
-        <button @click="viewTestCase = null">关闭</button>
+    <div v-if="showSupersedeDialog" class="dialog-overlay" @click.self="showSupersedeDialog = false">
+      <div data-testid="req-detail-dlg-supersede" class="dialog">
+        <h3>创建变更需求</h3>
+        <p class="dialog-hint">将当前已通过需求标记为废弃，并创建一个新的变更需求</p>
+        <div class="form-group">
+          <label>新需求标题</label>
+          <input v-model="supersedeForm.title" data-testid="req-detail-dlg-supersede-inp-title" :placeholder="`${req?.title || ''}（变更）`" />
+        </div>
+        <div class="form-group">
+          <label>新需求描述</label>
+          <textarea v-model="supersedeForm.description" data-testid="req-detail-dlg-supersede-txtarea-desc" :placeholder="req?.description || ''"></textarea>
+        </div>
+        <button data-testid="req-detail-dlg-supersede-btn-confirm" @click="supersedeReq">确认</button>
+        <button @click="showSupersedeDialog = false">取消</button>
+      </div>
+    </div>
+
+    <div v-if="showAddLinkDialog" class="dialog-overlay" @click.self="showAddLinkDialog = false">
+      <div data-testid="req-detail-dlg-add-link" class="dialog">
+        <h3>添加关联</h3>
+        <div class="form-group">
+          <label>目标需求 ID</label>
+          <input v-model.number="addLinkForm.target_id" type="number" data-testid="req-detail-dlg-add-link-inp-target" />
+        </div>
+        <div class="form-group">
+          <label>关联类型</label>
+          <span class="spec-tag" style="background:#eff6ff;color:#3b82f6">relates_to（关联）</span>
+        </div>
+        <button data-testid="req-detail-dlg-add-link-btn-confirm" @click="createLink">确认</button>
+        <button @click="showAddLinkDialog = false">取消</button>
       </div>
     </div>
   </div>
@@ -439,8 +560,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { taskStatusLabel } from '@/utils/status'
+import { marked } from 'marked'
 import RequirementSidebar from './RequirementSidebar.vue'
 import JsonTree from '@/components/JsonTree.vue'
+import TestDslFlow from '@/components/TestDslFlow.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -495,7 +618,7 @@ interface Member {
 
 interface SpecVersion {
   id?: number
-  content?: string
+  content?: any
   version?: number
 }
 
@@ -591,6 +714,40 @@ const dropdownOpen = ref('')
 const isLoading = ref(true)
 const reviewComments = ref<Array<{ id: number; reviewer_id: number; action: string; comment: string | null; created_at: string }>>([])
 
+interface LinkItem {
+  id: number
+  source_id: number
+  target_id: number
+  link_type: string
+  direction: 'incoming' | 'outgoing'
+  related_req_id: number
+  created_by: number
+  created_at: string | null
+}
+
+const links = ref<LinkItem[]>([])
+const showSupersedeDialog = ref(false)
+
+interface CommitItem {
+  id: number
+  task_id: number
+  commit_sha: string
+  message: string | null
+  author: string | null
+  committed_at: string | null
+  created_at: string | null
+}
+
+const commits = ref<CommitItem[]>([])
+
+const renderedDescription = computed(() => {
+  if (!req.value?.description) return ''
+  return marked.parse(req.value.description, { breaks: true })
+})
+const showAddLinkDialog = ref(false)
+const supersedeForm = reactive({ title: '', description: '' })
+const addLinkForm = reactive({ target_id: 0 })
+
 async function fetchReviewComments() {
   try {
     const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/review-comments`)
@@ -625,9 +782,15 @@ const filteredTestCases = computed(() => {
   return testCases.value.filter((tc) => tc.case_type === testCaseTypeFilter.value)
 })
 
-function getVersionText(ver: SpecVersion): any {
-  if (ver.content) return ver.content
-  return ''
+function getVersionContent(ver: SpecVersion): any {
+  return ver.content || null
+}
+
+function getVersionPreview(ver: SpecVersion): string {
+  const content = ver.content
+  if (!content) return ''
+  const text = typeof content === 'string' ? content : JSON.stringify(content)
+  return text.length > 100 ? text.slice(0, 100) + '...' : text
 }
 
 function getSpecField(sectionName: string, fieldName: string): any {
@@ -719,7 +882,9 @@ async function fetchReq() {
 }
 
 function autoSelectTab(status: string) {
-  if (['drafting_tests', 'reviewing_tests'].includes(status)) {
+  if (['drafting_req', 'reviewing_req'].includes(status)) {
+    activeTab.value = 'story'
+  } else if (['drafting_tests', 'reviewing_tests'].includes(status)) {
     activeTab.value = 'test-cases'
     fetchTestCases()
   } else if (status === 'approved') {
@@ -895,7 +1060,7 @@ async function fetchSpecVersions() {
 }
 
 function viewSpecVersion(ver: SpecVersion) {
-  selectedVersionContent.value = getVersionText(ver)
+  selectedVersionContent.value = getVersionContent(ver)
 }
 
 async function fetchTasks() {
@@ -1029,6 +1194,85 @@ async function fetchTestStats() {
   }
 }
 
+async function fetchLinks() {
+  try {
+    const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/links`)
+    links.value = res.data?.data || []
+  } catch {
+    links.value = []
+  }
+}
+
+async function fetchCommits() {
+  try {
+    const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/commits`)
+    commits.value = res.data?.data || []
+  } catch {
+    commits.value = []
+  }
+}
+
+async function createLink() {
+  if (!addLinkForm.target_id) {
+    notification.showError('请输入目标需求 ID')
+    return
+  }
+  try {
+    await apiClient.post(`/api/v1/requirements/${reqId.value}/links`, {
+      target_id: addLinkForm.target_id,
+      link_type: 'relates_to',
+    })
+    showAddLinkDialog.value = false
+    addLinkForm.target_id = 0
+    await fetchLinks()
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '添加关联失败')
+  }
+}
+
+async function deleteLink(linkId: number) {
+  if (!confirm('确定要删除此关联吗？')) return
+  try {
+    await apiClient.delete(`/api/v1/requirements/${reqId.value}/links/${linkId}`)
+    await fetchLinks()
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '删除关联失败')
+  }
+}
+
+async function supersedeReq() {
+  try {
+    const body: Record<string, string> = {}
+    if (supersedeForm.title) body.title = supersedeForm.title
+    if (supersedeForm.description) body.description = supersedeForm.description
+    const res = await apiClient.post(`/api/v1/requirements/${reqId.value}/supersede`, body)
+    showSupersedeDialog.value = false
+    supersedeForm.title = ''
+    supersedeForm.description = ''
+    const newReq = res.data?.data?.new_requirement
+    if (newReq) {
+      router.push(`/requirements/${newReq.id}`)
+    } else {
+      await fetchReq()
+    }
+  } catch (e: any) {
+    notification.showError(e?.response?.data?.message || e?.message || '创建变更失败')
+  }
+}
+
+function linkTypeLabel(type: string): string {
+  const map: Record<string, string> = { supersede: '变更', relates_to: '关联' }
+  return map[type] || type
+}
+
+function linkTypeStyle(type: string): string {
+  const map: Record<string, string> = {
+    supersede: 'background:#fef3c7;color:#92400e',
+    relates_to: 'background:#eff6ff;color:#3b82f6',
+  }
+  return map[type] || 'background:#f3f4f6;color:#666'
+}
+
 onMounted(async () => {
   isLoading.value = true
   try {
@@ -1064,32 +1308,158 @@ onMounted(async () => {
   color: #9ca3af;
   font-size: 13px;
 }
+.tc-detail-dialog {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+  width: 780px;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.tc-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.tc-detail-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+.tc-detail-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: #999;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.tc-detail-close:hover {
+  background: #f3f4f6;
+  color: #333;
+}
+.tc-detail-body {
+  padding: 1rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.tc-detail-section {
+  margin-bottom: 1.25rem;
+}
+.tc-detail-section:last-child {
+  margin-bottom: 0;
+}
+.tc-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.tc-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.tc-detail-grid .tc-detail-field:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.tc-detail-field label {
+  display: block;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.tc-empty-hint {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 0;
+  padding: 0.5rem 0;
+}
 .tc-exec-records {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-top: 0.25rem;
 }
-.tc-exec-item {
-  padding: 0.5rem 0.75rem;
-  background: #f9fafb;
-  border-radius: 6px;
+.tc-exec-collapsible {
   border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
 }
-.tc-exec-header {
+.tc-exec-collapsible summary {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: #fafbfc;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tc-exec-collapsible summary::before {
+  content: '▸';
+  font-size: 11px;
+  transition: transform 0.15s;
+  display: inline-block;
+  color: #9ca3af;
+}
+.tc-exec-collapsible[open] summary::before {
+  transform: rotate(90deg);
+}
+.tc-exec-collapsible summary:hover {
+  background: #f3f4f6;
+}
+.tc-exec-summary {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
 }
 .tc-exec-time {
   font-size: 12px;
   color: #9ca3af;
 }
+.tc-exec-dur {
+  font-size: 11px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+.tc-exec-detail {
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  background: #fff;
+}
 .tc-exec-field {
   font-size: 13px;
   color: #374151;
   margin-top: 0.25rem;
+  line-height: 1.5;
+}
+.tc-exec-field:first-child {
+  margin-top: 0;
 }
 .tc-exec-fail {
   color: #991b1b;
@@ -1348,6 +1718,25 @@ onMounted(async () => {
   color: #999;
   font-size: 14px;
 }
+.link-direction {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.link-direction.outgoing {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+.link-direction.incoming {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+.dialog-hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 1rem;
+}
 .spec-description {
   color: #555;
   line-height: 1.6;
@@ -1566,64 +1955,67 @@ onMounted(async () => {
   white-space: pre-wrap;
   word-break: break-word;
 }
-.review-timeline {
-  margin-top: 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding-top: 16px;
-}
-.review-timeline h4 {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 12px;
-}
-.review-timeline-item {
+.review-history-list {
   display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 0.75rem;
 }
-.review-timeline-dot {
-  width: 8px;
-  height: 8px;
+.review-history-item {
+  display: flex;
+  gap: 12px;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+}
+.review-history-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  margin-top: 5px;
+  margin-top: 4px;
   flex-shrink: 0;
 }
 .dot-approve { background: #22c55e; }
 .dot-reject { background: #ef4444; }
-.review-timeline-content {
+.review-history-body {
   flex: 1;
   min-width: 0;
 }
-.review-timeline-header {
+.review-history-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
-.review-timeline-action {
+.review-history-action {
   font-size: 12px;
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
   white-space: nowrap;
 }
-.review-timeline-action.approve {
+.review-history-action.approve {
   background: #dcfce7;
   color: #166534;
 }
-.review-timeline-action.reject {
+.review-history-action.reject {
   background: #fef2f2;
   color: #991b1b;
 }
-.review-timeline-time {
-  font-size: 11px;
+.review-history-time {
+  font-size: 12px;
   color: #aaa;
   white-space: nowrap;
 }
-.review-timeline-comment {
+.review-history-comment {
   font-size: 13px;
   color: #555;
+  line-height: 1.6;
   word-break: break-word;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  margin-top: 4px;
 }
 .loading-state {
   display: flex;
@@ -1632,5 +2024,101 @@ onMounted(async () => {
   min-height: 200px;
   color: #999;
   font-size: 14px;
+}
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #333;
+  max-width: 800px;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: #111;
+  margin: 1.5em 0 0.75em;
+  font-weight: 600;
+}
+.markdown-body h1 { font-size: 1.5em; }
+.markdown-body h2 { font-size: 1.3em; }
+.markdown-body h3 { font-size: 1.15em; }
+.markdown-body h4 { font-size: 1em; }
+.markdown-body p {
+  margin: 0.75em 0;
+}
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+  margin: 0.75em 0;
+}
+.markdown-body li {
+  margin-bottom: 0.35em;
+}
+.markdown-body code {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.9em;
+  background: #f1f3f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #c7254e;
+}
+.markdown-body pre {
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.markdown-body blockquote {
+  border-left: 4px solid #ddd;
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  color: #666;
+  background: #fafafa;
+  border-radius: 0 6px 6px 0;
+}
+.markdown-body a {
+  color: #1677ff;
+  text-decoration: none;
+}
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+.markdown-body strong {
+  font-weight: 600;
+  color: #111;
+}
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5em 0;
+}
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 13px;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  text-align: left;
+}
+.markdown-body th {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 6px;
 }
 </style>

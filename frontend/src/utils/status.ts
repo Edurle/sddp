@@ -3,6 +3,7 @@ export function reqStatusLabel(status: string): string {
     drafting_req: '草稿', reviewing_req: '需求审核', drafting_spec: '编写规范',
     reviewing_spec: '规范审核', drafting_tests: '编写测试', reviewing_tests: '测试审核',
     approved: '已通过',
+    deprecated: '已废弃',
   }
   return map[status] || status
 }

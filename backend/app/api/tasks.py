@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement
+from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement, _team_id_from_task
 from app.exceptions import BusinessError, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS, ERR_VALIDATION
 from app.services import task as task_svc
+from app.services import task_commit as tc_svc
 from app.services.test_execution import list_execution_rounds
 
 router = APIRouter()
@@ -70,6 +71,7 @@ async def patch_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     task = await task_svc._get_task_or_fail(db, id)
     if body.status is not None and body.status != task.status:
         if body.status not in VALID_TRANSITIONS.get(task.status, set()):
@@ -92,6 +94,7 @@ async def create_test_record(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:test")
     from app.models import TestExecutionRound, TestExecutionRecord
     task = await task_svc._get_task_or_fail(db, id)
 
@@ -109,6 +112,21 @@ async def create_test_record(
     status = body.get("status", "pending")
     actual_result = body.get("actual_result")
     failure_reason = body.get("failure_reason")
+
+    existing_stmt = select(TestExecutionRecord).where(
+        TestExecutionRecord.round_id == latest_round.id,
+        TestExecutionRecord.test_case_id == test_case_id,
+    )
+    existing_result = await db.execute(existing_stmt)
+    existing_rec = existing_result.scalar_one_or_none()
+
+    if existing_rec:
+        existing_rec.status = status
+        existing_rec.actual_result = actual_result
+        existing_rec.failure_reason = failure_reason
+        await db.commit()
+        await db.refresh(existing_rec)
+        return {"code": 0, "message": "success", "data": {"id": existing_rec.id, "status": existing_rec.status, "round_id": latest_round.id}}
 
     rec = TestExecutionRecord(
         round_id=latest_round.id,
@@ -130,6 +148,7 @@ async def create_test_round(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:test")
     from app.models import TestExecutionRound, TestExecutionRecord
     from sqlalchemy import select as sel
 
@@ -181,6 +200,7 @@ async def update_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.update_task(
         db, id,
         title=body.title,
@@ -196,6 +216,7 @@ async def delete_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:delete")
     data = await task_svc.delete_task(db, id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -206,6 +227,7 @@ async def start_testing(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:test")
     data = await task_svc.start_testing(db, id, user_id=int(user["sub"]))
     return {"code": 0, "message": "success", "data": data}
 
@@ -216,6 +238,7 @@ async def complete_task(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:complete")
     data = await task_svc.complete_task(db, id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -226,6 +249,7 @@ async def start_coding(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.start_coding(db, id)
     return {"code": 0, "message": "success", "data": data}
 
@@ -235,6 +259,9 @@ class GitInfoRequest(BaseModel):
     commit_sha: str | None = None
     pr_url: str | None = None
     artifact_url: str | None = None
+    message: str | None = None
+    author: str | None = None
+    committed_at: str | None = None
 
 
 @router.patch("/{id}/git-info")
@@ -244,7 +271,56 @@ async def update_git_info(
     user: Annotated[dict, Depends(get_current_user)],
     db=Depends(get_db_session),
 ) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.update_git_info(db, id, **body.model_dump(exclude_none=True))
+
+    if body.commit_sha:
+        try:
+            await tc_svc.add_commit(
+                db, id,
+                commit_sha=body.commit_sha,
+                message=body.message,
+                author=body.author,
+                committed_at=body.committed_at,
+            )
+        except BusinessError:
+            pass
+
+    return {"code": 0, "message": "success", "data": data}
+
+
+class AddCommitRequest(BaseModel):
+    commit_sha: str
+    message: str | None = None
+    author: str | None = None
+    committed_at: str | None = None
+
+
+@router.post("/{id}/commits")
+async def add_task_commit(
+    id: int,
+    body: AddCommitRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
+    data = await tc_svc.add_commit(
+        db, id,
+        commit_sha=body.commit_sha,
+        message=body.message,
+        author=body.author,
+        committed_at=body.committed_at,
+    )
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/{id}/commits")
+async def list_task_commits(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    data = await tc_svc.list_task_commits(db, id)
     return {"code": 0, "message": "success", "data": data}
 
 

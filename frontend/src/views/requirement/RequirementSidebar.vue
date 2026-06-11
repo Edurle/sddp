@@ -26,7 +26,6 @@
             <AppBadge data-testid="req-detail-txt-priority" :text="priorityLabel(req.priority)" />
             <span data-testid="req-detail-tag-status" class="status-tag">{{ reqStatusLabel(req.status) }}</span>
           </div>
-          <p class="info-desc" data-testid="req-detail-txt-description">{{ req.description }}</p>
           <p data-testid="req-detail-txt-review-status" class="status-text">{{ reqStatusLabel(req.status) }}</p>
 
           <div v-if="!editing && req.prototype_html" class="prototype-section">
@@ -87,6 +86,7 @@
         <button v-if="canEdit" data-testid="req-detail-btn-submit-req-review" @click="$emit('submit-review')">提交审核</button>
         <button v-if="canReview" data-testid="req-detail-btn-approve" @click="$emit('approve')">通过</button>
         <button v-if="canReview" data-testid="req-detail-btn-reject" @click="$emit('reject')">驳回</button>
+        <button v-if="canSupersede" data-testid="req-detail-btn-supersede" @click="$emit('supersede')">创建变更</button>
       </div>
     </div>
 
@@ -149,7 +149,7 @@ const props = defineProps<{
   editForm: { title: string; description: string; prototype_html: string }
 }>()
 
-defineEmits(['edit', 'save', 'delete', 'submit-review', 'approve', 'reject'])
+defineEmits(['edit', 'save', 'delete', 'submit-review', 'approve', 'reject', 'supersede'])
 
 const showPrototypeModal = ref(false)
 
@@ -161,11 +161,15 @@ const steps = [
   { key: 'drafting_tests', label: '编写测试' },
   { key: 'reviewing_tests', label: '测试审核' },
   { key: 'approved', label: '已通过' },
+  { key: 'deprecated', label: '已废弃' },
 ]
 
 const canEdit = computed(() => props.req.status === 'drafting_req')
 const canReview = computed(() =>
   ['reviewing_req', 'reviewing_spec', 'reviewing_tests'].includes(props.req.status),
+)
+const canSupersede = computed(() =>
+  ['drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved'].includes(props.req.status),
 )
 
 const reviewHistory = computed(() =>
@@ -192,10 +196,11 @@ function priorityLabel(p: string | number) {
 
 function stepClass(step: string) {
   const s = props.req.status || ''
+  if (s === 'deprecated' && step === 'deprecated') return 'current deprecated'
   const order = ['drafting_req', 'reviewing_req', 'drafting_spec', 'reviewing_spec', 'drafting_tests', 'reviewing_tests', 'approved']
   const currentIdx = order.indexOf(s)
   const stepIdx = order.indexOf(step)
-  if (currentIdx < 0) return ''
+  if (currentIdx < 0 || stepIdx < 0) return ''
   if (stepIdx < currentIdx) return 'done'
   if (stepIdx === currentIdx) {
     return step.includes('reviewing') ? 'current review' : 'current'
@@ -330,6 +335,14 @@ function stepCircle(step: string) {
 .step-item.done .step-circle {
   background: #fff;
   color: #111;
+}
+.step-item.deprecated {
+  background: #ff4d4f;
+  color: #fff;
+}
+.step-item.deprecated .step-circle {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 .action-buttons {
   display: flex;

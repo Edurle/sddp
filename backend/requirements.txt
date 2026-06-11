@@ -2,7 +2,6 @@ fastapi
 uvicorn[standard]
 sqlalchemy[asyncio]
 asyncpg
-aiosqlite
 pydantic[email]
 python-jose[cryptography]
 bcrypt
@@ -12,4 +11,3 @@ pytest
 pytest-asyncio
 pydantic-settings
 jsonschema
-alembic

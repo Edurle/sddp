@@ -126,9 +126,16 @@ const permissionGroups = [
       { value: 'requirement:create', label: '创建' },
       { value: 'requirement:edit', label: '编辑' },
       { value: 'requirement:delete', label: '删除' },
+      { value: 'requirement:submit_review_req', label: '提交评审' },
       { value: 'requirement:review_req', label: '评审需求' },
+    ],
+  },
+  {
+    label: '规范',
+    items: [
+      { value: 'specification:edit', label: '编辑' },
+      { value: 'requirement:submit_review_spec', label: '提交评审' },
       { value: 'requirement:review_spec', label: '评审规范' },
-      { value: 'requirement:review_tests', label: '评审测试' },
     ],
   },
   {
@@ -137,6 +144,8 @@ const permissionGroups = [
       { value: 'test_case:create', label: '创建' },
       { value: 'test_case:edit', label: '编辑' },
       { value: 'test_case:delete', label: '删除' },
+      { value: 'requirement:submit_review_tests', label: '提交评审' },
+      { value: 'requirement:review_tests', label: '评审测试' },
     ],
   },
   {
@@ -238,7 +247,7 @@ onMounted(() => fetchRoles())
 
 <style scoped>
 .dialog {
-  max-width: 560px;
+  max-width: 720px;
 }
 
 .permission-group {
@@ -269,5 +278,32 @@ onMounted(() => fetchRoles())
   color: #333;
   font-weight: 400;
   white-space: nowrap;
+}
+
+.permission-grid input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.permission-grid input[type="checkbox"]:checked {
+  background: #111;
+  border-color: #111;
+}
+
+.permission-grid input[type="checkbox"]:checked::after {
+  content: '✓';
+  color: #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
 }
 </style>

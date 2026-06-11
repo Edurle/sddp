@@ -28,40 +28,48 @@ export SDD_API_KEY="sdd_your_key_here"
 
 ### Step 2: Get Dashboard Overview
 
+**Combined work dashboard (recommended):**
+
 ```bash
-sdd me pending
+sdd me my-work
 ```
 
-This returns:
-- `teams` — teams you belong to
-- `projects` — active projects in your teams
-- `assigned_tasks` — tasks currently assigned to you
+This returns a combined view of:
 - `pending_reviews` — items awaiting your review
+- `assigned_tasks` — tasks currently assigned to you
+- `draftable_items` — items you can draft specs/tests for
 
-### Step 3: Check Your Assigned Tasks
-
+Filter by type:
 ```bash
-sdd me tasks
+sdd me my-work --type reviews
+sdd me my-work --type tasks
+sdd me my-work --type drafts
 ```
 
-Filter by status if needed:
-```bash
-sdd me tasks --status coding
-sdd me tasks --status testing
-sdd me tasks --status pending
-```
+Use `--json` for machine-readable output.
 
-### Step 4: Check Pending Reviews
+**Alternative: separate commands:**
 
 ```bash
-sdd me pending-reviews
+sdd me pending          # teams, projects, tasks, reviews overview
+sdd me pending-reviews  # items awaiting your review
+sdd me tasks            # assigned tasks with --status filter
 ```
 
-If there are pending reviews, see Step 5B.
+### Step 3: Check Statistics
 
-### Step 5: Decide What to Do Next
+View test statistics at different levels to identify problem areas:
 
-**5A — If you have assigned tasks:**
+```bash
+sdd iterations statistics ITERATION_ID     # iteration overview
+sdd iterations test-stats ITERATION_ID     # test pass/fail breakdown
+sdd projects test-stats PROJECT_ID         # project-level test stats
+sdd requirements test-stats REQUIREMENT_ID # requirement-level test stats
+```
+
+### Step 4: Decide What to Do Next
+
+**4A — If you have assigned tasks:**
 
 Pick a task and get its full context:
 ```bash
@@ -70,7 +78,7 @@ sdd requirements full-context REQUIREMENT_ID
 
 Then proceed to the `sdd-task-execution` skill to work on it.
 
-**5B — If you have pending reviews:**
+**4B — If you have pending reviews:**
 
 Get the requirement details:
 ```bash
@@ -80,7 +88,7 @@ sdd requirements spec REQUIREMENT_ID
 
 Then proceed to the `sdd-review` skill.
 
-**5C — If no tasks and no reviews:**
+**4C — If no tasks and no reviews:**
 
 Check for unassigned work:
 ```bash
@@ -91,6 +99,20 @@ sdd requirements list --status drafting_tests
 You can also check iteration kanban:
 ```bash
 sdd iterations kanban ITERATION_ID
+```
+
+**4D — If an approved requirement needs changes:**
+
+Use supersede to create a change request from an approved requirement:
+```bash
+sdd requirements supersede REQUIREMENT_ID --title "Requirement Title (v2)"
+```
+
+This marks the original as `deprecated` and creates a new requirement in `drafting_req` status linked via `supersede`. Then proceed to write its spec or draft as needed.
+
+To view existing links for any requirement:
+```bash
+sdd requirements links REQUIREMENT_ID
 ```
 
 ## Output Format

@@ -21,8 +21,9 @@ async def supersede_requirement(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
-    if req.status != "approved":
-        raise BusinessError(ERR_REQUIREMENT_STATUS, "只有已通过审核的需求才能创建变更")
+    allowed = {"drafting_spec", "reviewing_spec", "drafting_tests", "reviewing_tests", "approved"}
+    if req.status not in allowed:
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "需求审核通过后才能创建变更")
 
     new_title = title or f"{req.title}（变更）"
     new_req = Requirement(

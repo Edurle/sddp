@@ -15,6 +15,7 @@ from app.models.spec import SpecTemplate, SpecDocument
 from app.models.review_comment import ReviewComment
 from app.models.webhook import Webhook, WebhookDelivery
 from app.models.requirement_link import RequirementLink
+from app.models.task_commit import TaskCommit
 
 __all__ = [
     "User",
@@ -40,4 +41,5 @@ __all__ = [
     "Webhook",
     "WebhookDelivery",
     "RequirementLink",
+    "TaskCommit",
 ]

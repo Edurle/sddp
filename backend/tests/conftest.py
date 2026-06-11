@@ -21,7 +21,7 @@ def _normalize_header_value_utf8(value, encoding=None):
 import httpx._models as _httpx_models
 _httpx_models._normalize_header_value = _normalize_header_value_utf8
 
-from app.config import DATABASE_URL
+from app.config import DATABASE_URL, TEST_DATABASE_URL
 from app.database import Base
 from app.models import (
     User, Team, TeamMember, Role, RolePermission, MemberRole,
@@ -30,6 +30,8 @@ from app.models import (
     PasswordResetToken, ApiKey, RequirementLink,
 )
 from app.utils.security import hash_password, create_access_token
+
+_TEST_DB_URL = TEST_DATABASE_URL or DATABASE_URL
 
 _TRUNCATE_SQL = text(
     "TRUNCATE TABLE "
@@ -46,7 +48,7 @@ _TRUNCATE_SQL = text(
 
 
 def _make_engine():
-    return create_async_engine(DATABASE_URL, echo=False, poolclass=NullPool)
+    return create_async_engine(_TEST_DB_URL, echo=False, poolclass=NullPool)
 
 
 @pytest_asyncio.fixture
@@ -194,6 +196,7 @@ async def owner_role(db, normal_user):
         "project:create", "project:edit", "project:archive", "project:delete",
         "iteration:create", "iteration:edit", "iteration:start", "iteration:complete",
         "requirement:create", "requirement:edit", "requirement:delete",
+        "requirement:submit_review_req", "requirement:submit_review_spec", "requirement:submit_review_tests",
         "requirement:review_req", "requirement:review_spec", "requirement:review_tests",
         "task:create", "task:edit", "task:delete", "task:test", "task:complete",
         "member:invite", "member:remove", "member:assign_role",

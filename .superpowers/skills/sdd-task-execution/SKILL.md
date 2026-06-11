@@ -63,6 +63,25 @@ sdd requirements spec-version REQUIREMENT_ID VERSION
 sdd requirements test-cases REQUIREMENT_ID
 ```
 
+### Step 4A: Auto-Generate Tasks or Test Cases (Optional)
+
+If no tasks exist yet, auto-generate them from the spec:
+
+```bash
+sdd requirements generate-tasks REQUIREMENT_ID --strategy hybrid
+```
+
+Strategies: `hybrid` (default), `by_page`, `by_entity`, `by_api`.
+
+If no test cases exist yet, auto-generate them from the spec:
+
+```bash
+sdd requirements generate-test-cases REQUIREMENT_ID
+sdd requirements generate-test-cases REQUIREMENT_ID --case-types "api,ui"
+```
+
+Case types: `api`, `ui`, `functional`, `edge_case`.
+
 ### Step 5: Implement the Code
 
 Write your implementation following the spec. This is done outside SDD.
@@ -90,6 +109,12 @@ sdd tasks git-info TASK_ID \
 sdd tasks start-testing TASK_ID
 ```
 
+This creates a new test execution round automatically. Alternatively, you can create a round manually:
+
+```bash
+sdd tasks create-test-round TASK_ID --test-case-id TEST_CASE_ID
+```
+
 ### Step 8: Get Test Execution Round
 
 ```bash
@@ -111,13 +136,27 @@ Or from a file:
 sdd test-executions batch --round ROUND_ID --file test-results.json
 ```
 
-**Individual record updates:**
+**Create individual test record:**
+
+```bash
+sdd tasks create-test-record TASK_ID --test-case-id TEST_CASE_ID --status passed
+```
+
+**Update an existing record:**
 
 ```bash
 sdd test-executions update-record RECORD_ID --status passed --duration-ms 120
 ```
 
-### Step 10: Evaluate Results
+### Step 10: Check Test Statistics (Optional)
+
+View aggregated test results for the requirement:
+
+```bash
+sdd requirements test-stats REQUIREMENT_ID
+```
+
+### Step 11: Evaluate Results
 
 If all tests passed:
 ```bash
@@ -136,11 +175,14 @@ Then fix the issues and repeat from Step 7.
 sdd tasks get 42
 sdd tasks start-coding 42
 sdd requirements full-context 15
+sdd requirements generate-tasks 15 --strategy hybrid
+sdd requirements generate-test-cases 15
 # ... implement code ...
 sdd tasks git-info 42 --branch "feat/15-user-login" --sha "$(git rev-parse HEAD)"
 sdd tasks start-testing 42
 sdd tasks test-executions 42
 sdd test-executions batch --round 7 --file results.json
+sdd requirements test-stats 15
 sdd tasks complete 42
 ```
 

@@ -299,8 +299,8 @@ async def review_requirement(
     }
 
     required_perm = permission_map.get(review.review_type)
-    if required_perm and user_permissions:
-        if required_perm not in user_permissions:
+    if required_perm:
+        if not user_permissions or required_perm not in user_permissions:
             raise BusinessError(ERR_FORBIDDEN, "无权限")
 
     approve_transitions = {
