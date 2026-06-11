@@ -24,6 +24,7 @@
           <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例</button>
           <button data-testid="req-detail-tab-review-history" :class="['tab-btn', { active: activeTab === 'review-history' }]" @click="activeTab = 'review-history'">审核历史</button>
           <button data-testid="req-detail-tab-links" :class="['tab-btn', { active: activeTab === 'links' }]" @click="activeTab = 'links'; fetchLinks()">关联</button>
+          <button data-testid="req-detail-tab-commits" :class="['tab-btn', { active: activeTab === 'commits' }]" @click="activeTab = 'commits'; fetchCommits()">提交记录</button>
         </div>
 
         <div v-if="activeTab === 'story'" class="tab-panel">
@@ -326,6 +327,26 @@
             </tbody>
           </table>
           <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
+        </div>
+
+        <div v-if="activeTab === 'commits'" class="tab-panel">
+          <table data-testid="req-detail-tbl-commits">
+            <thead>
+              <tr><th>Commit</th><th>消息</th><th>作者</th><th>任务</th><th>提交时间</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="c in commits" :key="c.id">
+                <td><code>{{ c.commit_sha }}</code></td>
+                <td>{{ c.message || '' }}</td>
+                <td>{{ c.author || '' }}</td>
+                <td>
+                  <router-link :to="`/tasks/${c.task_id}`" class="task-link">任务 #{{ c.task_id }}</router-link>
+                </td>
+                <td>{{ formatTime(c.committed_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="commits.length === 0" class="spec-empty">暂无提交记录</div>
         </div>
       </div>
     </div>
@@ -706,6 +727,18 @@ interface LinkItem {
 
 const links = ref<LinkItem[]>([])
 const showSupersedeDialog = ref(false)
+
+interface CommitItem {
+  id: number
+  task_id: number
+  commit_sha: string
+  message: string | null
+  author: string | null
+  committed_at: string | null
+  created_at: string | null
+}
+
+const commits = ref<CommitItem[]>([])
 
 const renderedDescription = computed(() => {
   if (!req.value?.description) return ''
@@ -1167,6 +1200,15 @@ async function fetchLinks() {
     links.value = res.data?.data || []
   } catch {
     links.value = []
+  }
+}
+
+async function fetchCommits() {
+  try {
+    const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/commits`)
+    commits.value = res.data?.data || []
+  } catch {
+    commits.value = []
   }
 }
 

@@ -515,3 +515,14 @@ def supersede_requirement(
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
         raise typer.Exit(code=1)
+
+
+@app.command("commits")
+def list_requirement_commits(id: int) -> None:
+    try:
+        client = get_client()
+        data = client.get(f"/requirements/{id}/commits")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)

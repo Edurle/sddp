@@ -133,6 +133,9 @@ def update_git_info(
     sha: Optional[str] = typer.Option(None, "--sha"),
     pr: Optional[str] = typer.Option(None, "--pr"),
     artifact: Optional[str] = typer.Option(None, "--artifact"),
+    message: Optional[str] = typer.Option(None, "--message", "-m"),
+    author: Optional[str] = typer.Option(None, "--author"),
+    committed_at: Optional[str] = typer.Option(None, "--committed-at"),
 ) -> None:
     try:
         client = get_client()
@@ -145,7 +148,24 @@ def update_git_info(
             body["pr_url"] = pr
         if artifact:
             body["artifact_url"] = artifact
+        if message:
+            body["message"] = message
+        if author:
+            body["author"] = author
+        if committed_at:
+            body["committed_at"] = committed_at
         data = client.patch(f"/tasks/{id}/git-info", json=body)
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("commits")
+def list_task_commits(id: int) -> None:
+    try:
+        client = get_client()
+        data = client.get(f"/tasks/{id}/commits")
         print_response(data)
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)

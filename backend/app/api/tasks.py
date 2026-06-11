@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_requirement, _team_id_from_task
 from app.exceptions import BusinessError, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS, ERR_VALIDATION
 from app.services import task as task_svc
+from app.services import task_commit as tc_svc
 from app.services.test_execution import list_execution_rounds
 
 router = APIRouter()
@@ -258,6 +259,9 @@ class GitInfoRequest(BaseModel):
     commit_sha: str | None = None
     pr_url: str | None = None
     artifact_url: str | None = None
+    message: str | None = None
+    author: str | None = None
+    committed_at: str | None = None
 
 
 @router.patch("/{id}/git-info")
@@ -269,6 +273,54 @@ async def update_git_info(
 ) -> dict:
     await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
     data = await task_svc.update_git_info(db, id, **body.model_dump(exclude_none=True))
+
+    if body.commit_sha:
+        try:
+            await tc_svc.add_commit(
+                db, id,
+                commit_sha=body.commit_sha,
+                message=body.message,
+                author=body.author,
+                committed_at=body.committed_at,
+            )
+        except BusinessError:
+            pass
+
+    return {"code": 0, "message": "success", "data": data}
+
+
+class AddCommitRequest(BaseModel):
+    commit_sha: str
+    message: str | None = None
+    author: str | None = None
+    committed_at: str | None = None
+
+
+@router.post("/{id}/commits")
+async def add_task_commit(
+    id: int,
+    body: AddCommitRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_task(db, id), "task:edit")
+    data = await tc_svc.add_commit(
+        db, id,
+        commit_sha=body.commit_sha,
+        message=body.message,
+        author=body.author,
+        committed_at=body.committed_at,
+    )
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.get("/{id}/commits")
+async def list_task_commits(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    data = await tc_svc.list_task_commits(db, id)
     return {"code": 0, "message": "success", "data": data}
 
 
