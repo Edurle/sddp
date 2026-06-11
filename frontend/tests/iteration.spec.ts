@@ -3,7 +3,6 @@ import { test, expect } from './fixtures/auth'
 test.describe('Iteration List', () => {
   test.beforeEach(async ({ authenticatedPage: page }) => {
     await page.goto('/projects/1')
-    await page.getByTestId('project-detail-tab-iterations').click()
   })
 
   test('E2E-ITER-006: Display iteration list with name, dates, status', async ({
@@ -83,7 +82,6 @@ test.describe('Iteration Detail & Actions', () => {
     iterationId = String(body.data.id)
 
     await page.goto('/projects/1')
-    await page.getByTestId('project-detail-tab-iterations').click()
     const row = page
       .getByTestId('iteration-list-tbl-iterations')
       .locator('tbody tr')
@@ -93,7 +91,6 @@ test.describe('Iteration Detail & Actions', () => {
 
   test.beforeEach(async ({ authenticatedPage: page }) => {
     await page.goto('/projects/1')
-    await page.getByTestId('project-detail-tab-iterations').click()
   })
 
   test('E2E-ITER-002: Edit iteration — start_date is read-only', async ({
@@ -164,7 +161,6 @@ test.describe('Iteration Detail & Actions', () => {
     })
 
     await page.goto('/projects/1')
-    await page.getByTestId('project-detail-tab-iterations').click()
 
     await page.getByTestId(`iteration-list-btn-start-${unblockId}`).click()
     const startConfirm = page.getByTestId('iteration-list-dlg-confirm-start')
@@ -185,7 +181,6 @@ test.describe('Kanban Board', () => {
 
   test.beforeEach(async ({ authenticatedPage: page }) => {
     await page.goto('/projects/1')
-    await page.getByTestId('project-detail-tab-iterations').click()
 
     const table = page.getByTestId('iteration-list-tbl-iterations')
     const firstRow = table.locator('tbody tr').first()

@@ -357,22 +357,18 @@ test.describe('Full Business Workflow', () => {
     }
 
     await page.goto(`/projects/${projectId}`)
-    const iterTab = page.getByTestId('project-detail-tab-iterations')
-    if (await iterTab.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await iterTab.click()
 
-      const createBtn = page.getByTestId('iteration-list-btn-create')
-      if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await createBtn.click()
-        const dialog = page.getByTestId('iteration-list-dlg-create')
-        if (await dialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-          await dialog.getByTestId('iteration-list-dlg-create-inp-name').fill(`WF Sprint ${TS}`)
-          await dialog.getByTestId('iteration-list-dlg-create-txtarea-goal').fill('Workflow test sprint')
-          await dialog.getByTestId('iteration-list-dlg-create-inp-start-date').fill('2026-01-01')
-          await dialog.getByTestId('iteration-list-dlg-create-inp-end-date').fill('2026-03-31')
-          await dialog.getByTestId('iteration-list-dlg-create-btn-submit').click()
-          await expect(dialog).not.toBeVisible({ timeout: 5000 })
-        }
+    const createBtn = page.getByTestId('iteration-list-btn-create')
+    if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await createBtn.click()
+      const dialog = page.getByTestId('iteration-list-dlg-create')
+      if (await dialog.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await dialog.getByTestId('iteration-list-dlg-create-inp-name').fill(`WF Sprint ${TS}`)
+        await dialog.getByTestId('iteration-list-dlg-create-txtarea-goal').fill('Workflow test sprint')
+        await dialog.getByTestId('iteration-list-dlg-create-inp-start-date').fill('2026-01-01')
+        await dialog.getByTestId('iteration-list-dlg-create-inp-end-date').fill('2026-03-31')
+        await dialog.getByTestId('iteration-list-dlg-create-btn-submit').click()
+        await expect(dialog).not.toBeVisible({ timeout: 5000 })
       }
     }
 
@@ -756,10 +752,6 @@ test.describe('Full Business Workflow', () => {
 
     if (projectId) {
       await page.goto(`/projects/${projectId}`)
-      const iterTab = page.getByTestId('project-detail-tab-iterations')
-      if (await iterTab.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await iterTab.click()
-      }
 
       const startBtn = page.getByTestId(`iteration-list-btn-start-${iterationId}`)
       if (await startBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -779,10 +771,6 @@ test.describe('Full Business Workflow', () => {
 
     if (projectId) {
       await page.goto(`/projects/${projectId}`)
-      const iterTab = page.getByTestId('project-detail-tab-iterations')
-      if (await iterTab.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await iterTab.click()
-      }
 
       const completeBtn = page.getByTestId(`iteration-list-btn-complete-${iterationId}`)
       if (await completeBtn.isVisible({ timeout: 5000 }).catch(() => false)) {

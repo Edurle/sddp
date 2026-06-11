@@ -5,7 +5,7 @@
       <h2 data-testid="project-detail-txt-name">{{ project.name }}</h2>
       <p data-testid="project-detail-txt-desc">{{ project.description || '' }}</p>
       <p data-testid="project-detail-txt-start-date">开始日期: {{ project.start_date || '' }}</p>
-      <p v-if="!activeTab" data-testid="project-detail-txt-status">{{ projectStatusLabel(project.status) }}</p>
+      <p data-testid="project-detail-txt-status">{{ projectStatusLabel(project.status) }}</p>
 
       <div class="stats">
         <span data-testid="project-detail-txt-stat-req">需求数: {{ project.req_count ?? 0 }}</span>
@@ -17,14 +17,9 @@
         <button data-testid="project-detail-btn-edit" @click="openEditDialog">编辑</button>
         <button data-testid="project-detail-btn-archive" @click="showArchiveConfirm = true">归档</button>
         <button data-testid="project-detail-btn-delete" @click="showDeleteConfirm = true">删除</button>
-        <button
-          data-testid="project-detail-tab-iterations"
-          :class="{ active: activeTab === 'iterations' }"
-          @click="activeTab = 'iterations'"
-        >迭代列表</button>
       </div>
 
-      <IterationListTab v-if="activeTab === 'iterations' && project" :project-id="String(project.id)" />
+      <IterationListTab v-if="project" :project-id="String(project.id)" />
     </div>
 
     <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog = false">
@@ -85,7 +80,6 @@ interface ProjectData {
 }
 
 const project = ref<ProjectData | null>(null)
-const activeTab = ref('')
 const showEditDialog = ref(false)
 const showArchiveConfirm = ref(false)
 const showDeleteConfirm = ref(false)
