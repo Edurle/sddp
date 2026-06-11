@@ -17,12 +17,18 @@
 
       <div class="detail-main">
         <div class="detail-tabs">
+          <button data-testid="req-detail-tab-story" :class="['tab-btn', { active: activeTab === 'story' }]" @click="activeTab = 'story'">用户故事</button>
           <button data-testid="req-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
           <button data-testid="req-detail-tab-spec-versions" :class="['tab-btn', { active: activeTab === 'spec-versions' }]" @click="activeTab = 'spec-versions'; fetchSpecVersions()">版本历史</button>
           <button data-testid="req-detail-tab-tasks" :class="['tab-btn', { active: activeTab === 'tasks' }]" @click="activeTab = 'tasks'; fetchTasks()">任务</button>
           <button data-testid="req-detail-tab-test-cases" :class="['tab-btn', { active: activeTab === 'test-cases' }]" @click="activeTab = 'test-cases'; fetchTestCases()">测试用例</button>
           <button data-testid="req-detail-tab-review-history" :class="['tab-btn', { active: activeTab === 'review-history' }]" @click="activeTab = 'review-history'">审核历史</button>
           <button data-testid="req-detail-tab-links" :class="['tab-btn', { active: activeTab === 'links' }]" @click="activeTab = 'links'; fetchLinks()">关联</button>
+        </div>
+
+        <div v-if="activeTab === 'story'" class="tab-panel">
+          <div v-if="req.description" class="markdown-body" v-html="renderedDescription"></div>
+          <div v-else class="spec-empty">暂无需求描述</div>
         </div>
 
         <div v-if="activeTab === 'spec'" class="tab-panel">
@@ -533,6 +539,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { taskStatusLabel } from '@/utils/status'
+import { marked } from 'marked'
 import RequirementSidebar from './RequirementSidebar.vue'
 import JsonTree from '@/components/JsonTree.vue'
 import TestDslFlow from '@/components/TestDslFlow.vue'
@@ -699,6 +706,11 @@ interface LinkItem {
 
 const links = ref<LinkItem[]>([])
 const showSupersedeDialog = ref(false)
+
+const renderedDescription = computed(() => {
+  if (!req.value?.description) return ''
+  return marked.parse(req.value.description, { breaks: true })
+})
 const showAddLinkDialog = ref(false)
 const supersedeForm = reactive({ title: '', description: '' })
 const addLinkForm = reactive({ target_id: 0 })
@@ -837,7 +849,9 @@ async function fetchReq() {
 }
 
 function autoSelectTab(status: string) {
-  if (['drafting_tests', 'reviewing_tests'].includes(status)) {
+  if (['drafting_req', 'reviewing_req'].includes(status)) {
+    activeTab.value = 'story'
+  } else if (['drafting_tests', 'reviewing_tests'].includes(status)) {
     activeTab.value = 'test-cases'
     fetchTestCases()
   } else if (status === 'approved') {
@@ -1968,5 +1982,101 @@ onMounted(async () => {
   min-height: 200px;
   color: #999;
   font-size: 14px;
+}
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #333;
+  max-width: 800px;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: #111;
+  margin: 1.5em 0 0.75em;
+  font-weight: 600;
+}
+.markdown-body h1 { font-size: 1.5em; }
+.markdown-body h2 { font-size: 1.3em; }
+.markdown-body h3 { font-size: 1.15em; }
+.markdown-body h4 { font-size: 1em; }
+.markdown-body p {
+  margin: 0.75em 0;
+}
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+  margin: 0.75em 0;
+}
+.markdown-body li {
+  margin-bottom: 0.35em;
+}
+.markdown-body code {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.9em;
+  background: #f1f3f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #c7254e;
+}
+.markdown-body pre {
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.markdown-body blockquote {
+  border-left: 4px solid #ddd;
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  color: #666;
+  background: #fafafa;
+  border-radius: 0 6px 6px 0;
+}
+.markdown-body a {
+  color: #1677ff;
+  text-decoration: none;
+}
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+.markdown-body strong {
+  font-weight: 600;
+  color: #111;
+}
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5em 0;
+}
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 13px;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  text-align: left;
+}
+.markdown-body th {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 6px;
 }
 </style>

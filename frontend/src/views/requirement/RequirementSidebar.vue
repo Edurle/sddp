@@ -26,7 +26,6 @@
             <AppBadge data-testid="req-detail-txt-priority" :text="priorityLabel(req.priority)" />
             <span data-testid="req-detail-tag-status" class="status-tag">{{ reqStatusLabel(req.status) }}</span>
           </div>
-          <p class="info-desc" data-testid="req-detail-txt-description">{{ req.description }}</p>
           <p data-testid="req-detail-txt-review-status" class="status-text">{{ reqStatusLabel(req.status) }}</p>
 
           <div v-if="!editing && req.prototype_html" class="prototype-section">
