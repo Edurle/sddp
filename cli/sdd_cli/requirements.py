@@ -6,6 +6,7 @@ from typing import Optional
 import typer
 
 from sdd_cli.client import APIError, get_client
+from sdd_cli.file_loader import load_value_from_file
 from sdd_cli.output import print_response
 
 app = typer.Typer(help="Requirement management", no_args_is_help=True)
@@ -522,6 +523,75 @@ def list_requirement_commits(id: int) -> None:
     try:
         client = get_client()
         data = client.get(f"/requirements/{id}/commits")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("set-spec-field")
+def set_spec_field(
+    id: int,
+    path: str = typer.Argument(...),
+    file: str = typer.Option(..., "--file", "-f"),
+) -> None:
+    try:
+        value = load_value_from_file(file)
+        client = get_client()
+        data = client.patch(
+            f"/requirements/{id}/specification/draft/field",
+            json={"path": path, "value": value},
+        )
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("commit-spec")
+def commit_spec(id: int) -> None:
+    try:
+        client = get_client()
+        data = client.post(f"/requirements/{id}/specification/commit")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("discard-spec-draft")
+def discard_spec_draft(id: int) -> None:
+    try:
+        client = get_client()
+        data = client.delete(f"/requirements/{id}/specification/draft")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+@app.command("set-field")
+def set_requirement_field(
+    id: int,
+    path: str = typer.Argument(...),
+    file: str = typer.Option(..., "--file", "-f"),
+) -> None:
+    try:
+        value = load_value_from_file(file)
+        client = get_client()
+        body: dict = {}
+        if path == "prototype_html":
+            body["prototype_html"] = value
+        elif path.startswith("type_detail."):
+            body["type_detail_path"] = path[len("type_detail."):]
+            body["value"] = value
+        else:
+            typer.echo(
+                f"Error: 不支持的字段路径 '{path}'。支持 prototype_html 或 type_detail.<subpath>",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        data = client.patch(f"/requirements/{id}", json=body)
         print_response(data)
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)

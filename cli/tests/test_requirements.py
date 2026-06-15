@@ -266,3 +266,85 @@ class TestRequirementsTasks:
         body = mock_client.post.call_args[1]["json"]
         assert body["title"] == "New Task"
         assert body["description"] == "Do stuff"
+
+
+class TestSetSpecField:
+    def test_set_spec_field_reads_file(
+        self, runner: CliRunner, mock_client: MagicMock, tmp_path
+    ) -> None:
+        f = tmp_path / "desc.md"
+        f.write_text("新描述", encoding="utf-8")
+        mock_client.patch.return_value = {"is_draft": True, "base_version": 1}
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "requirements", "set-spec-field", "5",
+                "entity_definition.description", "--file", str(f),
+            ])
+        assert result.exit_code == 0
+        mock_client.patch.assert_called_with(
+            "/requirements/5/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "新描述"},
+        )
+
+
+class TestCommitSpec:
+    def test_commit_spec(self, runner: CliRunner, mock_client: MagicMock) -> None:
+        mock_client.post.return_value = {"version": 2}
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, ["requirements", "commit-spec", "5"])
+        assert result.exit_code == 0
+        mock_client.post.assert_called_with("/requirements/5/specification/commit")
+
+
+class TestDiscardSpecDraft:
+    def test_discard_spec_draft(self, runner: CliRunner, mock_client: MagicMock) -> None:
+        mock_client.delete.return_value = {"discarded": True}
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, ["requirements", "discard-spec-draft", "5"])
+        assert result.exit_code == 0
+        mock_client.delete.assert_called_with("/requirements/5/specification/draft")
+
+
+class TestReqSetField:
+    def test_set_field_prototype_html(
+        self, runner: CliRunner, mock_client: MagicMock, tmp_path
+    ) -> None:
+        f = tmp_path / "proto.html"
+        f.write_text("<div>x</div>", encoding="utf-8")
+        mock_client.patch.return_value = {"id": 5, "status": "drafting_req"}
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "requirements", "set-field", "5", "prototype_html",
+                "--file", str(f),
+            ])
+        assert result.exit_code == 0
+        mock_client.patch.assert_called_with(
+            "/requirements/5", json={"prototype_html": "<div>x</div>"},
+        )
+
+    def test_set_field_type_detail_path(
+        self, runner: CliRunner, mock_client: MagicMock, tmp_path
+    ) -> None:
+        import json as _json
+        f = tmp_path / "steps.json"
+        f.write_text(_json.dumps(["s1", "s2"]), encoding="utf-8")
+        mock_client.patch.return_value = {"id": 5, "status": "drafting_req"}
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "requirements", "set-field", "5", "type_detail.reproduce_steps",
+                "--file", str(f),
+            ])
+        assert result.exit_code == 0
+        mock_client.patch.assert_called_with(
+            "/requirements/5",
+            json={"type_detail_path": "reproduce_steps", "value": ["s1", "s2"]},
+        )
+
+    def test_set_field_unsupported_path(
+        self, runner: CliRunner, mock_client: MagicMock
+    ) -> None:
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "requirements", "set-field", "5", "unknown_field", "--file", "x",
+            ])
+        assert result.exit_code == 1
