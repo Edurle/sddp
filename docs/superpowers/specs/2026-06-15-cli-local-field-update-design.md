@@ -21,7 +21,7 @@
 |---|---|---|
 | 需求字段（title/description/type_detail/prototype_html） | `PATCH /requirements/{id}` 已支持局部更新（`if v is not None`） | CLI `patch` 命令漏了 `prototype_html`；`type_detail` 只能整体替换，无法下钻 |
 | specification | `PUT /specification` 整份覆盖，每次 +1 版本；无草稿、无局部更新 | CLI `save-spec` 要传整个 JSON |
-| test_case | `PUT /test-cases/{id}` 已支持局部更新；字段均为顶层字符串 | CLI 无 update 命令 |
+| test_case | `PUT /test-cases/{id}` 已支持局部更新；字段均为顶层字符串 | CLI 有 `update` 命令但用 `--steps` 行内选项，长文本仍受 cmd 限制 |
 
 数据库：生产/测试均使用 PostgreSQL。测试库 `obr_test`（`TEST_DATABASE_URL`），conftest 用 `TRUNCATE ... CASCADE` 清理，`spec_documents` 已在清理列表。
 
@@ -31,15 +31,17 @@
 
 ```
 点号分隔 key：     type_detail.reproduce_steps
-数组下标：         sections[0].fields.title
-负数下标：         sections[-1].name          （-1 = 末元素）
-键值匹配数组元素：  sections[name=entity_definition].fields.fields[2].constraints
+数组下标：         entity_definition.fields[0]
+负数下标：         api_design.endpoints[-1]          （-1 = 末元素）
+键值匹配数组元素：  page_structure.pages[name=user-list].elements[2].type
 ```
+
+> **注意**：spec content 是 **section-name-keyed dict**（`{entity_definition: {...}, table_design: {...}, ...}`），不是 `{sections: [...]}` 数组。路径从 section 名直接开始。`[name=x]` 键值定位用于定位数组里的 dict 元素（如 `pages[name=user-list]`），而非 section 本身。
 
 语义：
 - **仅更新已存在节点**：路径中间或叶子不存在时报错，不自动建树。
 - **整体替换**：路径指向的叶子或子树被文件内容整体替换。
-- **`[name=x]` 键值定位**：用于 spec sections（按 `name` 比按下标稳健）。匹配多个时报错。
+- **`[name=x]` 键值定位**：用于数组中按某个 key 的值定位 dict 元素（如 `pages[name=user-list]`）。匹配多个时报错。
 - **路径合法性校验**：非法语法 → `40001`。
 
 实现位置：`backend/app/services/path_utils.py`，纯函数、无 IO，三类内容复用。
@@ -84,7 +86,7 @@ draft_base_version  INTEGER | NULL  # 草稿基于哪个正式版本
 
 ### Test case 端点
 
-后端零改动：`PUT /test-cases/{id}` 已存在，字段均为顶层字符串，无需路径下钻。仅 CLI 新增 update 命令，长文本走 `--file`。
+后端零改动：`PUT /test-cases/{id}` 已存在，字段均为顶层字符串，无需路径下钻。CLI 新增 `set-field` 命令（`--file` 取值）补充现有 `update`（行内选项），让长文本（steps/expected/precondition）绕开 cmd 限制。
 
 ## CLI 命令面
 
@@ -92,7 +94,8 @@ draft_base_version  INTEGER | NULL  # 草稿基于哪个正式版本
 
 ```
 # spec 草稿
-sdd req set-spec-field     <id> sections[name=entity_definition].fields.description --file d.md
+sdd req set-spec-field     <id> entity_definition.description --file d.md
+sdd req set-spec-field     <id> api_design.endpoints[0].description --file api_desc.md
 sdd req commit-spec        <id>
 sdd req discard-spec-draft <id>
 sdd req get-spec           <id>           # 返回草稿（若有），带 is_draft
@@ -113,11 +116,11 @@ sdd tc set-field           <id> steps --file steps.txt
 
 | 场景 | code | 错误信息样例 |
 |---|---|---|
-| 路径语法非法 | `40001` | `路径语法非法：'sections[].fields' 中 '[]' 缺少下标或键值。用法：sections[0] / sections[-1] / sections[name=xxx]` |
+| 路径语法非法 | `40001` | `路径语法非法：'api_design.endpoints[]' 中 '[]' 缺少下标或键值。用法：endpoints[0] / endpoints[-1] / endpoints[path=/x]` |
 | 中间/叶子节点不存在 | `40404` | `路径不存在：'type_detail.reproduce_steps' 中 'reproduce_steps' 键不存在。type_detail 现有键：[severity, environment]` |
-| 数组越界 | `40404` | `路径不存在：'sections[3]' 越界，该数组当前长度 3（有效下标 0..2 或用 [-1] 取末元素）` |
-| `[name=x]` 匹配 0 个 | `40404` | `路径不存在：sections[name=api_design] 无匹配。现有 name 值：[entity_definition, field_rules]` |
-| `[name=x]` 匹配多个 | `40001` | `路径匹配到多个节点：sections[name=x] 命中 2 条，请改用下标 sections[0]/sections[1] 精确定位` |
+| 数组越界 | `40404` | `路径不存在：'api_design.endpoints[3]' 越界，该数组当前长度 3（有效下标 0..2 或用 [-1] 取末元素）` |
+| `[name=x]` 匹配 0 个 | `40404` | `路径不存在：pages[name=api_design] 无匹配。现有 name 值：[user-list, user-detail]` |
+| `[name=x]` 匹配多个 | `40001` | `路径匹配到多个节点：pages[name=x] 命中 2 条，请改用下标 pages[0]/pages[1] 精确定位` |
 | 草稿 Schema 校验失败 | `40001` | `草稿校验失败：` + 现有 `_validate_spec_content` 的 errors（含具体 section/field + 期望格式） |
 | 无草稿 commit/discard | `40404` | `无草稿可定版：当前 spec 已是正式版本 N，无未提交草稿。用 set-spec-field 开始编辑草稿` |
 | 状态非 drafting_spec | `40204`(ERR_REQUIREMENT_STATUS) | `当前需求状态为 drafting_req，不允许编辑草稿。需处于 drafting_spec 状态` |
