@@ -52,3 +52,44 @@ class TestTestCasesDelete:
             result = runner.invoke(app, ["test-cases", "delete", "1"])
         assert result.exit_code == 0
         mock_client.delete.assert_called_with("/test-cases/1")
+
+
+class TestTestCasesSetField:
+    def test_set_field_steps(
+        self, runner: CliRunner, mock_client: MagicMock, tmp_path
+    ) -> None:
+        f = tmp_path / "steps.txt"
+        f.write_text("1. 步骤一\n2. 步骤二", encoding="utf-8")
+        mock_client.put.return_value = {"id": 9}
+        with patch("sdd_cli.test_cases.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "test-cases", "set-field", "9", "steps", "--file", str(f),
+            ])
+        assert result.exit_code == 0
+        mock_client.put.assert_called_with(
+            "/test-cases/9", json={"steps": "1. 步骤一\n2. 步骤二"},
+        )
+
+    def test_set_field_expected(
+        self, runner: CliRunner, mock_client: MagicMock, tmp_path
+    ) -> None:
+        f = tmp_path / "expected.md"
+        f.write_text("预期结果", encoding="utf-8")
+        mock_client.put.return_value = {"id": 9}
+        with patch("sdd_cli.test_cases.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "test-cases", "set-field", "9", "expected", "--file", str(f),
+            ])
+        assert result.exit_code == 0
+        mock_client.put.assert_called_with(
+            "/test-cases/9", json={"expected_result": "预期结果"},
+        )
+
+    def test_set_field_unsupported(
+        self, runner: CliRunner, mock_client: MagicMock
+    ) -> None:
+        with patch("sdd_cli.test_cases.get_client", return_value=mock_client):
+            result = runner.invoke(app, [
+                "test-cases", "set-field", "9", "badfield", "--file", "x",
+            ])
+        assert result.exit_code == 1

@@ -5,6 +5,7 @@ from typing import Optional
 import typer
 
 from sdd_cli.client import APIError, get_client
+from sdd_cli.file_loader import load_value_from_file
 from sdd_cli.output import print_response
 
 app = typer.Typer(help="Test case commands", no_args_is_help=True)
@@ -70,6 +71,39 @@ def update_test_case(
         if related_element:
             body["related_element"] = related_element
         data = client.put(f"/test-cases/{id}", json=body)
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
+_TC_FIELD_MAP = {
+    "title": "title",
+    "type": "case_type",
+    "precondition": "precondition",
+    "steps": "steps",
+    "expected": "expected_result",
+    "related_api": "related_api",
+    "related_element": "related_element",
+}
+
+
+@app.command("set-field")
+def set_test_case_field(
+    id: int,
+    field: str = typer.Argument(...),
+    file: str = typer.Option(..., "--file", "-f"),
+) -> None:
+    try:
+        if field not in _TC_FIELD_MAP:
+            typer.echo(
+                f"Error: 不支持的字段 '{field}'。支持：{list(_TC_FIELD_MAP.keys())}",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        value = load_value_from_file(file)
+        client = get_client()
+        data = client.put(f"/test-cases/{id}", json={_TC_FIELD_MAP[field]: value})
         print_response(data)
     except APIError as e:
         typer.echo(f"Error: {e.message}", err=True)
