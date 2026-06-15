@@ -181,12 +181,17 @@ async def _check_member(db: AsyncSession, team_id: int, user_id: int):
 
 
 async def _get_active_iteration(db: AsyncSession, project_id: int) -> dict | None:
-    stmt = select(Iteration).where(
-        Iteration.project_id == project_id,
-        Iteration.status == "in_progress",
+    stmt = (
+        select(Iteration)
+        .where(
+            Iteration.project_id == project_id,
+            Iteration.status == "in_progress",
+        )
+        .order_by(Iteration.updated_at.desc())
+        .limit(1)
     )
     result = await db.execute(stmt)
-    iteration = result.scalar_one_or_none()
+    iteration = result.scalars().first()
     if iteration is None:
         return None
     return _iteration_to_dict(iteration)

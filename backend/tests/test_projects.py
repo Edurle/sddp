@@ -63,6 +63,33 @@ class TestListTeamProjects:
         body = resp.json()
         assert body["code"] == 40100
 
+    @pytest.mark.asyncio
+    async def test_list_projects_with_multiple_in_progress_iterations(
+        self, client, normal_user, owner_role, sample_project, db
+    ):
+        from datetime import date
+
+        from app.models import Iteration
+
+        for i in range(2):
+            db.add(Iteration(
+                project_id=sample_project.id,
+                name=f"Sprint {i}",
+                start_date=date(2026, 4, 1),
+                end_date=date(2026, 4, 15),
+                status="in_progress",
+            ))
+        await db.commit()
+
+        headers = auth_headers(normal_user.id)
+        resp = await client.get(
+            f"/api/v1/teams/{owner_role['team'].id}/projects", headers=headers
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["code"] == 0
+        assert body["data"][0]["active_iteration"] is not None
+
 
 class TestCreateProject:
     @pytest.mark.asyncio
