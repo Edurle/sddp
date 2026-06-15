@@ -200,7 +200,8 @@ async def owner_role(db, normal_user):
         "requirement:review_req", "requirement:review_spec", "requirement:review_tests",
         "task:create", "task:edit", "task:delete", "task:test", "task:complete",
         "member:invite", "member:remove", "member:assign_role",
-        "spec_template:edit",
+        "spec_template:edit", "specification:edit",
+        "test_case:create", "test_case:edit", "test_case:delete",
     ]
     for p in all_perms:
         db.add(RolePermission(role_id=role.id, permission=p))
