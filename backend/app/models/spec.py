@@ -29,6 +29,8 @@ class SpecDocument(Base):
     requirement_id: Mapped[int] = mapped_column(ForeignKey("requirements.id"), nullable=False, unique=True)
     current_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     versions: Mapped[dict] = mapped_column(JSONB, nullable=False, default=list)
+    draft_content: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    draft_base_version: Mapped[int | None] = mapped_column(Integer, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(),
     )
