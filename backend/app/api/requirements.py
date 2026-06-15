@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.deps import get_current_user, get_db_session, check_team_permission, _team_id_from_iteration, _team_id_from_requirement, _team_id_from_test_case
-from app.exceptions import BusinessError, ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS
+from app.exceptions import BusinessError, ERR_FORBIDDEN, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS, ERR_VALIDATION, ERR_FIELD_PATH_NOT_FOUND
 from app.models import Requirement
 from app.services import requirement as req_svc
 from app.services import requirement_guide as rg_svc
@@ -124,6 +124,8 @@ class PatchRequirementRequest(BaseModel):
     description: str | None = None
     type_detail: dict | None = None
     prototype_html: str | None = None
+    type_detail_path: str | None = None
+    value: Any = None
 
 
 def _clamp_pagination(offset: int, limit: int) -> tuple[int, int]:
@@ -291,10 +293,40 @@ async def patch_requirement(
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
     has_field_edits = any(v is not None for v in [
-        body.title, body.description, body.type_detail, body.prototype_html
+        body.title, body.description, body.type_detail, body.prototype_html, body.type_detail_path
     ])
     if has_field_edits and req.status not in EDITABLE_STATUSES:
         raise BusinessError(ERR_REQUIREMENT_STATUS, "当前状态不允许编辑")
+
+    if body.type_detail is not None and body.type_detail_path is not None:
+        raise BusinessError(
+            ERR_VALIDATION,
+            "type_detail_path 与 type_detail 不可同时提供，二选一。",
+        )
+
+    if body.type_detail_path is not None:
+        from app.services.path_utils import (
+            PathSyntaxError, PathNotFoundError, MultipleMatchError, set_by_path,
+        )
+        base = req.type_detail if isinstance(req.type_detail, dict) else {}
+        if not base:
+            raise BusinessError(
+                ERR_FIELD_PATH_NOT_FOUND,
+                "路径不存在：type_detail 当前为空，无法下钻。请先用 type_detail 整体设置初始结构。",
+            )
+        full_path = f"type_detail.{body.type_detail_path}"
+        try:
+            new_td = set_by_path({"type_detail": base}, full_path, body.value)["type_detail"]
+        except PathSyntaxError as e:
+            raise BusinessError(ERR_VALIDATION, str(e))
+        except MultipleMatchError as e:
+            raise BusinessError(ERR_VALIDATION, str(e))
+        except PathNotFoundError as e:
+            raise BusinessError(ERR_FIELD_PATH_NOT_FOUND, str(e))
+        req.type_detail = new_td
+        await db.commit()
+        await db.refresh(req)
+        return {"code": 0, "message": "success", "data": {"id": req.id, "status": req.status}}
 
     if body.status is not None and body.status != req.status:
         allowed = VALID_STATUS_TRANSITIONS.get(req.status, set())

@@ -1146,3 +1146,83 @@ class TestRequirementStatusTransitionSecurity:
         )
         body = resp.json()
         assert body["code"] == 0
+
+
+class TestPatchRequirementTypeDetailPath:
+    @pytest.mark.asyncio
+    async def test_type_detail_path_partial_update(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_req"
+        sample_requirement.type_detail = {"severity": "low", "reproduce_steps": ["old"]}
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"type_detail_path": "reproduce_steps", "value": ["step1", "step2"]},
+            headers=headers,
+        )
+        assert resp.json()["code"] == 0
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=auth_headers(normal_user.id),
+        )
+        td = get_resp.json()["data"]["type_detail"]
+        assert td["severity"] == "low"
+        assert td["reproduce_steps"] == ["step1", "step2"]
+
+    @pytest.mark.asyncio
+    async def test_type_detail_path_and_type_detail_mutually_exclusive(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_req"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"type_detail": {"a": 1}, "type_detail_path": "a", "value": 2},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+        assert "type_detail_path" in body["message"]
+
+    @pytest.mark.asyncio
+    async def test_type_detail_path_not_found_actionable(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_req"
+        sample_requirement.type_detail = {"severity": "low"}
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"type_detail_path": "nonexistent", "value": 1},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40404
+        assert "severity" in body["message"]
+
+    @pytest.mark.asyncio
+    async def test_patch_prototype_html(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_req"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            json={"prototype_html": "<div>proto</div>"},
+            headers=headers,
+        )
+        assert resp.json()["code"] == 0
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}",
+            headers=auth_headers(normal_user.id),
+        )
+        assert get_resp.json()["data"]["prototype_html"] == "<div>proto</div>"
