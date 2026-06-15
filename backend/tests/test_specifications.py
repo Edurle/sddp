@@ -634,3 +634,264 @@ class TestSpecContentValidation:
         )
         body = resp.json()
         assert body["code"] == 0
+
+
+_VALID_FULL_CONTENT = {
+    "entity_definition": {"description": "d", "fields": []},
+    "table_design": {"tables": []},
+    "page_structure": {"pages": []},
+    "api_design": {"endpoints": []},
+    "constraints": {},
+}
+
+
+class TestSpecDraftSetField:
+    @pytest.mark.asyncio
+    async def test_set_field_creates_draft_from_current_version(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "old", "fields": []})},
+            headers=headers,
+        )
+
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "new desc"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+        assert body["data"]["is_draft"] is True
+        assert body["data"]["base_version"] == 1
+
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            headers=auth_headers(normal_user.id),
+        )
+        gdata = get_resp.json()["data"]
+        assert gdata["is_draft"] is True
+        assert gdata["content"]["entity_definition"]["description"] == "new desc"
+        assert gdata["content"]["table_design"] == {"tables": []}
+
+    @pytest.mark.asyncio
+    async def test_set_field_multiple_writes_accumulate(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": {
+                "entity_definition": {"description": "d1", "fields": []},
+                "table_design": {"tables": []},
+                "page_structure": {"pages": []},
+                "api_design": {"endpoints": [{"method": "GET", "path": "/a", "description": "a"}]},
+                "constraints": {},
+            }},
+            headers=headers,
+        )
+
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "d2"},
+            headers=headers,
+        )
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "api_design.endpoints[0].description", "value": "updated"},
+            headers=headers,
+        )
+        assert resp.json()["code"] == 0
+
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            headers=auth_headers(normal_user.id),
+        )
+        content = get_resp.json()["data"]["content"]
+        assert content["entity_definition"]["description"] == "d2"
+        assert content["api_design"]["endpoints"][0]["description"] == "updated"
+
+    @pytest.mark.asyncio
+    async def test_set_field_status_not_drafting_spec(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_req"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "x"},
+            headers=headers,
+        )
+        assert resp.json()["code"] == 40204
+
+    @pytest.mark.asyncio
+    async def test_set_field_path_not_found_actionable(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT)},
+            headers=headers,
+        )
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.nonexistent", "value": "x"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40404
+        assert "description" in body["message"]
+
+    @pytest.mark.asyncio
+    async def test_set_field_schema_validation_fails_rolls_back(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT)},
+            headers=headers,
+        )
+        resp = await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.fields", "value": "not_an_array"},
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40001
+
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            headers=auth_headers(normal_user.id),
+        )
+        assert get_resp.json()["code"] == 0
+
+
+class TestSpecDraftCommitDiscard:
+    @pytest.mark.asyncio
+    async def test_commit_creates_new_version_clears_draft(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": {
+                "entity_definition": {"description": "v1", "fields": []},
+                "table_design": {"tables": []},
+                "page_structure": {"pages": []},
+                "api_design": {"endpoints": []},
+                "constraints": {},
+            }},
+            headers=headers,
+        )
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "v2-draft"},
+            headers=headers,
+        )
+
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/commit",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 0
+        assert body["data"]["version"] == 2
+
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            headers=auth_headers(normal_user.id),
+        )
+        gdata = get_resp.json()["data"]
+        assert gdata["is_draft"] is False
+        assert gdata["content"]["entity_definition"]["description"] == "v2-draft"
+        assert gdata["current_version"] == 2
+
+    @pytest.mark.asyncio
+    async def test_commit_no_draft(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": {
+                "entity_definition": {"description": "v1", "fields": []},
+                "table_design": {"tables": []},
+                "page_structure": {"pages": []},
+                "api_design": {"endpoints": []},
+                "constraints": {},
+            }},
+            headers=headers,
+        )
+        resp = await client.post(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/commit",
+            headers=headers,
+        )
+        body = resp.json()
+        assert body["code"] == 40404
+        assert "无草稿" in body["message"]
+
+    @pytest.mark.asyncio
+    async def test_discard_returns_to_committed(
+        self, client, normal_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": {
+                "entity_definition": {"description": "committed", "fields": []},
+                "table_design": {"tables": []},
+                "page_structure": {"pages": []},
+                "api_design": {"endpoints": []},
+                "constraints": {},
+            }},
+            headers=headers,
+        )
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "drafted"},
+            headers=headers,
+        )
+
+        resp = await client.delete(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft",
+            headers=headers,
+        )
+        assert resp.json()["code"] == 0
+
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            headers=auth_headers(normal_user.id),
+        )
+        gdata = get_resp.json()["data"]
+        assert gdata["is_draft"] is False
+        assert gdata["content"]["entity_definition"]["description"] == "committed"

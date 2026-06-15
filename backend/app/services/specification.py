@@ -8,9 +8,17 @@ from app.exceptions import (
     ERR_NOT_FOUND,
     ERR_REQUIREMENT_STATUS,
     ERR_VALIDATION,
+    ERR_FIELD_PATH_NOT_FOUND,
+    ERR_NO_DRAFT,
 )
 from app.models import Requirement, TeamMember
 from app.models.spec import SpecTemplate, SpecDocument
+from app.services.path_utils import (
+    PathSyntaxError,
+    PathNotFoundError,
+    MultipleMatchError,
+    set_by_path,
+)
 
 DEFAULT_SECTIONS = [
     {
@@ -382,13 +390,22 @@ async def get_spec_document(
     doc = result.scalar_one_or_none()
 
     if doc is None or doc.current_version == 0:
-        return {"current_version": 0, "content": None}
+        return {"current_version": 0, "content": None, "is_draft": False}
+
+    if doc.draft_content is not None:
+        return {
+            "current_version": doc.current_version,
+            "content": doc.draft_content,
+            "is_draft": True,
+            "base_version": doc.draft_base_version,
+        }
 
     versions = doc.versions or []
     content = versions[-1].get("content") if versions else None
     return {
         "current_version": doc.current_version,
         "content": content,
+        "is_draft": False,
     }
 
 
@@ -442,6 +459,110 @@ async def save_spec_document(
         "errors": [],
         "suggestions": suggestions,
     }
+
+
+async def set_spec_draft_field(
+    db: AsyncSession, req_id: int, user_id: int, path: str, value
+) -> dict:
+    req = await _get_requirement(db, req_id)
+    if req is None:
+        raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+    if req.status != "drafting_spec":
+        raise BusinessError(
+            ERR_REQUIREMENT_STATUS,
+            f"当前需求状态为 {req.status}，不允许编辑草稿。需处于 drafting_spec 状态。",
+        )
+
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+
+    if doc is None or doc.current_version == 0:
+        raise BusinessError(
+            ERR_NOT_FOUND,
+            "尚无正式 spec 版本，无法局部更新草稿。请先用 save-spec 提交初始版本。",
+        )
+
+    if doc.draft_content is None:
+        versions = doc.versions or []
+        doc.draft_content = versions[-1].get("content")
+        doc.draft_base_version = doc.current_version
+
+    try:
+        new_draft = set_by_path(doc.draft_content, path, value)
+    except PathSyntaxError as e:
+        raise BusinessError(ERR_VALIDATION, str(e))
+    except MultipleMatchError as e:
+        raise BusinessError(ERR_VALIDATION, str(e))
+    except PathNotFoundError as e:
+        raise BusinessError(ERR_FIELD_PATH_NOT_FOUND, str(e))
+
+    team_id = await _get_team_id_by_requirement(db, req_id)
+    errors, suggestions = await _validate_spec_content(new_draft, db, team_id)
+    if errors:
+        raise BusinessError(ERR_VALIDATION, "草稿校验失败", errors=errors)
+
+    doc.draft_content = new_draft
+    await db.commit()
+    return {
+        "is_draft": True,
+        "base_version": doc.draft_base_version,
+        "errors": [],
+        "suggestions": suggestions,
+    }
+
+
+async def commit_spec_draft(db: AsyncSession, req_id: int, user_id: int) -> dict:
+    from datetime import datetime, timezone
+
+    req = await _get_requirement(db, req_id)
+    if req is None:
+        raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+    if req.status != "drafting_spec":
+        raise BusinessError(
+            ERR_REQUIREMENT_STATUS,
+            f"当前需求状态为 {req.status}，不允许定版草稿。需处于 drafting_spec 状态。",
+        )
+
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+    if doc is None or doc.draft_content is None:
+        raise BusinessError(
+            ERR_NO_DRAFT,
+            "无草稿可定版：当前 spec 无未提交草稿。用 set-spec-field 开始编辑草稿。",
+        )
+
+    new_version_num = doc.current_version + 1
+    new_entry = {
+        "version": new_version_num,
+        "content": doc.draft_content,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": user_id,
+    }
+    versions = list(doc.versions or [])
+    versions.append(new_entry)
+    doc.versions = versions
+    doc.current_version = new_version_num
+    doc.draft_content = None
+    doc.draft_base_version = None
+    await db.commit()
+    return {"version": new_version_num, "committed_from_base": True}
+
+
+async def discard_spec_draft(db: AsyncSession, req_id: int) -> dict:
+    req = await _get_requirement(db, req_id)
+    if req is None:
+        raise BusinessError(ERR_NOT_FOUND, "需求不存在")
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+    if doc is None or doc.draft_content is None:
+        raise BusinessError(ERR_NO_DRAFT, "无草稿可丢弃：当前 spec 无未提交草稿。")
+    doc.draft_content = None
+    doc.draft_base_version = None
+    await db.commit()
+    return {"discarded": True, "current_version": doc.current_version}
 
 
 async def list_spec_versions(

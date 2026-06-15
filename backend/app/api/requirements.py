@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 import logging
 
 from fastapi import APIRouter, Depends, Query
@@ -724,6 +724,47 @@ async def update_specification(
 ) -> dict:
     await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "specification:edit")
     data = await spec_svc.save_spec_document(db, reqId, int(user["sub"]), body.content)
+    return {"code": 0, "message": "success", "data": data}
+
+
+class SetSpecDraftFieldRequest(BaseModel):
+    path: str
+    value: Any = None
+
+
+@router.patch("/{reqId}/specification/draft/field")
+async def set_spec_draft_field(
+    reqId: int,
+    body: SetSpecDraftFieldRequest,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "specification:edit")
+    data = await spec_svc.set_spec_draft_field(
+        db, reqId, int(user["sub"]), body.path, body.value
+    )
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.post("/{reqId}/specification/commit")
+async def commit_spec_draft(
+    reqId: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "specification:edit")
+    data = await spec_svc.commit_spec_draft(db, reqId, int(user["sub"]))
+    return {"code": 0, "message": "success", "data": data}
+
+
+@router.delete("/{reqId}/specification/draft")
+async def discard_spec_draft(
+    reqId: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_requirement(db, reqId), "specification:edit")
+    data = await spec_svc.discard_spec_draft(db, reqId)
     return {"code": 0, "message": "success", "data": data}
 
 
