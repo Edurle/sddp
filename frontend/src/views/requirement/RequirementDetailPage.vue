@@ -229,8 +229,9 @@
             <button data-testid="req-detail-btn-add-test-case" @click="showTestCaseDialog = true">添加测试用例</button>
             <select data-testid="req-detail-sel-filter-case-type" v-model="testCaseTypeFilter" @change="fetchTestCases">
               <option value="">全部</option>
-              <option value="api">API</option>
-              <option value="e2e">E2E</option>
+              <option value="ui_test">UI测试</option>
+              <option value="happy_path">正常用例</option>
+              <option value="edge_case">边界用例</option>
             </select>
             <button data-testid="req-detail-btn-submit-tests-review" @click="openSubmitTestsReviewDialog">提交测试审核</button>
           </div>
@@ -438,8 +439,9 @@
         <div class="form-group">
           <label>类型</label>
           <select v-model="testCaseForm.case_type" data-testid="req-detail-dlg-test-case-sel-type">
-            <option value="api">API</option>
-            <option value="e2e">E2E</option>
+            <option value="ui_test">UI测试</option>
+            <option value="happy_path">正常用例</option>
+            <option value="edge_case">边界用例</option>
           </select>
         </div>
         <div class="form-group">
@@ -479,7 +481,7 @@
               </div>
               <div class="tc-detail-field">
                 <label>类型</label>
-                <p class="view-field">{{ viewTestCase.case_type === 'api' ? 'API' : viewTestCase.case_type === 'functional' ? '功能测试' : viewTestCase.case_type }}</p>
+                <p class="view-field">{{ caseTypeLabel(viewTestCase.case_type) }}</p>
               </div>
               <div class="tc-detail-field">
                 <label>关联 API</label>
@@ -713,7 +715,7 @@ const editingTestCase = ref<TestCaseItem | null>(null)
 const tcExecutionMap = ref<Record<number, { status: string; all_results: Array<{ status: string; actual_result?: string; failure_reason?: string; duration_ms?: number; executed_at?: string }> }>>({})
 const testCaseForm = reactive({
   title: '',
-  case_type: 'api',
+  case_type: 'ui_test',
   precondition: '',
   steps: '',
   expected_result: '',
@@ -1134,6 +1136,14 @@ async function fetchTestCaseExecutions() {
   } catch {
     tcExecutionMap.value = {}
   }
+}
+
+function caseTypeLabel(caseType: string) {
+  if (caseType === 'ui_test') return 'UI测试'
+  if (caseType === 'happy_path') return '正常用例'
+  if (caseType === 'edge_case') return '边界用例'
+  if (caseType === 'api') return 'API'
+  return caseType
 }
 
 function tcResultText(status: string) {

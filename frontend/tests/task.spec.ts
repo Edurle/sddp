@@ -180,7 +180,7 @@ test.describe('任务详情页', () => {
 
       const testCase = {
         title: '测试用例1',
-        case_type: 'api',
+        case_type: 'happy_path',
         precondition: '前置条件',
         steps: '操作步骤',
         expected: '预期结果',
@@ -219,7 +219,7 @@ test.describe('任务详情页', () => {
 
       const testCase = {
         title: '测试用例-失败',
-        case_type: 'api',
+        case_type: 'happy_path',
         precondition: '前置条件',
         steps: '操作步骤',
         expected: '预期结果',
@@ -258,7 +258,7 @@ test.describe('任务详情页', () => {
 
       const testCase = {
         title: '测试用例-未填原因',
-        case_type: 'e2e',
+        case_type: 'ui_test',
         precondition: '前置条件',
         steps: '操作步骤',
         expected: '预期结果',
@@ -297,7 +297,7 @@ test.describe('任务详情页', () => {
       const tcResp = await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '通过的用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -331,7 +331,7 @@ test.describe('任务详情页', () => {
       const tcResp = await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '失败的用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -369,7 +369,7 @@ test.describe('任务详情页', () => {
       const tcResp = await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '历史用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',

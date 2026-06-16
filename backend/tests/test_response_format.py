@@ -51,7 +51,7 @@ async def test_direct_create_test_case_no_top_level_duplicate(client, db, approv
         "/api/v1/test-cases",
         json={
             "title": "格式测试用例",
-            "case_type": "api",
+            "case_type": "happy_path",
             "requirement_id": approved_requirement.id,
         },
         headers=headers,

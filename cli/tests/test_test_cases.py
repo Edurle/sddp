@@ -18,18 +18,18 @@ class TestTestCasesCreate:
         mock_client.post.return_value = {"id": 1, "title": "TC1"}
         with patch("sdd_cli.test_cases.get_client", return_value=mock_client):
             result = runner.invoke(app, [
-                "test-cases", "create", "--requirement", "10", "--title", "TC1", "--type", "functional",
+                "test-cases", "create", "--requirement", "10", "--title", "TC1", "--type", "happy_path",
             ])
         assert result.exit_code == 0
         body = mock_client.post.call_args[1]["json"]
         assert body["requirement_id"] == 10
-        assert body["case_type"] == "functional"
+        assert body["case_type"] == "happy_path"
 
     def test_create_full(self, runner: CliRunner, mock_client: MagicMock) -> None:
         mock_client.post.return_value = {"id": 2}
         with patch("sdd_cli.test_cases.get_client", return_value=mock_client):
             result = runner.invoke(app, [
-                "test-cases", "create", "--requirement", "10", "--title", "TC2", "--type", "integration",
+                "test-cases", "create", "--requirement", "10", "--title", "TC2", "--type", "edge_case",
                 "--precondition", "DB seeded", "--steps", "POST /api", "--expected", "200",
             ])
         assert result.exit_code == 0

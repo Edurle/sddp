@@ -52,14 +52,14 @@ class TestTestGenerator:
         req_id = setup_requirement_for_tc
         headers = auth_headers(normal_user.id)
 
-        resp = await client.post(f"/api/v1/requirements/{req_id}/generate-test-cases", json={"case_types": ["e2e", "api"]}, headers=headers)
+        resp = await client.post(f"/api/v1/requirements/{req_id}/generate-test-cases", json={"case_types": ["ui_test", "happy_path"]}, headers=headers)
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
         assert len(body["data"]["created"]) >= 2
         case_types = [c["case_type"] for c in body["data"]["created"]]
-        assert "e2e" in case_types
-        assert "api" in case_types
+        assert "ui_test" in case_types
+        assert "happy_path" in case_types
 
     @pytest.mark.asyncio
     async def test_generate_test_cases_wrong_status(self, client, normal_user):

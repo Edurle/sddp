@@ -285,7 +285,7 @@ async def test_tc_agent_029_full_context_with_all_data(
         requirement_id=approved_requirement.id,
         case_number=f"TC-{approved_requirement.id}-CTX",
         title="Context test case",
-        case_type="api",
+        case_type="happy_path",
         steps="do something",
         expected_result="works",
     )

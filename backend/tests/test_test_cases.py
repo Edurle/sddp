@@ -28,14 +28,14 @@ async def test_list_test_cases_filter_by_type(client, db, sample_test_case, norm
     req_id = sample_test_case.requirement_id
     resp = await client.get(
         f"/api/v1/requirements/{req_id}/test-cases",
-        params={"case_type": "api"},
+        params={"case_type": "happy_path"},
         headers=headers,
     )
     assert resp.status_code == 200
     body = resp.json()
     assert body["code"] == 0
     for tc in body["data"]["items"]:
-        assert tc["case_type"] == "api"
+        assert tc["case_type"] == "happy_path"
 
 
 @pytest.mark.asyncio
@@ -67,7 +67,7 @@ async def test_create_test_case_success(client, db, approved_requirement, normal
         f"/api/v1/requirements/{approved_requirement.id}/test-cases",
         json={
             "title": "登录成功",
-            "case_type": "api",
+            "case_type": "happy_path",
             "precondition": "用户已注册",
             "steps": "发送登录请求",
             "expected_result": "返回token",
@@ -92,7 +92,7 @@ async def test_create_test_case_auto_case_number(client, db, approved_requiremen
         f"/api/v1/requirements/{approved_requirement.id}/test-cases",
         json={
             "title": "登录失败",
-            "case_type": "api",
+            "case_type": "happy_path",
             "precondition": "用户未注册",
             "steps": "发送错误密码",
             "expected_result": "返回401",
@@ -107,7 +107,7 @@ async def test_create_test_case_auto_case_number(client, db, approved_requiremen
 
 
 @pytest.mark.asyncio
-async def test_create_test_case_e2e_with_related_element(client, db, approved_requirement, normal_user, owner_role):
+async def test_create_test_case_ui_test_with_related_element(client, db, approved_requirement, normal_user, owner_role):
     approved_requirement.status = "drafting_tests"
     await db.commit()
 
@@ -115,8 +115,8 @@ async def test_create_test_case_e2e_with_related_element(client, db, approved_re
     resp = await client.post(
         f"/api/v1/requirements/{approved_requirement.id}/test-cases",
         json={
-            "title": "E2E登录流程",
-            "case_type": "e2e",
+            "title": "UI登录流程",
+            "case_type": "ui_test",
             "precondition": "用户在登录页",
             "steps": "点击登录按钮",
             "expected_result": "跳转首页",
@@ -139,7 +139,7 @@ async def test_create_test_case_reviewing_status_forbidden(client, db, approved_
         f"/api/v1/requirements/{approved_requirement.id}/test-cases",
         json={
             "title": "测试",
-            "case_type": "api",
+            "case_type": "happy_path",
             "precondition": "无",
             "steps": "步骤",
             "expected_result": "结果",
@@ -158,7 +158,7 @@ async def test_create_test_case_approved_status_forbidden(client, db, approved_r
         f"/api/v1/requirements/{approved_requirement.id}/test-cases",
         json={
             "title": "测试",
-            "case_type": "api",
+            "case_type": "happy_path",
             "precondition": "无",
             "steps": "步骤",
             "expected_result": "结果",
@@ -196,7 +196,7 @@ async def test_create_test_case_empty_steps(client, db, approved_requirement, no
         f"/api/v1/requirements/{approved_requirement.id}/test-cases",
         json={
             "title": "有标题",
-            "case_type": "api",
+            "case_type": "happy_path",
             "steps": "",
             "expected_result": "结果",
         },

@@ -180,7 +180,7 @@ export function parseTestDsl(
     return { dslType: 'plain', setup: [], steps: [], asserts: [] }
   }
 
-  if (caseType === 'e2e') {
+  if (caseType === 'ui_test') {
     const { role, items } = extractUiSetup(pre)
     return {
       dslType: 'ui',

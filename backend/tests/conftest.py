@@ -333,7 +333,7 @@ async def sample_test_case(db, approved_requirement):
         requirement_id=approved_requirement.id,
         case_number=f"TC-{approved_requirement.id}-01",
         title="测试用例1",
-        case_type="api",
+        case_type="happy_path",
         steps="执行步骤",
         expected_result="预期结果",
     )

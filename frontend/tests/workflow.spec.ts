@@ -522,7 +522,7 @@ test.describe('Full Business Workflow', () => {
       const dialog = page.getByTestId('req-detail-dlg-test-case')
       if (await dialog.isVisible({ timeout: 3000 }).catch(() => false)) {
         await dialog.getByTestId('req-detail-dlg-test-case-inp-title').fill('WF Test Case 1')
-        await dialog.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('api')
+        await dialog.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('happy_path')
         await dialog.getByTestId('req-detail-dlg-test-case-txtarea-precondition').fill('用户已注册')
         await dialog.getByTestId('req-detail-dlg-test-case-txtarea-steps').fill('1. 调用API 2. 检查返回')
         await dialog.getByTestId('req-detail-dlg-test-case-txtarea-expected').fill('返回200')
@@ -534,7 +534,7 @@ test.describe('Full Business Workflow', () => {
     const tcResp = await page.request.post('/api/v1/test-cases', {
       data: {
         title: `WF Test Case ${TS}`,
-        case_type: 'api',
+        case_type: 'happy_path',
         precondition: '用户已注册',
         steps: '1. 调用API 2. 检查返回',
         expected_result: '返回200',
@@ -711,7 +711,7 @@ test.describe('Full Business Workflow', () => {
       const tcResp = await page.request.post('/api/v1/test-cases', {
         data: {
           title: `WF Late Test Case ${TS}`,
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected_result: '预期',
