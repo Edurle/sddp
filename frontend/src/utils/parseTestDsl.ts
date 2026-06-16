@@ -54,6 +54,7 @@ export interface ApiAssertItem {
   data_type?: string
   data_not_empty?: boolean
   status?: number
+  error?: { message_contains?: string; type?: string }
   [key: string]: unknown
 }
 
@@ -141,7 +142,7 @@ function extractUiSteps(stepsRaw: any): UiStepItem[] {
 function extractApiAsserts(expectedRaw: any): ApiAssertItem[] {
   const arr = Array.isArray(expectedRaw) ? expectedRaw : expectedRaw ? [expectedRaw] : []
   return arr
-    .filter((e: any) => e?.response || e?.success !== undefined)
+    .filter((e: any) => e?.response || e?.success !== undefined || e?.error)
     .map((e: any) => {
       const r = e.response || e
       return {
@@ -150,6 +151,7 @@ function extractApiAsserts(expectedRaw: any): ApiAssertItem[] {
         data_type: r.data_type,
         data_not_empty: r.data_not_empty,
         status: r.status,
+        error: e.error,
       }
     })
 }
