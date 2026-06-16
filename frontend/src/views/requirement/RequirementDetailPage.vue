@@ -285,12 +285,13 @@
 
         <div v-if="activeTab === 'review-history'" class="tab-panel">
           <div v-if="reviewComments.length === 0" class="spec-empty">暂无审核记录</div>
-          <div v-else class="review-history-list">
+          <div v-else class="review-history-list" data-testid="req-detail-list-review-history">
             <div v-for="rc in reviewComments" :key="rc.id" class="review-history-item">
               <div class="review-history-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
               <div class="review-history-body">
                 <div class="review-history-header">
                   <span class="review-history-action" :class="rc.action">{{ rc.action === 'approve' ? '通过' : '拒绝' }}</span>
+                  <span v-if="reviewTypeLabel(rc.review_type)" class="review-history-type">{{ reviewTypeLabel(rc.review_type) }}</span>
                   <span class="review-history-time">{{ formatTime(rc.created_at) }}</span>
                 </div>
                 <div v-if="rc.comment" class="review-history-comment">{{ rc.comment }}</div>
@@ -588,6 +589,15 @@ interface Review {
   status?: string
 }
 
+interface ReviewComment {
+  id: number
+  reviewer_id: number
+  review_type?: string
+  action: string
+  comment: string | null
+  created_at: string
+}
+
 interface RequirementData {
   id: number
   title: string
@@ -712,7 +722,7 @@ const testCaseForm = reactive({
 const testStats = ref<TestStats>({})
 const dropdownOpen = ref('')
 const isLoading = ref(true)
-const reviewComments = ref<Array<{ id: number; reviewer_id: number; action: string; comment: string | null; created_at: string }>>([])
+const reviewComments = ref<ReviewComment[]>([])
 
 interface LinkItem {
   id: number
@@ -755,6 +765,15 @@ async function fetchReviewComments() {
   } catch {
     reviewComments.value = []
   }
+}
+
+function reviewTypeLabel(type?: string): string {
+  const map: Record<string, string> = {
+    requirement: '需求审核',
+    specification: '规范审核',
+    test_case: '测试审核',
+  }
+  return type ? (map[type] || type) : ''
 }
 
 function formatTime(iso: string | null): string {
@@ -2001,6 +2020,15 @@ onMounted(async () => {
 .review-history-action.reject {
   background: #fef2f2;
   color: #991b1b;
+}
+.review-history-type {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  background: rgba(17, 17, 17, 0.06);
+  color: #555;
 }
 .review-history-time {
   font-size: 12px;

@@ -216,7 +216,7 @@ test.describe('需求详情页', () => {
       await authenticatedPage.getByTestId('req-detail-dlg-reject-btn-confirm').click()
 
       await expect(authenticatedPage.getByTestId('req-detail-list-review-history')).toBeVisible()
-      await expect(authenticatedPage.getByTestId('req-detail-list-review-history').getByText('驳回')).toBeVisible()
+      await expect(authenticatedPage.getByTestId('req-detail-list-review-history').getByText('拒绝')).toBeVisible()
     })
   })
 
