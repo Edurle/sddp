@@ -22,14 +22,14 @@
   <div v-else class="dsl-assert-card">
     <div class="dsl-assert-header">
       <span class="dsl-assert-check">✓</span>
-      <span class="dsl-assert-name">response</span>
+      <span class="dsl-assert-name">{{ assertName }}</span>
       <span class="dsl-phase-tag">#{{ index + 1 }}</span>
     </div>
     <div class="dsl-assert-items">
       <div v-for="key in assertKeys" :key="key" class="dsl-assert-row">
         <span class="dsl-assert-key">{{ key }}</span>
-        <span class="dsl-assert-val" :class="{ 'is-true': (item as ApiAssertItem)[key] === true, 'is-false': (item as ApiAssertItem)[key] === false }">
-          {{ formatVal((item as ApiAssertItem)[key]) }}
+        <span class="dsl-assert-val" :class="{ 'is-true': assertVal(key) === true, 'is-false': assertVal(key) === false }">
+          {{ formatVal(assertVal(key)) }}
         </span>
       </div>
     </div>
@@ -46,13 +46,28 @@ const props = defineProps<{
   index: number
 }>()
 
-const displayKeys = ['success', 'status', 'data_type', 'data_not_empty']
+const displayKeys = ['success', 'status', 'data_type', 'data_not_empty', 'error.message_contains', 'error.type']
+
+const assertName = computed(() => {
+  if (props.dslType === 'ui') return ''
+  const obj = props.item as ApiAssertItem
+  return obj.error ? 'error' : 'response'
+})
 
 const assertKeys = computed(() => {
   if (props.dslType === 'ui') return []
-  const obj = props.item as ApiAssertItem
-  return displayKeys.filter((k) => obj[k] !== undefined && obj[k] !== null)
+  return displayKeys.filter((k) => assertVal(k) !== undefined && assertVal(k) !== null)
 })
+
+function assertVal(key: string): unknown {
+  const obj = props.item as ApiAssertItem
+  if (key.includes('.')) {
+    const [head, tail] = key.split('.')
+    const sub = (obj as Record<string, unknown>)[head] as Record<string, unknown> | undefined
+    return sub?.[tail]
+  }
+  return obj[key]
+}
 
 function formatVal(v: unknown): string {
   if (typeof v === 'boolean') return v ? 'true' : 'false'
