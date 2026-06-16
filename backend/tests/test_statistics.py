@@ -68,7 +68,7 @@ async def test_requirement_test_statistics_pass_rate_calculation(
         requirement_id=approved_requirement.id,
         case_number=f"TC-{approved_requirement.id}-10",
         title="用例A",
-        case_type="api",
+        case_type="happy_path",
         steps="步骤",
         expected_result="结果",
     )
@@ -76,7 +76,7 @@ async def test_requirement_test_statistics_pass_rate_calculation(
         requirement_id=approved_requirement.id,
         case_number=f"TC-{approved_requirement.id}-11",
         title="用例B",
-        case_type="api",
+        case_type="happy_path",
         steps="步骤",
         expected_result="结果",
     )

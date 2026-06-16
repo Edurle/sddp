@@ -149,7 +149,7 @@ async def test_test_cases_pagination(
             requirement_id=approved_requirement.id,
             case_number=f"TC-{approved_requirement.id}-{i}",
             title=f"用例-{i}",
-            case_type="api",
+            case_type="happy_path",
             steps="步骤",
             expected_result="结果",
         )

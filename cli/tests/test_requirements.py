@@ -231,14 +231,14 @@ class TestRequirementsTestCases:
         with patch("sdd_cli.requirements.get_client", return_value=mock_client):
             result = runner.invoke(app, [
                 "requirements", "create-test-case", "1",
-                "--title", "TC New", "--type", "functional",
+                "--title", "TC New", "--type", "happy_path",
                 "--precondition", "Logged in", "--steps", "Click",
                 "--expected", "OK",
             ])
         assert result.exit_code == 0
         body = mock_client.post.call_args[1]["json"]
         assert body["title"] == "TC New"
-        assert body["case_type"] == "functional"
+        assert body["case_type"] == "happy_path"
 
 
 class TestRequirementsTasks:

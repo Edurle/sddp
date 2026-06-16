@@ -10,7 +10,7 @@ async def setup_round_with_records(db, sample_task, normal_user):
         requirement_id=sample_task.requirement_id,
         case_number="TC-BATCH-01",
         title="批量测试用例1",
-        case_type="api",
+        case_type="happy_path",
         steps="步骤1",
         expected_result="结果1",
     )
@@ -18,7 +18,7 @@ async def setup_round_with_records(db, sample_task, normal_user):
         requirement_id=sample_task.requirement_id,
         case_number="TC-BATCH-02",
         title="批量测试用例2",
-        case_type="api",
+        case_type="happy_path",
         steps="步骤2",
         expected_result="结果2",
     )

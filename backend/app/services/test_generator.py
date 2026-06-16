@@ -14,7 +14,7 @@ async def generate_test_cases(
     case_types: list[str] | None = None,
 ) -> dict:
     if case_types is None:
-        case_types = ["e2e", "api"]
+        case_types = ["ui_test", "happy_path"]
 
     req_stmt = select(Requirement).where(Requirement.id == requirement_id, Requirement.is_deleted == False)
     req_result = await db.execute(req_stmt)
@@ -37,7 +37,7 @@ async def generate_test_cases(
     suggestions = []
     errors = []
 
-    if "e2e" in case_types:
+    if "ui_test" in case_types:
         pages = content.get("page_structure", {}).get("pages", [])
         for page in pages:
             for el in page.get("elements", []):
@@ -49,7 +49,7 @@ async def generate_test_cases(
                     tc = await tc_svc.create_test_case(
                         db, requirement_id,
                         title=f"验证{page.get('name', '')}中「{el.get('accessible_name') or el.get('label', '')}」的{el.get('interaction', '交互行为')}",
-                        case_type="e2e",
+                        case_type="ui_test",
                         precondition="用户已登录，页面已加载",
                         steps=steps,
                         expected_result=expected,
@@ -65,13 +65,13 @@ async def generate_test_cases(
                             "message": f"测试用例「{tc['title']}」未关联 API，建议补充",
                         })
 
-    if "api" in case_types:
+    if "happy_path" in case_types:
         endpoints = content.get("api_design", {}).get("endpoints", [])
         for ep in endpoints:
             tc = await tc_svc.create_test_case(
                 db, requirement_id,
                 title=f"验证 {ep.get('method', '')} {ep.get('path', '')} 接口",
-                case_type="api",
+                case_type="happy_path",
                 precondition="系统正常运行",
                 steps=f"1. 发送 {ep.get('method', '')} 请求到 {ep.get('path', '')}\n2. 检查响应状态码和返回数据",
                 expected_result="返回成功状态码，响应体包含预期数据结构",
@@ -83,11 +83,11 @@ async def generate_test_cases(
         len([e for e in p.get("elements", []) if e.get("interaction")])
         for p in content.get("page_structure", {}).get("pages", [])
     )
-    e2e_count = len([c for c in created if c.get("case_type") == "e2e"])
-    if total_interactions > 0 and e2e_count < total_interactions:
+    ui_test_count = len([c for c in created if c.get("case_type") == "ui_test"])
+    if total_interactions > 0 and ui_test_count < total_interactions:
         suggestions.append({
             "type": "coverage",
-            "message": f"规范中定义了 {total_interactions} 个交互行为，当前生成了 {e2e_count} 个 E2E 测试用例",
+            "message": f"规范中定义了 {total_interactions} 个交互行为，当前生成了 {ui_test_count} 个 UI 测试用例",
         })
 
     return {

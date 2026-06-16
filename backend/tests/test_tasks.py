@@ -338,7 +338,7 @@ async def test_start_testing_creates_records_for_all_cases(
         requirement_id=approved_requirement.id,
         case_number=f"TC-{approved_requirement.id}-02",
         title="测试用例2",
-        case_type="e2e",
+        case_type="ui_test",
         steps="步骤",
         expected_result="结果",
     )

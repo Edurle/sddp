@@ -86,7 +86,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '已有用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置条件',
           steps: '步骤',
           expected: '预期',
@@ -111,7 +111,7 @@ test.describe('测试用例管理', () => {
       await expect(authenticatedPage.getByTestId('req-detail-dlg-test-case')).toBeVisible()
 
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-inp-title').fill('登录接口测试')
-      await authenticatedPage.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('api')
+      await authenticatedPage.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('happy_path')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-precondition').fill('用户已注册')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-steps').fill('1. 发送 POST /api/login 2. 检查返回')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-expected').fill('返回 200 和 token')
@@ -130,7 +130,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.getByTestId('req-detail-btn-add-test-case').click()
 
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-inp-title').fill('登录流程端到端测试')
-      await authenticatedPage.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('e2e')
+      await authenticatedPage.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('ui_test')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-precondition').fill('浏览器已打开')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-steps').fill('1. 打开登录页 2. 输入账号密码 3. 点击登录')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-expected').fill('跳转到首页')
@@ -149,7 +149,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.getByTestId('req-detail-btn-add-test-case').click()
 
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-inp-title').fill('编号测试用例')
-      await authenticatedPage.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('api')
+      await authenticatedPage.getByTestId('req-detail-dlg-test-case-sel-type').selectOption('happy_path')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-precondition').fill('前置')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-steps').fill('步骤')
       await authenticatedPage.getByTestId('req-detail-dlg-test-case-txtarea-expected').fill('预期')
@@ -169,7 +169,7 @@ test.describe('测试用例管理', () => {
       const tcResp = await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '待编辑用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -200,7 +200,7 @@ test.describe('测试用例管理', () => {
       const tcResp = await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '待删除用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -227,7 +227,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: 'API用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -236,8 +236,8 @@ test.describe('测试用例管理', () => {
       })
       await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
-          title: 'E2E用例',
-          case_type: 'e2e',
+          title: 'UI用例',
+          case_type: 'ui_test',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -247,10 +247,10 @@ test.describe('测试用例管理', () => {
 
       await authenticatedPage.goto(`/requirements/${req.id}`)
 
-      await authenticatedPage.getByTestId('req-detail-sel-filter-case-type').selectOption('api')
+      await authenticatedPage.getByTestId('req-detail-sel-filter-case-type').selectOption('happy_path')
 
       await expect(authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText('API用例')).toBeVisible()
-      await expect(authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText('E2E用例')).not.toBeVisible()
+      await expect(authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText('UI用例')).not.toBeVisible()
     })
 
     test('筛选 E2E 类型用例', async ({ authenticatedPage }) => {
@@ -259,7 +259,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: 'API用例2',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -268,8 +268,8 @@ test.describe('测试用例管理', () => {
       })
       await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
-          title: 'E2E用例2',
-          case_type: 'e2e',
+          title: 'UI用例2',
+          case_type: 'ui_test',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -279,9 +279,9 @@ test.describe('测试用例管理', () => {
 
       await authenticatedPage.goto(`/requirements/${req.id}`)
 
-      await authenticatedPage.getByTestId('req-detail-sel-filter-case-type').selectOption('e2e')
+      await authenticatedPage.getByTestId('req-detail-sel-filter-case-type').selectOption('ui_test')
 
-      await expect(authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText('E2E用例2')).toBeVisible()
+      await expect(authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText('UI用例2')).toBeVisible()
       await expect(authenticatedPage.getByTestId('req-detail-tbl-test-cases').getByText('API用例2')).not.toBeVisible()
     })
   })
@@ -293,7 +293,7 @@ test.describe('测试用例管理', () => {
       await authenticatedPage.request.post('/api/v1/test-cases', {
         data: {
           title: '待审核用例',
-          case_type: 'api',
+          case_type: 'happy_path',
           precondition: '前置',
           steps: '步骤',
           expected: '预期',
@@ -322,7 +322,7 @@ test.describe('测试执行', () => {
     const tcResp = await page.request.post('/api/v1/test-cases', {
       data: {
         title: '执行测试用例',
-        case_type: 'api',
+        case_type: 'happy_path',
         precondition: '前置',
         steps: '步骤',
         expected: '预期',
@@ -464,7 +464,7 @@ test.describe('测试执行', () => {
         const tcResp = await authenticatedPage.request.post('/api/v1/test-cases', {
           data: {
             title: `统计用例${i}`,
-            case_type: 'api',
+            case_type: 'happy_path',
             precondition: '前置',
             steps: '步骤',
             expected: '预期',
