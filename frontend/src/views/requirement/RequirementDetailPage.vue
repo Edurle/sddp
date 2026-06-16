@@ -156,7 +156,7 @@
                   <div v-if="ep.response" class="spec-sub">
                     <div class="spec-sub-title">响应</div>
                     <div class="spec-json-tree">
-                      <div class="json-line"><span class="spec-key">code</span>: <span class="spec-val">{{ ep.response.code }}</span></div>
+                      <div class="json-line"><span class="spec-key">code</span>: <span class="spec-val">{{ ep.response.status_code ?? ep.response.code }}</span></div>
                       <div class="json-line"><span class="spec-key">message</span>: <span class="spec-val">"{{ ep.response.message }}"</span></div>
                       <template v-if="ep.response.data">
                         <div class="json-line"><span class="spec-key">data</span>: <JsonTree :value="ep.response.data" :indent="1" /></div>
@@ -166,7 +166,7 @@
                   <div v-if="ep.errors && ep.errors.length" class="spec-sub">
                     <div class="spec-sub-title">错误码</div>
                     <div class="spec-error-row" v-for="(err, erri) in ep.errors" :key="erri">
-                      <span class="spec-error-code">{{ err.code }}</span>
+                      <span class="spec-error-code">{{ err.status_code ?? err.code }}</span>
                       <span>{{ err.message }}</span>
                     </div>
                   </div>
