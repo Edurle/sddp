@@ -5,7 +5,6 @@
       <TaskSidebar
         :task="task"
         :editing="editing"
-        :edit-form="editForm"
         @edit="startEdit"
         @save="saveEdit"
         @delete="deleteTask"
@@ -17,8 +16,15 @@
       <div class="detail-main">
         <div v-if="completeError" class="error-message">{{ completeError }}</div>
         <div class="detail-tabs">
+          <button data-testid="task-detail-tab-info" :class="['tab-btn', { active: activeTab === 'info' }]" @click="activeTab = 'info'">基本信息</button>
           <button data-testid="task-detail-tab-spec" :class="['tab-btn', { active: activeTab === 'spec' }]" @click="activeTab = 'spec'">规范</button>
           <button v-if="task.status === 'testing' || task.status === 'completed'" data-testid="task-detail-tab-test-exec" :class="['tab-btn', { active: activeTab === 'test-exec' }]" @click="activeTab = 'test-exec'; fetchTestExecutions()">测试执行</button>
+        </div>
+
+        <!-- 用 v-show 而非 v-if：testing/completed 状态会自动切到「测试执行」标签，
+             但基本信息里的状态徽章等内容需保持挂载在 DOM 中（被 e2e 断言读取）。 -->
+        <div v-show="activeTab === 'info'" class="tab-panel">
+          <TaskInfoPanel :task="task" :editing="editing" :edit-form="editForm" />
         </div>
 
         <div v-if="activeTab === 'spec'" class="tab-panel">
@@ -134,6 +140,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import TaskSidebar from './TaskSidebar.vue'
+import TaskInfoPanel from './TaskInfoPanel.vue'
 import JsonTree from '@/components/JsonTree.vue'
 
 const route = useRoute()
@@ -183,7 +190,7 @@ interface TaskData {
 const task = ref<TaskData | null>(null)
 const editing = ref(false)
 const editForm = reactive({ title: '', description: '' })
-const activeTab = ref('spec')
+const activeTab = ref('info')
 const specContent = ref<any>(null)
 const testRecords = ref<TestRecord[]>([])
 const execHistory = ref<TestRound[]>([])
@@ -272,6 +279,7 @@ function startEdit() {
     editForm.title = task.value.title
     editForm.description = task.value.description
   }
+  activeTab.value = 'info'
   editing.value = true
 }
 
