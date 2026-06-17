@@ -30,7 +30,7 @@ Tests use a real PostgreSQL DB (`TEST_DATABASE_URL`, e.g. `obr_test`) — `conft
 - API client: `src/api/client.ts` — axios with JWT interceptor, API responses wrapped in `{ code, message, data }` (code `0` = success)
 - Views: `src/views/{admin,auth,dashboard,iteration,profile,project,requirement,task,team}/`
 - Auth guard on `/admin/*` routes checks `is_admin` in JWT payload
-- E2E tests: Playwright in `frontend/tests/`, 13 spec files
+- E2E tests: Playwright in `frontend/tests/`, 12 spec files
 
 ## Commands
 
