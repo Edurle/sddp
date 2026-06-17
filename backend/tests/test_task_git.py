@@ -122,3 +122,38 @@ async def test_task_detail_shows_null_git_fields_when_not_set(client, db, sample
     assert data["commit_sha"] is None
     assert data["pr_url"] is None
     assert data["artifact_url"] is None
+
+
+@pytest.mark.asyncio
+async def test_list_requirement_commits_empty(client, db, approved_requirement, normal_user):
+    headers = auth_headers(normal_user.id)
+    resp = await client.get(
+        f"/api/v1/requirements/{approved_requirement.id}/commits", headers=headers
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["code"] == 0
+    assert body["data"] == []
+
+
+@pytest.mark.asyncio
+async def test_list_requirement_commits_aggregates_task_commits(
+    client, db, sample_task, approved_requirement, normal_user
+):
+    headers = auth_headers(normal_user.id)
+    add = await client.post(
+        f"/api/v1/tasks/{sample_task.id}/commits",
+        json={"commit_sha": "abc123def456abc123def456abc123def456abcd", "message": "init"},
+        headers=headers,
+    )
+    assert add.json()["code"] == 0
+
+    resp = await client.get(
+        f"/api/v1/requirements/{approved_requirement.id}/commits", headers=headers
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["code"] == 0
+    assert len(body["data"]) == 1
+    assert body["data"][0]["commit_sha"] == "abc123def456abc123def456abc123def456abcd"
+    assert body["data"][0]["task_id"] == sample_task.id

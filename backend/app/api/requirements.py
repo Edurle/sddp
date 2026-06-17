@@ -15,7 +15,7 @@ from app.services import requirement_link as link_svc
 from app.services import review_comment as rc_svc
 from app.services import specification as spec_svc
 from app.services import task as task_svc
-from app.services import task_commit as tc_svc
+from app.services import task_commit as commit_svc
 from app.services import task_generator as tg_svc
 from app.services import test_case as tc_svc
 from app.services import test_generator as testgen_svc
@@ -885,5 +885,5 @@ async def list_requirement_commits(
     user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> dict:
-    data = await tc_svc.list_requirement_commits(db, id)
+    data = await commit_svc.list_requirement_commits(db, id)
     return {"code": 0, "message": "success", "data": data}
