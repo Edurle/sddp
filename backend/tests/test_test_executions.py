@@ -241,7 +241,7 @@ async def test_update_record_mark_skipped(client, db, sample_task, sample_test_c
 
 
 @pytest.mark.asyncio
-async def test_update_record_no_permission(client, db, sample_task, sample_test_case, normal_user):
+async def test_update_record_no_permission(client, db, sample_task, sample_test_case, normal_user, another_user):
     from app.models import TestExecutionRound, TestExecutionRecord
 
     round_ = TestExecutionRound(task_id=sample_task.id, executed_by=normal_user.id)
@@ -256,7 +256,7 @@ async def test_update_record_no_permission(client, db, sample_task, sample_test_
     db.add(record)
     await db.commit()
 
-    headers = auth_headers(normal_user.id, permissions=[])
+    headers = auth_headers(another_user.id)
     resp = await client.put(
         f"/api/v1/test-execution-records/{record.id}",
         json={"status": "passed", "actual_result": "OK"},

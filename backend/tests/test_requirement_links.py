@@ -128,9 +128,9 @@ class TestSupersedeRequirement:
 
     @pytest.mark.asyncio
     async def test_supersede_no_permission(
-        self, client, normal_user, approved_requirement
+        self, client, normal_user, another_user, approved_requirement
     ):
-        headers = auth_headers(normal_user.id, permissions=[])
+        headers = auth_headers(another_user.id)
         resp = await client.post(
             f"/api/v1/requirements/{approved_requirement.id}/supersede",
             headers=headers,

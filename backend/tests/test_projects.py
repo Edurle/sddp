@@ -129,8 +129,8 @@ class TestCreateProject:
         assert body["code"] == 40001
 
     @pytest.mark.asyncio
-    async def test_create_project_no_permission(self, client, normal_user, owner_role):
-        headers = auth_headers(normal_user.id, permissions=[])
+    async def test_create_project_no_permission(self, client, normal_user, another_user, owner_role):
+        headers = auth_headers(another_user.id)
         resp = await client.post(
             f"/api/v1/teams/{owner_role['team'].id}/projects",
             json={"name": "项目C", "description": "描述"},
@@ -197,8 +197,8 @@ class TestUpdateProject:
         assert body["code"] == 0
 
     @pytest.mark.asyncio
-    async def test_update_project_no_permission(self, client, normal_user, sample_project):
-        headers = auth_headers(normal_user.id, permissions=[])
+    async def test_update_project_no_permission(self, client, normal_user, another_user, sample_project):
+        headers = auth_headers(another_user.id)
         resp = await client.put(
             f"/api/v1/projects/{sample_project.id}",
             json={"name": "尝试更新"},
@@ -257,8 +257,8 @@ class TestArchiveProject:
         assert body["code"] == 40204
 
     @pytest.mark.asyncio
-    async def test_archive_project_no_permission(self, client, normal_user, sample_project):
-        headers = auth_headers(normal_user.id, permissions=[])
+    async def test_archive_project_no_permission(self, client, normal_user, another_user, sample_project):
+        headers = auth_headers(another_user.id)
         resp = await client.put(
             f"/api/v1/projects/{sample_project.id}/archive",
             headers=headers,
@@ -308,8 +308,8 @@ class TestDeleteProject:
         assert all(p["id"] != sample_project.id for p in body["data"])
 
     @pytest.mark.asyncio
-    async def test_delete_project_no_permission(self, client, normal_user, sample_project):
-        headers = auth_headers(normal_user.id, permissions=[])
+    async def test_delete_project_no_permission(self, client, normal_user, another_user, sample_project):
+        headers = auth_headers(another_user.id)
         resp = await client.delete(
             f"/api/v1/projects/{sample_project.id}",
             headers=headers,

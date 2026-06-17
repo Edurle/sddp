@@ -80,8 +80,8 @@ class TestCreateIteration:
         assert body["code"] == 40001
 
     @pytest.mark.asyncio
-    async def test_create_iteration_no_permission(self, client, normal_user, sample_project):
-        headers = auth_headers(normal_user.id, permissions=[])
+    async def test_create_iteration_no_permission(self, client, normal_user, another_user, sample_project):
+        headers = auth_headers(another_user.id)
         resp = await client.post(
             f"/api/v1/projects/{sample_project.id}/iterations",
             json={"name": "Sprint No", "goal": "目标", "start_date": "2026-05-01", "end_date": "2026-05-31"},
@@ -200,8 +200,8 @@ class TestStartIteration:
         assert body["code"] == 40204
 
     @pytest.mark.asyncio
-    async def test_start_iteration_no_permission(self, client, normal_user, sample_iteration):
-        headers = auth_headers(normal_user.id, permissions=[])
+    async def test_start_iteration_no_permission(self, client, normal_user, another_user, sample_iteration):
+        headers = auth_headers(another_user.id)
         resp = await client.post(
             f"/api/v1/iterations/{sample_iteration.id}/start",
             headers=headers,

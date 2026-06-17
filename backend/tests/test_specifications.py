@@ -98,10 +98,10 @@ class TestUpdateSpecTemplate:
 
     @pytest.mark.asyncio
     async def test_update_spec_template_no_permission(
-        self, client, normal_user, owner_role
+        self, client, normal_user, another_user, owner_role
     ):
         team = owner_role["team"]
-        headers = auth_headers(normal_user.id, permissions=[])
+        headers = auth_headers(another_user.id)
         resp = await client.put(
             f"/api/v1/teams/{team.id}/spec-template",
             json={"sections": []},

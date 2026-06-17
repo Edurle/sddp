@@ -285,9 +285,9 @@ class TestCreateRequirement:
 
     @pytest.mark.asyncio
     async def test_create_requirement_no_permission(
-        self, client, normal_user, sample_iteration
+        self, client, normal_user, another_user, sample_iteration
     ):
-        headers = auth_headers(normal_user.id, permissions=[])
+        headers = auth_headers(another_user.id)
         resp = await client.post(
             f"/api/v1/iterations/{sample_iteration.id}/requirements",
             json={
@@ -441,9 +441,9 @@ class TestUpdateRequirement:
 
     @pytest.mark.asyncio
     async def test_update_requirement_no_permission(
-        self, client, normal_user, sample_requirement
+        self, client, normal_user, another_user, sample_requirement
     ):
-        headers = auth_headers(normal_user.id, permissions=[])
+        headers = auth_headers(another_user.id)
         resp = await client.put(
             f"/api/v1/requirements/{sample_requirement.id}",
             json={"title": "尝试修改"},
@@ -518,9 +518,9 @@ class TestDeleteRequirement:
 
     @pytest.mark.asyncio
     async def test_delete_requirement_no_permission(
-        self, client, normal_user, sample_requirement
+        self, client, normal_user, another_user, sample_requirement
     ):
-        headers = auth_headers(normal_user.id, permissions=[])
+        headers = auth_headers(another_user.id)
         resp = await client.delete(
             f"/api/v1/requirements/{sample_requirement.id}",
             headers=headers,

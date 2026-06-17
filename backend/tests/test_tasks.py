@@ -122,8 +122,8 @@ async def test_create_task_empty_title(client, db, approved_requirement, normal_
 
 
 @pytest.mark.asyncio
-async def test_create_task_no_permission(client, db, approved_requirement, normal_user):
-    headers = auth_headers(normal_user.id, permissions=[])
+async def test_create_task_no_permission(client, db, approved_requirement, normal_user, another_user):
+    headers = auth_headers(another_user.id)
     resp = await client.post(
         f"/api/v1/requirements/{approved_requirement.id}/tasks",
         json={"title": "test", "description": "test"},
