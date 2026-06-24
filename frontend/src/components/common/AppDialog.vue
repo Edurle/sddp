@@ -1,35 +1,90 @@
 <template>
-  <div v-if="open" class="app-dialog-overlay" @click.self="$emit('close')">
-    <div :data-testid="testId" class="app-dialog">
-      <slot />
+  <transition name="dialog-fade">
+    <div v-if="open" class="dialog-overlay" @click.self="$emit('close')">
+      <div
+        ref="dialogEl"
+        :data-testid="testId"
+        class="dialog"
+        role="dialog"
+        aria-modal="true"
+        tabindex="-1"
+        @keydown="onKeydown"
+      >
+        <slot />
+      </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script setup lang="ts">
-defineProps<{ testId?: string; open?: boolean }>()
-defineEmits(['close'])
+import { ref, watch, nextTick } from 'vue'
+
+const props = defineProps<{ open?: boolean; testId?: string }>()
+const emit = defineEmits(['close'])
+
+const dialogEl = ref<HTMLElement | null>(null)
+let lastFocused: HTMLElement | null = null
+
+watch(
+  () => props.open,
+  async (open) => {
+    if (open) {
+      lastFocused = (document.activeElement as HTMLElement) || null
+      await nextTick()
+      focusFirst()
+    } else if (lastFocused) {
+      lastFocused.focus?.()
+      lastFocused = null
+    }
+  },
+)
+
+function focusable(): HTMLElement[] {
+  if (!dialogEl.value) return []
+  const sel =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  return Array.from(dialogEl.value.querySelectorAll<HTMLElement>(sel)).filter(
+    (el) => el.getClientRects().length > 0,
+  )
+}
+
+function focusFirst() {
+  const f = focusable()
+  ;(f[0] || dialogEl.value)?.focus()
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    emit('close')
+    return
+  }
+  if (e.key === 'Tab') {
+    const f = focusable()
+    if (f.length === 0) {
+      e.preventDefault()
+      return
+    }
+    const first = f[0]
+    const last = f[f.length - 1]
+    const active = document.activeElement as HTMLElement
+    if (e.shiftKey && active === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+}
 </script>
 
 <style scoped>
-.app-dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.dialog-fade-enter-active,
+.dialog-fade-leave-active {
+  transition: opacity 0.15s ease;
 }
-.app-dialog {
-  background: var(--color-surface);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
-  border-radius: var(--radius-xl);
-  padding: 1.5rem;
-  min-width: 440px;
-  max-width: 600px;
+.dialog-fade-enter-from,
+.dialog-fade-leave-to {
+  opacity: 0;
 }
 </style>

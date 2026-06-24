@@ -22,35 +22,29 @@
       <IterationListTab v-if="project" :project-id="String(project.id)" />
     </div>
 
-    <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog = false">
-      <div data-testid="project-detail-dlg-edit" class="dialog">
-        <h3>编辑项目</h3>
-        <div class="form-group">
-          <label>项目名称</label>
-          <input v-model="editForm.name" data-testid="project-detail-dlg-edit-inp-name" />
-        </div>
-        <button data-testid="project-detail-dlg-edit-btn-save" :disabled="isPending('saveEdit')" @click="saveEdit">保存</button>
-        <button @click="showEditDialog = false">取消</button>
+    <AppDialog :open="showEditDialog" test-id="project-detail-dlg-edit" @close="showEditDialog = false">
+      <h3>编辑项目</h3>
+      <div class="form-group">
+        <label>项目名称</label>
+        <input v-model="editForm.name" data-testid="project-detail-dlg-edit-inp-name" />
       </div>
-    </div>
+      <button data-testid="project-detail-dlg-edit-btn-save" :disabled="isPending('saveEdit')" @click="saveEdit">保存</button>
+      <button @click="showEditDialog = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showArchiveConfirm" class="dialog-overlay" @click.self="showArchiveConfirm = false">
-      <div data-testid="project-detail-dlg-confirm-archive" class="dialog">
-        <h3>确认归档</h3>
-        <p>确定要归档该项目吗？</p>
-        <button data-testid="project-detail-dlg-confirm-archive-btn-confirm" :disabled="isPending('archiveProject')" @click="archiveProject">确认</button>
-        <button @click="showArchiveConfirm = false">取消</button>
-      </div>
-    </div>
+    <AppDialog :open="showArchiveConfirm" test-id="project-detail-dlg-confirm-archive" @close="showArchiveConfirm = false">
+      <h3>确认归档</h3>
+      <p>确定要归档该项目吗？</p>
+      <button data-testid="project-detail-dlg-confirm-archive-btn-confirm" :disabled="isPending('archiveProject')" @click="archiveProject">确认</button>
+      <button @click="showArchiveConfirm = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showDeleteConfirm" class="dialog-overlay" @click.self="showDeleteConfirm = false">
-      <div data-testid="project-detail-dlg-confirm-delete" class="dialog">
-        <h3>确认删除</h3>
-        <p>确定要删除该项目吗？</p>
-        <button class="btn-danger" data-testid="project-detail-dlg-confirm-delete-btn-confirm" :disabled="isPending('deleteProject')" @click="deleteProject">确认</button>
-        <button @click="showDeleteConfirm = false">取消</button>
-      </div>
-    </div>
+    <AppDialog :open="showDeleteConfirm" test-id="project-detail-dlg-confirm-delete" @close="showDeleteConfirm = false">
+      <h3>确认删除</h3>
+      <p>确定要删除该项目吗？</p>
+      <button class="btn-danger" data-testid="project-detail-dlg-confirm-delete-btn-confirm" :disabled="isPending('deleteProject')" @click="deleteProject">确认</button>
+      <button @click="showDeleteConfirm = false">取消</button>
+    </AppDialog>
   </div>
 </template>
 
@@ -61,6 +55,7 @@ import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { projectStatusLabel } from '@/utils/status'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 import IterationListTab from '../iteration/IterationListTab.vue'
 
 const route = useRoute()
