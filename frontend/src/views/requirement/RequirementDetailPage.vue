@@ -197,22 +197,11 @@
 
         <RequirementSpecVersionsTab v-if="activeTab === 'spec-versions'" :spec-versions="specVersions" />
 
-        <div v-if="activeTab === 'tasks'" class="tab-panel">
-          <div class="tab-toolbar">
-            <button data-testid="req-detail-btn-add-task" @click="fetchReviewers(); showAddTaskDialog = true">添加任务</button>
-          </div>
-          <table data-testid="req-detail-tbl-tasks">
-            <thead>
-              <tr><th>标题</th><th>状态</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="task in tasks" :key="task.id">
-                <td><router-link :to="`/tasks/${task.id}`" class="task-link">{{ task.title }}</router-link></td>
-                <td>{{ taskStatusLabel(task.status) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <RequirementTasksTab
+          v-if="activeTab === 'tasks'"
+          :tasks="tasks"
+          @add="fetchReviewers(); showAddTaskDialog = true"
+        />
 
         <div v-if="activeTab === 'test-cases'" class="tab-panel">
           <div class="tab-toolbar">
@@ -483,13 +472,13 @@ import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { useConfirm } from '@/composables/useConfirm'
 import { useAsyncAction } from '@/composables/useAsyncAction'
-import { taskStatusLabel } from '@/utils/status'
 import { marked } from 'marked'
 import RequirementSidebar from './RequirementSidebar.vue'
 import RequirementCommitsTab from './RequirementCommitsTab.vue'
 import RequirementSpecVersionsTab from './RequirementSpecVersionsTab.vue'
 import RequirementReviewHistoryTab from './RequirementReviewHistoryTab.vue'
 import RequirementLinksTab from './RequirementLinksTab.vue'
+import RequirementTasksTab from './RequirementTasksTab.vue'
 import JsonTree from '@/components/JsonTree.vue'
 import TestDslFlow from '@/components/TestDslFlow.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
