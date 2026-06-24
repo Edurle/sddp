@@ -51,63 +51,55 @@
 
     <div v-if="completeError" class="error-message" data-testid="iteration-list-txt-complete-error">{{ completeError }}</div>
 
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-      <div data-testid="iteration-list-dlg-create" class="dialog">
-        <h3>创建迭代</h3>
-        <div class="form-group">
-          <label>名称</label>
-          <input v-model="newIter.name" data-testid="iteration-list-dlg-create-inp-name" />
-        </div>
-        <div class="form-group">
-          <label>目标</label>
-          <textarea v-model="newIter.goal" data-testid="iteration-list-dlg-create-txtarea-goal"></textarea>
-        </div>
-        <div class="form-group">
-          <label>开始日期</label>
-          <input v-model="newIter.start_date" type="date" data-testid="iteration-list-dlg-create-inp-start-date" />
-        </div>
-        <div class="form-group">
-          <label>结束日期</label>
-          <input v-model="newIter.end_date" type="date" data-testid="iteration-list-dlg-create-inp-end-date" />
-        </div>
-        <button data-testid="iteration-list-dlg-create-btn-submit" :disabled="isPending('createIteration')" @click="createIteration">创建</button>
-        <button @click="showCreateDialog = false">取消</button>
+    <AppDialog :open="showCreateDialog" test-id="iteration-list-dlg-create" @close="showCreateDialog = false">
+      <h3>创建迭代</h3>
+      <div class="form-group">
+        <label>名称</label>
+        <input v-model="newIter.name" data-testid="iteration-list-dlg-create-inp-name" />
       </div>
-    </div>
+      <div class="form-group">
+        <label>目标</label>
+        <textarea v-model="newIter.goal" data-testid="iteration-list-dlg-create-txtarea-goal"></textarea>
+      </div>
+      <div class="form-group">
+        <label>开始日期</label>
+        <input v-model="newIter.start_date" type="date" data-testid="iteration-list-dlg-create-inp-start-date" />
+      </div>
+      <div class="form-group">
+        <label>结束日期</label>
+        <input v-model="newIter.end_date" type="date" data-testid="iteration-list-dlg-create-inp-end-date" />
+      </div>
+      <button data-testid="iteration-list-dlg-create-btn-submit" :disabled="isPending('createIteration')" @click="createIteration">创建</button>
+      <button @click="showCreateDialog = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog = false">
-      <div data-testid="iteration-list-dlg-edit" class="dialog">
-        <h3>编辑迭代</h3>
-        <div class="form-group">
-          <label>开始日期</label>
-          <input v-model="editForm.start_date" type="date" data-testid="iteration-list-dlg-edit-inp-start-date" disabled />
-        </div>
-        <div class="form-group">
-          <label>结束日期</label>
-          <input v-model="editForm.end_date" type="date" data-testid="iteration-list-dlg-edit-inp-end-date" />
-        </div>
-        <button data-testid="iteration-list-dlg-edit-btn-submit" :disabled="isPending('saveEdit')" @click="saveEdit">保存</button>
-        <button @click="showEditDialog = false">取消</button>
+    <AppDialog :open="showEditDialog" test-id="iteration-list-dlg-edit" @close="showEditDialog = false">
+      <h3>编辑迭代</h3>
+      <div class="form-group">
+        <label>开始日期</label>
+        <input v-model="editForm.start_date" type="date" data-testid="iteration-list-dlg-edit-inp-start-date" disabled />
       </div>
-    </div>
+      <div class="form-group">
+        <label>结束日期</label>
+        <input v-model="editForm.end_date" type="date" data-testid="iteration-list-dlg-edit-inp-end-date" />
+      </div>
+      <button data-testid="iteration-list-dlg-edit-btn-submit" :disabled="isPending('saveEdit')" @click="saveEdit">保存</button>
+      <button @click="showEditDialog = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showStartConfirm" class="dialog-overlay" @click.self="showStartConfirm = false">
-      <div data-testid="iteration-list-dlg-confirm-start" class="dialog">
-        <h3>确认开始</h3>
-        <p>确定要开始该迭代吗？</p>
-        <button data-testid="iteration-list-dlg-confirm-start-btn-confirm" :disabled="isPending('confirmStart')" @click="confirmStart">确认</button>
-        <button @click="showStartConfirm = false">取消</button>
-      </div>
-    </div>
+    <AppDialog :open="showStartConfirm" test-id="iteration-list-dlg-confirm-start" @close="showStartConfirm = false">
+      <h3>确认开始</h3>
+      <p>确定要开始该迭代吗？</p>
+      <button data-testid="iteration-list-dlg-confirm-start-btn-confirm" :disabled="isPending('confirmStart')" @click="confirmStart">确认</button>
+      <button @click="showStartConfirm = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showCompleteConfirm" class="dialog-overlay" @click.self="showCompleteConfirm = false">
-      <div data-testid="iteration-list-dlg-confirm-complete" class="dialog">
-        <h3>确认完成</h3>
-        <p>确定要完成该迭代吗？</p>
-        <button data-testid="iteration-list-dlg-confirm-complete-btn-confirm" :disabled="isPending('confirmComplete')" @click="confirmComplete">确认</button>
-        <button @click="showCompleteConfirm = false">取消</button>
-      </div>
-    </div>
+    <AppDialog :open="showCompleteConfirm" test-id="iteration-list-dlg-confirm-complete" @close="showCompleteConfirm = false">
+      <h3>确认完成</h3>
+      <p>确定要完成该迭代吗？</p>
+      <button data-testid="iteration-list-dlg-confirm-complete-btn-confirm" :disabled="isPending('confirmComplete')" @click="confirmComplete">确认</button>
+      <button @click="showCompleteConfirm = false">取消</button>
+    </AppDialog>
   </div>
 </template>
 
@@ -117,6 +109,7 @@ import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const props = defineProps<{ projectId: string }>()
 const router = useRouter()

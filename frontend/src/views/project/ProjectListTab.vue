@@ -54,25 +54,23 @@
       </tbody>
     </table>
 
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-      <div data-testid="project-list-dlg-create" class="dialog">
-        <h3>创建项目</h3>
-        <div class="form-group">
-          <label>项目名称</label>
-          <input v-model="newProject.name" data-testid="project-list-dlg-create-inp-name" />
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea v-model="newProject.description" data-testid="project-list-dlg-create-txtarea-desc"></textarea>
-        </div>
-        <div class="form-group">
-          <label>开始日期</label>
-          <input v-model="newProject.start_date" type="date" data-testid="project-list-dlg-create-inp-start-date" />
-        </div>
-        <button data-testid="project-list-dlg-create-btn-submit" :disabled="isPending('createProject')" @click="createProject">创建</button>
-        <button @click="showCreateDialog = false">取消</button>
+    <AppDialog :open="showCreateDialog" test-id="project-list-dlg-create" @close="showCreateDialog = false">
+      <h3>创建项目</h3>
+      <div class="form-group">
+        <label>项目名称</label>
+        <input v-model="newProject.name" data-testid="project-list-dlg-create-inp-name" />
       </div>
-    </div>
+      <div class="form-group">
+        <label>描述</label>
+        <textarea v-model="newProject.description" data-testid="project-list-dlg-create-txtarea-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label>开始日期</label>
+        <input v-model="newProject.start_date" type="date" data-testid="project-list-dlg-create-inp-start-date" />
+      </div>
+      <button data-testid="project-list-dlg-create-btn-submit" :disabled="isPending('createProject')" @click="createProject">创建</button>
+      <button @click="showCreateDialog = false">取消</button>
+    </AppDialog>
   </div>
 </template>
 
@@ -80,6 +78,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const props = defineProps<{ teamId: string }>()
 const { isPending, run } = useAsyncAction()

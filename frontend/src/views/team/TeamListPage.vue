@@ -23,22 +23,20 @@
       </div>
     </div>
 
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-      <div data-testid="team-list-dlg-create" class="dialog">
-        <h3>创建团队</h3>
-        <div class="form-group">
-          <label>团队名称</label>
-          <input v-model="newTeam.name" data-testid="team-list-dlg-create-inp-name" />
-        </div>
-        <div v-if="createError" class="error-message">{{ createError }}</div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea v-model="newTeam.description" data-testid="team-list-dlg-create-txtarea-desc"></textarea>
-        </div>
-        <button data-testid="team-list-dlg-create-btn-submit" :disabled="isPending('createTeam')" @click="createTeam">创建</button>
-        <button @click="showCreateDialog = false">取消</button>
+    <AppDialog :open="showCreateDialog" test-id="team-list-dlg-create" @close="showCreateDialog = false">
+      <h3>创建团队</h3>
+      <div class="form-group">
+        <label>团队名称</label>
+        <input v-model="newTeam.name" data-testid="team-list-dlg-create-inp-name" />
       </div>
-    </div>
+      <div v-if="createError" class="error-message">{{ createError }}</div>
+      <div class="form-group">
+        <label>描述</label>
+        <textarea v-model="newTeam.description" data-testid="team-list-dlg-create-txtarea-desc"></textarea>
+      </div>
+      <button data-testid="team-list-dlg-create-btn-submit" :disabled="isPending('createTeam')" @click="createTeam">创建</button>
+      <button @click="showCreateDialog = false">取消</button>
+    </AppDialog>
   </div>
 </template>
 
@@ -48,6 +46,7 @@ import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
