@@ -26,12 +26,13 @@
         </tr>
       </tbody>
     </table>
-    <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
+    <EmptyState v-if="links.length === 0" text="暂无关联需求" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { formatTime } from '@/utils/date'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 interface LinkItem {
   id: number
@@ -75,12 +76,6 @@ function linkTypeStyle(type: string): string {
 }
 .task-link:hover {
   text-decoration: underline;
-}
-.spec-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--color-text-subtle);
-  font-size: var(--text-base);
 }
 .link-direction {
   font-size: var(--text-xs);

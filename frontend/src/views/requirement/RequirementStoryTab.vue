@@ -1,13 +1,14 @@
 <template>
   <div class="tab-panel">
     <div v-if="description" class="markdown-body" v-html="renderedDescription"></div>
-    <div v-else class="spec-empty">暂无需求描述</div>
+    <EmptyState v-else text="暂无需求描述" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { marked } from 'marked'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 const props = defineProps<{ description?: string }>()
 
@@ -18,12 +19,6 @@ const renderedDescription = computed(() => {
 </script>
 
 <style scoped>
-.spec-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--color-text-subtle);
-  font-size: var(--text-base);
-}
 .markdown-body {
   font-size: var(--text-base);
   line-height: 1.75;

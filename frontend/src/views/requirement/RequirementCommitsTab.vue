@@ -16,12 +16,13 @@
         </tr>
       </tbody>
     </table>
-    <div v-if="commits.length === 0" class="spec-empty">暂无提交记录</div>
+    <EmptyState v-if="commits.length === 0" text="暂无提交记录" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { formatTime } from '@/utils/date'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 interface CommitItem {
   id: number
@@ -44,11 +45,5 @@ defineProps<{ commits: CommitItem[] }>()
 }
 .task-link:hover {
   text-decoration: underline;
-}
-.spec-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--color-text-subtle);
-  font-size: var(--text-base);
 }
 </style>

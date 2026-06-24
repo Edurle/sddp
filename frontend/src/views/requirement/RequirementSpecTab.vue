@@ -7,9 +7,7 @@
       </div>
     </div>
 
-    <div v-if="!hasSectionContent('entity_definition')" class="spec-empty">
-      <p>该需求尚未编写规范，请通过 Agent 提交规范内容。</p>
-    </div>
+    <EmptyState v-if="!hasSectionContent('entity_definition')" text="该需求尚未编写规范，请通过 Agent 提交规范内容。" />
 
     <template v-if="hasSectionContent('entity_definition')">
       <div class="spec-section">
@@ -80,7 +78,7 @@
                 <td><code>{{ el.code }}</code></td>
                 <td>{{ el.type }}</td>
                 <td>{{ el.label }}</td>
-                <td><code v-if="el.role">{{ el.role }}</code><span v-else class="spec-empty">-</span></td>
+                <td><code v-if="el.role">{{ el.role }}</code><span v-else>-</span></td>
                 <td>{{ el.accessible_name || '-' }}</td>
                 <td>{{ el.interaction || '' }}</td>
               </tr>
@@ -162,6 +160,7 @@
 
 <script setup lang="ts">
 import JsonTree from '@/components/JsonTree.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 const props = defineProps<{ specRawContent: Record<string, any>; status: string }>()
 defineEmits<{ 'submit-review': [] }>()
@@ -251,12 +250,6 @@ function paramInStyle(p: string): string {
 .spec-actions {
   display: flex;
   gap: 6px;
-}
-.spec-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--color-text-subtle);
-  font-size: var(--text-base);
 }
 .spec-section {
   margin-bottom: 1.5rem;

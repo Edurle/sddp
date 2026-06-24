@@ -22,8 +22,8 @@
         <template v-if="!editing">
           <h2 class="info-title" data-testid="req-detail-txt-title">{{ req.title }}</h2>
           <div class="info-badges">
-            <AppBadge data-testid="req-detail-tag-type" :text="typeLabel(req.type)" />
-            <AppBadge data-testid="req-detail-txt-priority" :text="priorityLabel(req.priority)" />
+            <StatusBadge test-id="req-detail-tag-type" intent="neutral" :label="typeLabel(req.type)" />
+            <StatusBadge test-id="req-detail-txt-priority" intent="neutral" :label="priorityLabel(req.priority)" />
             <StatusBadge test-id="req-detail-tag-status" :intent="reqStatusIntent(req.status)" :label="reqStatusLabel(req.status)" :strike="req.status === 'deprecated'" />
           </div>
           <p data-testid="req-detail-txt-review-status" class="status-text">{{ reqStatusLabel(req.status) }}</p>
@@ -108,7 +108,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import AppBadge from '@/components/common/AppBadge.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import { reqStatusLabel, reqStatusIntent } from '@/utils/status'
 

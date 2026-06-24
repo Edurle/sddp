@@ -1,6 +1,6 @@
 <template>
   <div class="tab-panel">
-    <div v-if="reviewComments.length === 0" class="spec-empty">暂无审核记录</div>
+    <EmptyState v-if="reviewComments.length === 0" text="暂无审核记录" />
     <div v-else class="review-history-list" data-testid="req-detail-list-review-history">
       <div v-for="rc in reviewComments" :key="rc.id" class="review-history-item">
         <div class="review-history-dot" :class="rc.action === 'approve' ? 'dot-approve' : 'dot-reject'"></div>
@@ -19,6 +19,7 @@
 
 <script setup lang="ts">
 import { formatTime } from '@/utils/date'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 interface ReviewComment {
   id: number
@@ -42,12 +43,6 @@ function reviewTypeLabel(type?: string): string {
 </script>
 
 <style scoped>
-.spec-empty {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: var(--color-text-subtle);
-  font-size: var(--text-base);
-}
 .review-history-list {
   display: flex;
   flex-direction: column;
