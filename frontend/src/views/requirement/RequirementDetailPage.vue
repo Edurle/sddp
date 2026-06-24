@@ -276,35 +276,13 @@
 
         <RequirementReviewHistoryTab v-if="activeTab === 'review-history'" :review-comments="reviewComments" />
 
-        <div v-if="activeTab === 'links'" class="tab-panel">
-          <div class="tab-toolbar">
-            <button data-testid="req-detail-btn-add-link" @click="showAddLinkDialog = true">添加关联</button>
-          </div>
-          <table data-testid="req-detail-tbl-links">
-            <thead>
-              <tr><th>方向</th><th>类型</th><th>关联需求</th><th>创建时间</th><th>操作</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="link in links" :key="link.id">
-                <td>
-                  <span class="link-direction" :class="link.direction">{{ link.direction === 'outgoing' ? '→ 指向' : '← 来自' }}</span>
-                </td>
-                <td>
-                  <span class="spec-tag" :style="linkTypeStyle(link.link_type)">{{ linkTypeLabel(link.link_type) }}</span>
-                </td>
-                <td>
-                  <router-link :to="`/requirements/${link.related_req_id}`" class="task-link">需求 #{{ link.related_req_id }}</router-link>
-                </td>
-                <td>{{ formatTime(link.created_at) }}</td>
-                <td>
-                  <button v-if="link.link_type === 'relates_to'" class="btn-danger" data-testid="req-detail-btn-unlink" :disabled="isPending('deleteLink')" @click="deleteLink(link.id)">删除</button>
-                  <span v-else class="spec-muted">系统关联</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
-        </div>
+        <RequirementLinksTab
+          v-if="activeTab === 'links'"
+          :links="links"
+          :deleting="isPending('deleteLink')"
+          @add="showAddLinkDialog = true"
+          @delete="deleteLink"
+        />
 
         <RequirementCommitsTab v-if="activeTab === 'commits'" :commits="commits" />
       </div>
@@ -511,7 +489,7 @@ import RequirementSidebar from './RequirementSidebar.vue'
 import RequirementCommitsTab from './RequirementCommitsTab.vue'
 import RequirementSpecVersionsTab from './RequirementSpecVersionsTab.vue'
 import RequirementReviewHistoryTab from './RequirementReviewHistoryTab.vue'
-import { formatTime } from '@/utils/date'
+import RequirementLinksTab from './RequirementLinksTab.vue'
 import JsonTree from '@/components/JsonTree.vue'
 import TestDslFlow from '@/components/TestDslFlow.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
@@ -1231,19 +1209,6 @@ async function supersedeReq() {
   })
 }
 
-function linkTypeLabel(type: string): string {
-  const map: Record<string, string> = { supersede: '变更', relates_to: '关联' }
-  return map[type] || type
-}
-
-function linkTypeStyle(type: string): string {
-  const map: Record<string, string> = {
-    supersede: 'background:var(--intent-warning-bg);color:var(--intent-warning-text)',
-    relates_to: 'background:var(--intent-info-bg);color:var(--color-primary)',
-  }
-  return map[type] || 'background:var(--color-surface-muted);color:var(--color-text-muted)'
-}
-
 onMounted(async () => {
   isLoading.value = true
   try {
@@ -1630,20 +1595,6 @@ onMounted(async () => {
   padding: 3rem 1rem;
   color: var(--color-text-subtle);
   font-size: var(--text-base);
-}
-.link-direction {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: var(--radius-md);
-}
-.link-direction.outgoing {
-  background: var(--intent-info-bg);
-  color: var(--color-primary);
-}
-.link-direction.incoming {
-  background: var(--intent-success-bg);
-  color: var(--intent-success-text);
 }
 .dialog-hint {
   font-size: var(--text-sm);
