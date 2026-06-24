@@ -18,7 +18,7 @@
 
     <div class="form-group" style="margin-top: 1rem;">
       <h3>解散团队</h3>
-      <button v-if="isOwner" data-testid="team-settings-btn-dissolve" @click="showDissolveDialog = true">解散团队</button>
+      <button v-if="isOwner" class="btn-danger" data-testid="team-settings-btn-dissolve" @click="showDissolveDialog = true">解散团队</button>
       <button v-else data-testid="team-settings-btn-dissolve" style="display:none">解散团队</button>
     </div>
 
@@ -38,7 +38,7 @@
       <div data-testid="team-settings-dlg-dissolve" class="dialog">
         <h3>解散团队</h3>
         <p>确定要解散团队吗？此操作不可撤销。</p>
-        <button data-testid="team-settings-dlg-dissolve-btn-confirm" @click="dissolveTeam">确认解散</button>
+        <button class="btn-danger" data-testid="team-settings-dlg-dissolve-btn-confirm" @click="dissolveTeam">确认解散</button>
         <button @click="showDissolveDialog = false">取消</button>
       </div>
     </div>

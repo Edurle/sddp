@@ -154,7 +154,7 @@
         <div v-for="item in pendingInvitations" :key="item.id">
           {{ item.team_name || item.name }}
           <button :data-testid="`dashboard-btn-accept-invitation-${item.id}`" @click="acceptInvitation(item.id)">接受</button>
-          <button :data-testid="`dashboard-btn-reject-invitation-${item.id}`" @click="rejectInvitation(item.id)">拒绝</button>
+          <button class="btn-danger" :data-testid="`dashboard-btn-reject-invitation-${item.id}`" @click="rejectInvitation(item.id)">拒绝</button>
         </div>
       </div>
     </div>

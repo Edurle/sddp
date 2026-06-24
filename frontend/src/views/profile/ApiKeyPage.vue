@@ -192,15 +192,15 @@ code {
   color: #999;
 }
 .btn-danger {
-  background: #fff;
-  color: #dc2626;
-  border-color: #fecaca;
+  background: var(--color-danger);
+  color: #fff;
+  border-color: var(--color-danger);
   padding: 4px 12px;
   font-size: 12px;
 }
 .btn-danger:hover {
-  background: #fef2f2;
-  box-shadow: none;
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
 }
 .raw-key-dialog {
   max-width: 560px;

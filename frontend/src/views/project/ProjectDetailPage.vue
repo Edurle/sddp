@@ -16,7 +16,7 @@
       <div class="actions">
         <button data-testid="project-detail-btn-edit" @click="openEditDialog">编辑</button>
         <button data-testid="project-detail-btn-archive" @click="showArchiveConfirm = true">归档</button>
-        <button data-testid="project-detail-btn-delete" @click="showDeleteConfirm = true">删除</button>
+        <button class="btn-danger" data-testid="project-detail-btn-delete" @click="showDeleteConfirm = true">删除</button>
       </div>
 
       <IterationListTab v-if="project" :project-id="String(project.id)" />
@@ -47,7 +47,7 @@
       <div data-testid="project-detail-dlg-confirm-delete" class="dialog">
         <h3>确认删除</h3>
         <p>确定要删除该项目吗？</p>
-        <button data-testid="project-detail-dlg-confirm-delete-btn-confirm" @click="deleteProject">确认</button>
+        <button class="btn-danger" data-testid="project-detail-dlg-confirm-delete-btn-confirm" @click="deleteProject">确认</button>
         <button @click="showDeleteConfirm = false">取消</button>
       </div>
     </div>

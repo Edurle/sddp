@@ -182,12 +182,13 @@ function stepCircle(step: string) {
   border-color: rgba(0, 0, 0, 0.14) !important;
 }
 .btn-danger {
-  background: #fff;
-  color: #ff4d4f !important;
-  border: 1px solid #ffccc7 !important;
+  background: var(--color-danger) !important;
+  color: #fff !important;
+  border: 1px solid var(--color-danger) !important;
 }
 .btn-danger:hover {
-  background: #fff1f0;
+  background: var(--color-danger-hover) !important;
+  border-color: var(--color-danger-hover) !important;
 }
 
 @media (max-width: 768px) {

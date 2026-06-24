@@ -31,6 +31,7 @@
             </template>
             <template v-else>
               <button
+                class="btn-danger"
                 :data-testid="`team-members-btn-remove-user-${m.user_id}`"
                 @click="confirmRemoveMember = m"
               >移除</button>
@@ -64,7 +65,7 @@
       <div data-testid="team-members-dlg-confirm" class="dialog">
         <h3>确认移除</h3>
         <p>确定要移除该成员吗？</p>
-        <button data-testid="team-members-dlg-confirm-btn-confirm" @click="removeMember(confirmRemoveMember.user_id)">确认</button>
+        <button class="btn-danger" data-testid="team-members-dlg-confirm-btn-confirm" @click="removeMember(confirmRemoveMember.user_id)">确认</button>
         <button @click="confirmRemoveMember = null">取消</button>
       </div>
     </div>

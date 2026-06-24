@@ -85,7 +85,7 @@
         <button v-if="canEdit" data-testid="req-detail-btn-delete-req" class="btn-danger" @click="$emit('delete')">删除</button>
         <button v-if="canEdit" data-testid="req-detail-btn-submit-req-review" @click="$emit('submit-review')">提交审核</button>
         <button v-if="canReview" data-testid="req-detail-btn-approve" @click="$emit('approve')">通过</button>
-        <button v-if="canReview" data-testid="req-detail-btn-reject" @click="$emit('reject')">驳回</button>
+        <button v-if="canReview" class="btn-danger" data-testid="req-detail-btn-reject" @click="$emit('reject')">驳回</button>
         <button v-if="canSupersede" data-testid="req-detail-btn-supersede" @click="$emit('supersede')">创建变更</button>
       </div>
     </div>
@@ -450,9 +450,13 @@ function stepCircle(step: string) {
   margin-top: 6px;
 }
 .btn-danger {
-  background: #fef2f2 !important;
-  color: #dc2626 !important;
-  border: 1px solid #fecaca;
+  background: var(--color-danger) !important;
+  color: #fff !important;
+  border: 1px solid var(--color-danger) !important;
+}
+.btn-danger:hover {
+  background: var(--color-danger-hover) !important;
+  border-color: var(--color-danger-hover) !important;
 }
 
 @media (max-width: 768px) {

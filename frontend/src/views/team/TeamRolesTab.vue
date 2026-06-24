@@ -26,6 +26,7 @@
             >编辑</button>
             <button
               v-if="!r.is_builtin"
+              class="btn-danger"
               :data-testid="`team-roles-btn-delete-${r.identifier}`"
               @click="confirmDeleteRole = r"
             >删除</button>
@@ -72,7 +73,7 @@
       <div data-testid="team-roles-dlg-confirm" class="dialog">
         <h3>确认删除</h3>
         <p>确定要删除角色 "{{ confirmDeleteRole.name }}" 吗？</p>
-        <button data-testid="team-roles-dlg-confirm-btn-confirm" @click="deleteRole(confirmDeleteRole.id)">确认</button>
+        <button class="btn-danger" data-testid="team-roles-dlg-confirm-btn-confirm" @click="deleteRole(confirmDeleteRole.id)">确认</button>
         <button @click="confirmDeleteRole = null">取消</button>
       </div>
     </div>

@@ -253,7 +253,7 @@
                 <td>
                   <button @click="openTestCaseDetail(tc)">查看</button>
                   <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="openEditTestCase(tc)">编辑</button>
-                  <button :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" @click="deleteTestCase(tc.id)">删除</button>
+                  <button class="btn-danger" :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" @click="deleteTestCase(tc.id)">删除</button>
                 </td>
               </tr>
             </tbody>
@@ -322,7 +322,7 @@
                 </td>
                 <td>{{ formatTime(link.created_at) }}</td>
                 <td>
-                  <button v-if="link.link_type === 'relates_to'" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
+                  <button v-if="link.link_type === 'relates_to'" class="btn-danger" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
                   <span v-else class="spec-muted">系统关联</span>
                 </td>
               </tr>
@@ -371,7 +371,7 @@
       <div data-testid="req-detail-dlg-reject" class="dialog">
         <h3>驳回</h3>
         <textarea v-model="rejectForm.comment" data-testid="req-detail-dlg-reject-txtarea-comment"></textarea>
-        <button data-testid="req-detail-dlg-reject-btn-confirm" @click="rejectReview">确认</button>
+        <button class="btn-danger" data-testid="req-detail-dlg-reject-btn-confirm" @click="rejectReview">确认</button>
         <button @click="showRejectDialog = false">取消</button>
       </div>
     </div>
