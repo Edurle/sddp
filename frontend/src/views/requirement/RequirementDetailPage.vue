@@ -42,65 +42,22 @@
           @add="fetchReviewers(); showAddTaskDialog = true"
         />
 
-        <div v-if="activeTab === 'test-cases'" class="tab-panel">
-          <div class="tab-toolbar">
-            <button data-testid="req-detail-btn-add-test-case" @click="showTestCaseDialog = true">添加测试用例</button>
-            <select data-testid="req-detail-sel-filter-case-type" v-model="testCaseTypeFilter" @change="fetchTestCases">
-              <option value="">全部</option>
-              <option value="ui_test">UI测试</option>
-              <option value="happy_path">正常用例</option>
-              <option value="edge_case">边界用例</option>
-            </select>
-            <button data-testid="req-detail-btn-submit-tests-review" @click="openSubmitTestsReviewDialog">提交测试审核</button>
-          </div>
-          <table data-testid="req-detail-tbl-test-cases">
-            <thead>
-              <tr><th>编号</th><th>标题</th><th>类型</th><th>最新结果</th><th>操作</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="tc in filteredTestCases" :key="tc.id">
-                <td>{{ tc.case_number }}</td>
-                <td>
-                  <span class="tc-title" @click="viewTestCase = tc">{{ tc.title }}</span>
-                </td>
-                <td>{{ tc.case_type }}</td>
-                <td>
-                  <span v-if="tcExecutionMap[tc.id]" class="spec-tag" :style="resultTagStyle(tcExecutionMap[tc.id].status)">{{ tcResultText(tcExecutionMap[tc.id].status) }}</span>
-                  <span v-else class="tc-no-result">未执行</span>
-                </td>
-                <td>
-                  <button @click="openTestCaseDetail(tc)">查看</button>
-                  <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="openEditTestCase(tc)">编辑</button>
-                  <button class="btn-danger" :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" :disabled="isPending('deleteTestCase')" @click="deleteTestCase(tc.id)">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div class="stat-cards" data-testid="req-detail-txt-test-stats">
-            <span data-testid="req-detail-tab-test-stats" style="display: none;"></span>
-            <div class="stat-card">
-              <div class="stat-num">{{ testStats.total_cases ?? 0 }}</div>
-              <div class="stat-label">总用例</div>
-            </div>
-            <div class="stat-card stat-pass">
-              <div class="stat-num" data-testid="req-detail-txt-test-pass-count">{{ testStats.latest_results?.passed ?? 0 }}</div>
-              <div class="stat-label">通过</div>
-            </div>
-            <div class="stat-card stat-fail">
-              <div class="stat-num" data-testid="req-detail-txt-test-fail-count">{{ testStats.latest_results?.failed ?? 0 }}</div>
-              <div class="stat-label">失败</div>
-            </div>
-            <div class="stat-card stat-skip">
-              <div class="stat-num" data-testid="req-detail-txt-test-skip-count">{{ testStats.latest_results?.skipped ?? 0 }}</div>
-              <div class="stat-label">跳过</div>
-            </div>
-            <div class="stat-card stat-rate">
-              <div class="stat-num" data-testid="req-detail-txt-test-total-count">{{ testStats.pass_rate != null ? (testStats.pass_rate * 100).toFixed(0) + '%' : 'N/A' }}</div>
-              <div class="stat-label">通过率</div>
-            </div>
-          </div>
-        </div>
+        <RequirementTestCasesTab
+          v-if="activeTab === 'test-cases'"
+          :test-cases="filteredTestCases"
+          :test-stats="testStats"
+          :execution-map="tcExecutionMap"
+          :filter="testCaseTypeFilter"
+          :deleting="isPending('deleteTestCase')"
+          @add="showTestCaseDialog = true"
+          @submit-review="openSubmitTestsReviewDialog"
+          @update:filter="testCaseTypeFilter = $event"
+          @change="fetchTestCases"
+          @select="viewTestCase = $event"
+          @view="openTestCaseDetail"
+          @edit="openEditTestCase"
+          @delete="deleteTestCase"
+        />
 
         <RequirementReviewHistoryTab v-if="activeTab === 'review-history'" :review-comments="reviewComments" />
 
@@ -319,6 +276,7 @@ import RequirementLinksTab from './RequirementLinksTab.vue'
 import RequirementTasksTab from './RequirementTasksTab.vue'
 import RequirementStoryTab from './RequirementStoryTab.vue'
 import RequirementSpecTab from './RequirementSpecTab.vue'
+import RequirementTestCasesTab from './RequirementTestCasesTab.vue'
 import TestDslFlow from '@/components/TestDslFlow.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 
