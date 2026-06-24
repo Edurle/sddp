@@ -35,8 +35,8 @@ select {
 }
 
 select:focus {
-  border-color: #111;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
   outline: none;
 }
 </style>

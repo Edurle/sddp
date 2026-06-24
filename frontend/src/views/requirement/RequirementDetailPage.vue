@@ -1531,8 +1531,8 @@ onMounted(async () => {
   color: #333;
 }
 .tab-btn.active {
-  color: #111;
-  border-bottom-color: #111;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
   font-weight: 600;
 }
 .tab-panel {

@@ -119,12 +119,12 @@ function stepCircle(step: string) {
   flex-shrink: 0;
 }
 .step-item.done {
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
 }
 .step-item.done .step-circle {
   background: #fff;
-  color: #111;
+  color: var(--color-primary);
 }
 .step-item.current {
   background: #1677ff;

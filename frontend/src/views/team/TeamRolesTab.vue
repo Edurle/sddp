@@ -293,8 +293,8 @@ onMounted(() => fetchRoles())
 }
 
 .permission-grid input[type="checkbox"]:checked {
-  background: #111;
-  border-color: #111;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .permission-grid input[type="checkbox"]:checked::after {

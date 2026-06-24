@@ -457,9 +457,9 @@ onMounted(async () => {
   cursor: pointer;
 }
 .sub-tabs button.active {
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
-  border-color: #111;
+  border-color: var(--color-primary);
 }
 .empty-state {
   padding: 2rem;

@@ -267,8 +267,8 @@ input[type="checkbox"] {
 }
 
 input[type="checkbox"]:checked {
-  background: #111;
-  border-color: #111;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 input[type="checkbox"]:checked::after {

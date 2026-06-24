@@ -144,8 +144,8 @@ async function handleLogin() {
 
 .login-card .form-group input:focus {
   outline: none;
-  border-color: #111;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-ring);
   background: #fff;
 }
 
@@ -168,14 +168,14 @@ async function handleLogin() {
 .remember-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #111;
+  accent-color: var(--color-primary);
   cursor: pointer;
 }
 
 .login-btn {
   width: 100%;
   padding: 14px;
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -188,7 +188,7 @@ async function handleLogin() {
 }
 
 .login-btn:hover {
-  background: #222;
+  background: var(--color-primary-hover);
   color: #fff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }

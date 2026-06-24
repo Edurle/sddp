@@ -329,12 +329,12 @@ function stepCircle(step: string) {
   background: #722ed1;
 }
 .step-item.done {
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
 }
 .step-item.done .step-circle {
   background: #fff;
-  color: #111;
+  color: var(--color-primary);
 }
 .step-item.deprecated {
   background: #ff4d4f;

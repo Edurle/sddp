@@ -75,7 +75,7 @@ function handleLogout() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--color-bg);
 }
 .app-layout-header {
   background: rgba(255, 255, 255, 0.7);
@@ -117,11 +117,11 @@ function handleLogout() {
   transition: all 0.2s ease;
 }
 .app-layout-nav a:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: #111;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 .app-layout-nav a.router-link-active {
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
 }
 .app-layout-main {
@@ -162,7 +162,7 @@ function handleLogout() {
   color: #666;
   text-decoration: none;
 }
-.breadcrumb-bar a:hover { color: #111; }
+.breadcrumb-bar a:hover { color: var(--color-primary); }
 .breadcrumb-sep { color: #ccc; }
 .breadcrumb-current { color: #333; font-weight: 500; }
 </style>

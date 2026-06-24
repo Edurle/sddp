@@ -24,15 +24,15 @@ defineProps<{ testId?: string; active?: boolean; completed?: boolean }>()
 }
 
 .app-step.active {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: #111;
-  color: #111;
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
 .app-step.completed {
-  background: #111;
-  border-color: #111;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 </style>

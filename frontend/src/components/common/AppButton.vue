@@ -16,7 +16,7 @@ button {
 }
 
 button[type="submit"] {
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -26,7 +26,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background: #333;
+  background: var(--color-primary-hover);
 }
 
 button[type="submit"]:disabled {

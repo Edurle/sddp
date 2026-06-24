@@ -49,13 +49,13 @@ defineEmits(['update:modelValue'])
 }
 
 .tab-buttons button.active {
-  background: #111;
+  background: var(--color-primary);
   color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tab-buttons button:hover:not(.active) {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-primary-soft);
   color: #333;
 }
 </style>
