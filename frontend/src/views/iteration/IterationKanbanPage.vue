@@ -50,8 +50,7 @@
       </div>
     </div>
 
-    <div v-if="showCreateReqDialog" class="dialog-overlay" @click.self="showCreateReqDialog = false">
-      <div data-testid="iteration-kanban-dlg-create-req" class="dialog">
+    <AppDialog :open="showCreateReqDialog" test-id="iteration-kanban-dlg-create-req" @close="showCreateReqDialog = false">
         <h3>创建需求</h3>
         <div class="form-group">
           <label>标题</label>
@@ -79,8 +78,7 @@
         </div>
         <button data-testid="iteration-kanban-dlg-create-req-btn-submit" @click="createRequirement">创建</button>
         <button @click="showCreateReqDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
   </div>
 </template>
 
@@ -90,6 +88,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { reqStatusLabel, mappedReqStatusIntent, priorityIntent } from '@/utils/status'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const route = useRoute()
 const router = useRouter()

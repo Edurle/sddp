@@ -323,6 +323,10 @@ label {
   max-width: 90vw;
 }
 
+/* Dialog width modifiers (used via AppDialog :dialog-class) */
+.dialog.dialog-md { max-width: 560px; }
+.dialog.dialog-wide { max-width: 720px; }
+
 .dialog h3 {
   margin: 0 0 1rem;
   font-weight: 600;

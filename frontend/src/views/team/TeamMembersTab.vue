@@ -47,8 +47,7 @@
 
     <div v-if="successMsg" class="success-message" data-testid="team-members-txt-success">{{ successMsg }}</div>
 
-    <div v-if="showInviteDialog" class="dialog-overlay" @click.self="showInviteDialog = false">
-      <div data-testid="team-members-dlg-invite" class="dialog">
+    <AppDialog :open="showInviteDialog" test-id="team-members-dlg-invite" @close="showInviteDialog = false">
         <h3>邀请成员</h3>
         <input
           v-model="inviteIdentifier"
@@ -58,20 +57,18 @@
         <div v-if="inviteError" class="error-message" data-testid="team-members-dlg-invite-txt-error">{{ inviteError }}</div>
         <button data-testid="team-members-dlg-invite-btn-submit" :disabled="isPending('inviteMember')" @click="inviteMember">发送邀请</button>
         <button @click="showInviteDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
 
-    <div v-if="confirmRemoveMember" class="dialog-overlay" @click.self="confirmRemoveMember = null">
-      <div data-testid="team-members-dlg-confirm" class="dialog">
-        <h3>确认移除</h3>
-        <p>确定要移除该成员吗？</p>
-        <button class="btn-danger" data-testid="team-members-dlg-confirm-btn-confirm" :disabled="isPending('removeMember')" @click="removeMember(confirmRemoveMember.user_id)">确认</button>
-        <button @click="confirmRemoveMember = null">取消</button>
-      </div>
-    </div>
+    <AppDialog :open="!!confirmRemoveMember" test-id="team-members-dlg-confirm" @close="confirmRemoveMember = null">
+        <template v-if="confirmRemoveMember">
+          <h3>确认移除</h3>
+          <p>确定要移除该成员吗？</p>
+          <button class="btn-danger" data-testid="team-members-dlg-confirm-btn-confirm" :disabled="isPending('removeMember')" @click="removeMember(confirmRemoveMember.user_id)">确认</button>
+          <button @click="confirmRemoveMember = null">取消</button>
+        </template>
+    </AppDialog>
 
-    <div v-if="showRoleDialog" class="dialog-overlay" @click.self="showRoleDialog = false">
-      <div data-testid="team-members-dlg-roles" class="dialog">
+    <AppDialog :open="showRoleDialog" test-id="team-members-dlg-roles" @close="showRoleDialog = false">
         <h3>分配角色</h3>
         <div v-for="r in roles" :key="r.id">
           <label>
@@ -86,8 +83,7 @@
         </div>
         <button data-testid="team-members-dlg-roles-btn-save" :disabled="isPending('saveRoles')" @click="saveRoles">保存</button>
         <button @click="showRoleDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
   </div>
 </template>
 
@@ -96,6 +92,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const props = defineProps<{ teamId: string }>()
 const notification = useNotificationStore()

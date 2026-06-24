@@ -5,6 +5,7 @@
         ref="dialogEl"
         :data-testid="testId"
         class="dialog"
+        :class="dialogClass"
         role="dialog"
         aria-modal="true"
         tabindex="-1"
@@ -19,7 +20,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 
-const props = defineProps<{ open?: boolean; testId?: string }>()
+const props = defineProps<{ open?: boolean; testId?: string; dialogClass?: string }>()
 const emit = defineEmits(['close'])
 
 const dialogEl = ref<HTMLElement | null>(null)

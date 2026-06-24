@@ -113,8 +113,7 @@
       </div>
     </div>
 
-    <div v-if="showRecordDialog" class="dialog-overlay" @click.self="showRecordDialog = false">
-      <div data-testid="task-detail-dlg-record" class="dialog">
+    <AppDialog :open="showRecordDialog" test-id="task-detail-dlg-record" @close="showRecordDialog = false">
         <h3>更新测试记录</h3>
         <select v-model="recordForm.status" data-testid="task-detail-dlg-record-sel-status">
           <option value="pass">通过</option>
@@ -132,8 +131,7 @@
         <p v-if="recordError" class="error">{{ recordError }}</p>
         <button data-testid="task-detail-dlg-record-btn-save" :disabled="isPending('saveRecord')" @click="saveRecord">保存</button>
         <button @click="showRecordDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
   </div>
 </template>
 
@@ -147,6 +145,7 @@ import { useAsyncAction } from '@/composables/useAsyncAction'
 import TaskSidebar from './TaskSidebar.vue'
 import TaskInfoPanel from './TaskInfoPanel.vue'
 import JsonTree from '@/components/JsonTree.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const route = useRoute()
 const router = useRouter()

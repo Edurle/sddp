@@ -52,8 +52,7 @@
       <button v-show="page * pageSize < total" @click="page++; fetchUsers()">下一页</button>
     </div>
 
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-      <div class="dialog" data-testid="user-mgmt-dlg-create">
+    <AppDialog :open="showCreateDialog" test-id="user-mgmt-dlg-create" @close="showCreateDialog = false">
         <h3>创建用户</h3>
         <div class="form-group">
           <label>邮箱</label>
@@ -72,11 +71,9 @@
           <button data-testid="admin-users-dlg-create-btn-submit" :disabled="isPending('createUser')" @click="createUser">确认创建</button>
           <button class="btn-cancel" @click="showCreateDialog = false">关闭</button>
         </div>
-      </div>
-    </div>
+    </AppDialog>
 
-    <div v-if="showResetDialog" class="dialog-overlay" @click.self="showResetDialog = false">
-      <div class="dialog" data-testid="user-mgmt-dlg-reset-pw">
+    <AppDialog :open="showResetDialog" test-id="user-mgmt-dlg-reset-pw" @close="showResetDialog = false">
         <h3>重置密码 — {{ resetTargetUser?.email }}</h3>
         <div class="form-group">
           <label>新密码</label>
@@ -92,8 +89,7 @@
           <button :disabled="isPending('resetPassword')" @click="resetPassword">确认重置</button>
           <button class="btn-cancel" @click="showResetDialog = false">关闭</button>
         </div>
-      </div>
-    </div>
+    </AppDialog>
 
     <div v-if="errorMsg" class="error-message">{{ errorMsg }}</div>
     </template>
@@ -104,6 +100,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 interface UserItem {
   id: number
@@ -315,14 +312,6 @@ th, td {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-}
-
-.dialog {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  min-width: 360px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
 
 .dialog h3 {

@@ -35,8 +35,7 @@
       </tbody>
     </table>
 
-    <div v-if="showEditDialog" class="dialog-overlay" @click.self="showEditDialog = false">
-      <div data-testid="team-roles-dlg-edit" class="dialog">
+    <AppDialog :open="showEditDialog" test-id="team-roles-dlg-edit" dialog-class="dialog-wide" @close="showEditDialog = false">
         <h3>{{ editingRole ? '编辑角色' : '创建角色' }}</h3>
         <div class="form-group">
           <label>角色名称</label>
@@ -66,17 +65,16 @@
         <div v-if="editError" class="error-message" data-testid="team-roles-dlg-edit-txt-error">{{ editError }}</div>
         <button data-testid="team-roles-dlg-edit-btn-save" :disabled="isPending('saveRole')" @click="saveRole">保存</button>
         <button @click="showEditDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
 
-    <div v-if="confirmDeleteRole" class="dialog-overlay" @click.self="confirmDeleteRole = null">
-      <div data-testid="team-roles-dlg-confirm" class="dialog">
-        <h3>确认删除</h3>
-        <p>确定要删除角色 "{{ confirmDeleteRole.name }}" 吗？</p>
-        <button class="btn-danger" data-testid="team-roles-dlg-confirm-btn-confirm" :disabled="isPending('deleteRole')" @click="deleteRole(confirmDeleteRole.id)">确认</button>
-        <button @click="confirmDeleteRole = null">取消</button>
-      </div>
-    </div>
+    <AppDialog :open="!!confirmDeleteRole" test-id="team-roles-dlg-confirm" @close="confirmDeleteRole = null">
+        <template v-if="confirmDeleteRole">
+          <h3>确认删除</h3>
+          <p>确定要删除角色 "{{ confirmDeleteRole.name }}" 吗？</p>
+          <button class="btn-danger" data-testid="team-roles-dlg-confirm-btn-confirm" :disabled="isPending('deleteRole')" @click="deleteRole(confirmDeleteRole.id)">确认</button>
+          <button @click="confirmDeleteRole = null">取消</button>
+        </template>
+    </AppDialog>
   </div>
 </template>
 
@@ -84,6 +82,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { apiClient } from '@/api/client'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const props = defineProps<{ teamId: string }>()
 const { isPending, run } = useAsyncAction()
@@ -253,10 +252,6 @@ onMounted(() => fetchRoles())
 </script>
 
 <style scoped>
-.dialog {
-  max-width: 720px;
-}
-
 .permission-group {
   margin-bottom: 0.5rem;
 }

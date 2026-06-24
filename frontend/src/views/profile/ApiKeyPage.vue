@@ -45,8 +45,7 @@
       </tbody>
     </table>
 
-    <div v-if="showCreateDialog" class="dialog-overlay" @click.self="showCreateDialog = false">
-      <div class="dialog">
+    <AppDialog :open="showCreateDialog" @close="showCreateDialog = false">
         <h3>创建 API Key</h3>
         <div class="form-group">
           <label>名称</label>
@@ -59,11 +58,9 @@
         <div v-if="createError" class="error-message">{{ createError }}</div>
         <button :disabled="isPending('createKey')" @click="createKey">创建</button>
         <button @click="showCreateDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
 
-    <div v-if="showRawKey" class="dialog-overlay" @click.self="closeRawKeyDialog">
-      <div class="dialog raw-key-dialog">
+    <AppDialog :open="showRawKey" dialog-class="dialog-md" @close="closeRawKeyDialog">
         <h3>API Key 已创建</h3>
         <p class="raw-key-warning">请立即保存以下密钥，关闭后无法再次查看。</p>
         <div class="raw-key-box">
@@ -72,8 +69,7 @@
         </div>
         <div v-if="copied" class="success-message">已复制到剪贴板</div>
         <button @click="closeRawKeyDialog">关闭</button>
-      </div>
-    </div>
+    </AppDialog>
 
     <div v-if="errorMsg" class="error-message">{{ errorMsg }}</div>
   </div>
@@ -83,6 +79,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 interface ApiKeyItem {
   id: number
@@ -209,9 +206,6 @@ code {
 .btn-danger:hover {
   background: var(--color-danger-hover);
   border-color: var(--color-danger-hover);
-}
-.raw-key-dialog {
-  max-width: 560px;
 }
 .raw-key-warning {
   color: var(--color-danger);

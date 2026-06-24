@@ -22,8 +22,7 @@
       <button v-else data-testid="team-settings-btn-dissolve" style="display:none">解散团队</button>
     </div>
 
-    <div v-if="showTransferDialog" class="dialog-overlay" @click.self="showTransferDialog = false">
-      <div data-testid="team-settings-dlg-transfer" class="dialog">
+    <AppDialog :open="showTransferDialog" test-id="team-settings-dlg-transfer" @close="showTransferDialog = false">
         <h3>转让团队所有权</h3>
         <select data-testid="team-settings-dlg-transfer-sel-owner" v-model="transferTarget">
           <option value="">选择新所有者</option>
@@ -31,17 +30,14 @@
         </select>
         <button data-testid="team-settings-dlg-transfer-btn-confirm" :disabled="isPending('transferOwnership')" @click="transferOwnership">确认转让</button>
         <button @click="showTransferDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
 
-    <div v-if="showDissolveDialog" class="dialog-overlay" @click.self="showDissolveDialog = false">
-      <div data-testid="team-settings-dlg-dissolve" class="dialog">
+    <AppDialog :open="showDissolveDialog" test-id="team-settings-dlg-dissolve" @close="showDissolveDialog = false">
         <h3>解散团队</h3>
         <p>确定要解散团队吗？此操作不可撤销。</p>
         <button class="btn-danger" data-testid="team-settings-dlg-dissolve-btn-confirm" :disabled="isPending('dissolveTeam')" @click="dissolveTeam">确认解散</button>
         <button @click="showDissolveDialog = false">取消</button>
-      </div>
-    </div>
+    </AppDialog>
   </div>
 </template>
 
@@ -51,6 +47,7 @@ import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { useAsyncAction } from '@/composables/useAsyncAction'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const props = defineProps<{ teamId: string; team: unknown }>()
 const emit = defineEmits<{ teamUpdated: [] }>()
