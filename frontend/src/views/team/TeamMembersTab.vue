@@ -259,34 +259,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-input[type="checkbox"] {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.02);
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  vertical-align: middle;
-}
-
-input[type="checkbox"]:checked {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-input[type="checkbox"]:checked::after {
-  content: '✓';
-  color: #fff;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: var(--text-xs);
-}
-
 .dialog label {
   display: flex;
   align-items: center;

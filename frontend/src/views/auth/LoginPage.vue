@@ -169,13 +169,6 @@ async function handleLogin() {
   color: var(--color-text-muted);
 }
 
-.remember-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-primary);
-  cursor: pointer;
-}
-
 .login-btn {
   width: 100%;
   padding: 14px;
