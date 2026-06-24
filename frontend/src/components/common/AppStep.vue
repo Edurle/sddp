@@ -18,8 +18,8 @@ defineProps<{ testId?: string; active?: boolean; completed?: boolean }>()
   font-size: 12px;
   font-weight: 500;
   background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  color: #666;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   transition: all 0.2s ease;
 }
 

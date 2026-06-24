@@ -15,7 +15,7 @@ table {
   border-spacing: 0;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
 }
 th {
   background: rgba(0, 0, 0, 0.03);
@@ -23,17 +23,17 @@ th {
   text-align: left;
   font-weight: 600;
   font-size: 12px;
-  color: #666;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 td {
   padding: 10px 14px;
   text-align: left;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-border);
   font-size: 13px;
-  color: #333;
+  color: var(--color-text);
 }
 tr:last-child td {
   border-bottom: none;

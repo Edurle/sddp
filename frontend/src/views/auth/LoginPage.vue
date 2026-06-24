@@ -101,10 +101,10 @@ async function handleLogin() {
 .login-card {
   width: 100%;
   max-width: 440px;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--color-surface);
   backdrop-filter: blur(24px);
   border-radius: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.06),
     0 1px 3px rgba(0, 0, 0, 0.04);
@@ -120,12 +120,12 @@ async function handleLogin() {
   font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.04em;
-  color: #111;
+  color: var(--color-text);
   margin: 0;
 }
 
 .login-header p {
-  color: #888;
+  color: var(--color-text-subtle);
   font-size: 13px;
   margin-top: 4px;
   letter-spacing: 0.02em;
@@ -139,9 +139,9 @@ async function handleLogin() {
 .login-card .form-group input[type="password"] {
   width: 100%;
   padding: 11px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--color-surface);
   font-size: 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -150,7 +150,7 @@ async function handleLogin() {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-ring);
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .login-options {
@@ -166,7 +166,7 @@ async function handleLogin() {
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .remember-label input[type="checkbox"] {
@@ -217,7 +217,7 @@ async function handleLogin() {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #999;
+  color: var(--color-text-subtle);
   cursor: pointer;
   padding: 6px;
   margin: 0;
@@ -227,7 +227,7 @@ async function handleLogin() {
 }
 
 .toggle-pw:hover {
-  color: #333;
+  color: var(--color-text);
   background: none;
   box-shadow: none;
 }

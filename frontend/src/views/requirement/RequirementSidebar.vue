@@ -224,7 +224,7 @@ function stepCircle(step: string) {
 .req-sidebar {
   width: 280px;
   flex-shrink: 0;
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  border-right: 1px solid var(--color-border);
   padding: 1rem;
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.01);
@@ -234,16 +234,16 @@ function stepCircle(step: string) {
 }
 .sidebar-label {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
 .info-card {
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--color-surface);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0.75rem;
 }
@@ -251,7 +251,7 @@ function stepCircle(step: string) {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #111;
+  color: var(--color-text);
 }
 .info-badges {
   display: flex;
@@ -261,28 +261,28 @@ function stepCircle(step: string) {
 }
 .status-text {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-subtle);
   margin-top: 4px;
 }
 .info-desc {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.5;
 }
 .type-detail {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-top: 1px solid var(--color-border);
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 .type-detail p {
   margin-bottom: 4px;
 }
 .reject-card {
-  background: #fff2f0;
-  border-color: #ffccc7;
-  color: #cf1322;
+  background: var(--intent-danger-bg);
+  border-color: var(--intent-danger-bg);
+  color: var(--intent-danger-text);
 }
 .step-list {
   display: flex;
@@ -296,8 +296,8 @@ function stepCircle(step: string) {
   padding: 6px 8px;
   border-radius: 6px;
   font-size: 12px;
-  background: #f0f0f0;
-  color: #999;
+  background: var(--color-surface-muted);
+  color: var(--color-text-subtle);
   transition: all 0.2s;
 }
 .step-circle {
@@ -309,8 +309,8 @@ function stepCircle(step: string) {
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  background: #ddd;
-  color: #999;
+  background: var(--color-border);
+  color: var(--color-text-subtle);
   flex-shrink: 0;
 }
 .step-item.current {
@@ -322,7 +322,7 @@ function stepCircle(step: string) {
   color: #fff;
 }
 .step-item.review {
-  background: #722ed1;
+  background: var(--intent-review-solid);
 }
 .step-item.done {
   background: var(--color-primary);
@@ -333,7 +333,7 @@ function stepCircle(step: string) {
   color: var(--color-primary);
 }
 .step-item.deprecated {
-  background: #ff4d4f;
+  background: var(--color-danger);
   color: #fff;
 }
 .step-item.deprecated .step-circle {
@@ -363,17 +363,17 @@ function stepCircle(step: string) {
 }
 .prototype-zoom-btn {
   background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
   padding: 2px 6px;
   cursor: pointer;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-muted);
   line-height: 1;
 }
 .prototype-zoom-btn:hover {
   background: rgba(0, 0, 0, 0.04);
-  color: #111;
+  color: var(--color-text);
 }
 .prototype-modal-overlay {
   position: fixed;
@@ -389,7 +389,7 @@ function stepCircle(step: string) {
   padding: 24px;
 }
 .prototype-modal {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   width: 95vw;
   max-width: 900px;
@@ -403,26 +403,26 @@ function stepCircle(step: string) {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 .prototype-modal-title {
   font-size: 14px;
   font-weight: 600;
-  color: #111;
+  color: var(--color-text);
 }
 .prototype-modal-close {
   background: transparent;
   border: none;
   font-size: 18px;
-  color: #999;
+  color: var(--color-text-subtle);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
 }
 .prototype-modal-close:hover {
   background: rgba(0, 0, 0, 0.04);
-  color: #333;
+  color: var(--color-text);
 }
 .prototype-modal-iframe {
   flex: 1;
@@ -433,9 +433,9 @@ function stepCircle(step: string) {
 .prototype-iframe {
   width: 100%;
   height: 200px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
-  background: #fff;
+  background: var(--color-surface);
 }
 .prototype-textarea {
   min-height: 80px;
@@ -459,7 +459,7 @@ function stepCircle(step: string) {
   .req-sidebar {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid var(--color-border);
   }
 }
 </style>

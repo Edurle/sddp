@@ -14,8 +14,8 @@ defineProps<{ testId?: string; text?: string }>()
   font-size: 0.8em;
   font-weight: 500;
   background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: #333;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text);
   letter-spacing: 0.01em;
 }
 </style>

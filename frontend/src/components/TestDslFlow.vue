@@ -88,7 +88,7 @@ const rawExpected = computed(() => props.expectedResult || '')
   gap: 0.75rem;
 }
 .tc-dsl-plain-section {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -99,8 +99,8 @@ const rawExpected = computed(() => props.expectedResult || '')
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #374151;
-  background: #fafbfc;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
   max-height: 200px;
   overflow-y: auto;
 }
@@ -113,8 +113,8 @@ const rawExpected = computed(() => props.expectedResult || '')
   gap: 4px;
   font-size: 12px;
   font-weight: 500;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
   padding: 3px 10px;
   border-radius: 12px;
 }
@@ -123,7 +123,7 @@ const rawExpected = computed(() => props.expectedResult || '')
 .tc-phase-label {
   font-size: 11px;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   letter-spacing: 1px;
   margin-bottom: 0.5rem;
   text-transform: uppercase;

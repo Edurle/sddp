@@ -75,7 +75,7 @@ function stepCircle(step: string) {
 .task-sidebar {
   width: 260px;
   flex-shrink: 0;
-  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  border-right: 1px solid var(--color-border);
   padding: 1.25rem 1rem;
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.01);
@@ -85,7 +85,7 @@ function stepCircle(step: string) {
 }
 .sidebar-label {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
@@ -104,8 +104,8 @@ function stepCircle(step: string) {
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  background: #f0f0f0;
-  color: #999;
+  background: var(--color-surface-muted);
+  color: var(--color-text-subtle);
   transition: all 0.2s;
 }
 .step-circle {
@@ -117,8 +117,8 @@ function stepCircle(step: string) {
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  background: #ddd;
-  color: #999;
+  background: var(--color-border);
+  color: var(--color-text-subtle);
   flex-shrink: 0;
 }
 .step-item.done {
@@ -126,7 +126,7 @@ function stepCircle(step: string) {
   color: #fff;
 }
 .step-item.done .step-circle {
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-primary);
 }
 .step-item.current {
@@ -138,8 +138,8 @@ function stepCircle(step: string) {
   color: #fff;
 }
 .step-item.waiting {
-  background: #f0f0f0;
-  color: #bbb;
+  background: var(--color-surface-muted);
+  color: var(--color-text-subtle);
 }
 .action-buttons {
   display: flex;
@@ -159,30 +159,30 @@ function stepCircle(step: string) {
   transition: all 0.15s;
 }
 .btn-primary {
-  background: #1677ff;
+  background: var(--color-primary);
   color: #fff !important;
-  border-color: #1677ff !important;
+  border-color: var(--color-primary) !important;
 }
 .btn-primary:hover {
-  background: #4096ff;
+  background: var(--color-primary-hover);
   box-shadow: 0 2px 8px rgba(22, 119, 255, 0.3);
 }
 .btn-success {
-  background: #52c41a;
+  background: var(--intent-success-solid);
   color: #fff !important;
-  border-color: #52c41a !important;
+  border-color: var(--intent-success-solid) !important;
 }
 .btn-success:hover {
   background: #73d13d;
 }
 .btn-default {
   background: rgba(0, 0, 0, 0.04);
-  color: #333 !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
 }
 .btn-default:hover {
   background: rgba(0, 0, 0, 0.07);
-  border-color: rgba(0, 0, 0, 0.14) !important;
+  border-color: var(--color-border-strong) !important;
 }
 .btn-danger {
   background: var(--color-danger) !important;
@@ -198,7 +198,7 @@ function stepCircle(step: string) {
   .task-sidebar {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid var(--color-border);
   }
 }
 </style>

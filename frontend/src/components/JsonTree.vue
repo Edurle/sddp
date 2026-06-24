@@ -100,11 +100,11 @@ function isKeyCollapsed(k: string): boolean {
 
 <style scoped>
 .jt-val { font-size: 13px; }
-.jt-null { color: #9ca3af; }
-.jt-bool { color: #d97706; }
-.jt-num { color: #d97706; }
-.jt-str { color: #374151; }
-.jt-empty { color: #9ca3af; font-style: italic; }
+.jt-null { color: var(--color-text-subtle); }
+.jt-bool { color: var(--intent-warning-text); }
+.jt-num { color: var(--intent-warning-text); }
+.jt-str { color: var(--color-text); }
+.jt-empty { color: var(--color-text-subtle); font-style: italic; }
 
 .jt-nested { width: 100%; }
 
@@ -123,47 +123,47 @@ function isKeyCollapsed(k: string): boolean {
   border-radius: 4px;
 }
 .jt-toggle-row:hover {
-  background: #f3f4f6;
+  background: var(--color-surface-muted);
 }
 
 .jt-arrow {
   font-size: 10px;
-  color: #3b82f6;
+  color: var(--color-primary);
   margin-right: 6px;
   width: 12px;
   display: inline-block;
 }
 
 .jt-key {
-  color: #2563eb;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .jt-hint {
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-size: 11px;
   margin-left: 8px;
 }
 
 .jt-label {
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
 .jt-divider {
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border);
   margin: 0 12px;
 }
 
 .jt-indent {
   margin-left: 12px;
-  border-left: 3px solid #e5e7eb;
+  border-left: 3px solid var(--color-border);
   border-radius: 2px;
 }
 .jt-indent-nested {
-  border-left-color: #3b82f6;
+  border-left-color: var(--color-primary);
 }
 
 .jt-section {
@@ -171,10 +171,10 @@ function isKeyCollapsed(k: string): boolean {
 }
 
 .jt-card {
-  background: #ffffff;
+  background: var(--color-surface);
   margin: 4px 0;
   border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   overflow: hidden;
 }
 .jt-card-header {
@@ -182,8 +182,8 @@ function isKeyCollapsed(k: string): boolean {
   justify-content: space-between;
   align-items: center;
   padding: 6px 10px;
-  border-bottom: 1px solid #f3f4f6;
-  background: #fafafa;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
 }
 .jt-card-body {
   padding: 4px 8px;
@@ -193,7 +193,7 @@ function isKeyCollapsed(k: string): boolean {
 }
 
 .jt-idx {
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-size: 11px;
   font-weight: 600;
 }

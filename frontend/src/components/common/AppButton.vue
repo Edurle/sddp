@@ -36,8 +36,8 @@ button[type="submit"]:disabled {
 
 button[type="button"] {
   background: rgba(0, 0, 0, 0.04);
-  color: #333;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 9px 20px;
   cursor: pointer;
@@ -45,6 +45,6 @@ button[type="button"] {
 
 button[type="button"]:hover {
   background: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.15);
+  border-color: var(--color-border-strong);
 }
 </style>

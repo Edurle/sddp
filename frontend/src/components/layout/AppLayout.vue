@@ -83,9 +83,9 @@ function handleLogout() {
   background: var(--color-bg);
 }
 .app-layout-header {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--color-surface);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid var(--color-border);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
   padding: 0 1.5rem;
   height: 56px;
@@ -96,7 +96,7 @@ function handleLogout() {
 .app-layout-brand {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #111;
+  color: var(--color-text);
   text-decoration: none;
   letter-spacing: -0.02em;
 }
@@ -106,15 +106,15 @@ function handleLogout() {
   gap: 0.5rem;
 }
 .app-layout-nav {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--color-surface);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-border);
   padding: 0.5rem 1.5rem;
   display: flex;
   gap: 0.5rem;
 }
 .app-layout-nav a {
-  color: #666;
+  color: var(--color-text-muted);
   text-decoration: none;
   padding: 6px 14px;
   border-radius: 8px;
@@ -171,14 +171,14 @@ function handleLogout() {
   box-shadow: none;
 }
 .notification-toast.error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: var(--intent-danger-bg);
+  color: var(--intent-danger-text);
+  border: 1px solid var(--intent-danger-bg);
 }
 .notification-toast.success {
-  background: #f0fdf4;
-  color: #166534;
-  border: 1px solid #bbf7d0;
+  background: var(--intent-success-bg);
+  color: var(--intent-success-text);
+  border: 1px solid var(--intent-success-bg);
 }
 .toast-slide-enter-active,
 .toast-slide-leave-active {
@@ -192,17 +192,17 @@ function handleLogout() {
 .breadcrumb-bar {
   padding: 8px 24px;
   font-size: 13px;
-  color: #888;
+  color: var(--color-text-subtle);
   display: flex;
   align-items: center;
   gap: 6px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-border);
 }
 .breadcrumb-bar a {
-  color: #666;
+  color: var(--color-text-muted);
   text-decoration: none;
 }
 .breadcrumb-bar a:hover { color: var(--color-primary); }
-.breadcrumb-sep { color: #ccc; }
-.breadcrumb-current { color: #333; font-weight: 500; }
+.breadcrumb-sep { color: var(--color-text-subtle); }
+.breadcrumb-current { color: var(--color-text); font-weight: 500; }
 </style>

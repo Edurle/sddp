@@ -22,14 +22,14 @@ label {
   gap: 8px;
   cursor: pointer;
   font-size: 13px;
-  color: #333;
+  color: var(--color-text);
 }
 
 input[type="checkbox"] {
   appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--color-border-strong);
   border-radius: 5px;
   background: rgba(0, 0, 0, 0.02);
   cursor: pointer;
@@ -54,6 +54,6 @@ input[type="checkbox"]:checked::after {
 }
 
 span {
-  color: #333;
+  color: var(--color-text);
 }
 </style>

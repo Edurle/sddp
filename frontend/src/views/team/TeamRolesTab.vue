@@ -263,7 +263,7 @@ onMounted(() => fetchRoles())
 
 .permission-group-label {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-subtle);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -282,7 +282,7 @@ onMounted(() => fetchRoles())
   margin-bottom: 0;
   font-size: 13px;
   cursor: pointer;
-  color: #333;
+  color: var(--color-text);
   font-weight: 400;
   white-space: nowrap;
 }
@@ -291,7 +291,7 @@ onMounted(() => fetchRoles())
   appearance: none;
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(0, 0, 0, 0.15);
+  border: 2px solid var(--color-border-strong);
   border-radius: 5px;
   background: rgba(0, 0, 0, 0.02);
   cursor: pointer;

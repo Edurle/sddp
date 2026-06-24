@@ -6,13 +6,13 @@
           data-testid="project-list-sel-status"
           class="select-trigger"
           @click="showStatusDropdown = !showStatusDropdown"
-          style="padding: 4px 8px; border: 1px solid #ccc; cursor: pointer; min-width: 120px; background: white"
+          style="padding: 4px 8px; border: 1px solid var(--color-border); cursor: pointer; min-width: 120px; background: var(--color-surface)"
         >
           {{ statusFilterText }}
         </div>
         <div
           v-if="showStatusDropdown"
-          style="position: absolute; top: 100%; left: 0; z-index: 1000; background: white; border: 1px solid #ccc; min-width: 120px"
+          style="position: absolute; top: 100%; left: 0; z-index: 1000; background: var(--color-surface); border: 1px solid var(--color-border); min-width: 120px"
         >
           <div @click="selectStatus('')" style="padding: 4px 8px; cursor: pointer">全部状态</div>
           <div @click="selectStatus('active')" style="padding: 4px 8px; cursor: pointer">进行中</div>

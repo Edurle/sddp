@@ -226,22 +226,22 @@ onMounted(() => fetchData())
 }
 .filter-btn {
   padding: 0.35rem 0.75rem;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: white;
-  color: #333;
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 0.85rem;
   transition: all 0.2s;
 }
 .filter-btn:hover {
-  border-color: #4096ff;
-  color: #4096ff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 .filter-btn.active {
-  background: #4096ff;
+  background: var(--color-primary);
   color: white;
-  border-color: #4096ff;
+  border-color: var(--color-primary);
 }
 .kanban-grid {
   display: grid;
@@ -250,10 +250,10 @@ onMounted(() => fetchData())
 }
 .kanban-card {
   position: relative;
-  background: white;
+  background: var(--color-surface);
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--color-border);
   transition: box-shadow 0.2s;
 }
 .kanban-card:hover {

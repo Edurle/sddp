@@ -181,7 +181,7 @@ onMounted(fetchKeys)
   max-width: 800px;
 }
 .page-desc {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 13px;
   margin-bottom: 1rem;
 }
@@ -193,11 +193,11 @@ code {
   font-size: 12px;
 }
 .status-active {
-  color: #16a34a;
+  color: var(--intent-success-text);
   font-weight: 500;
 }
 .status-revoked {
-  color: #999;
+  color: var(--color-text-subtle);
 }
 .btn-danger {
   background: var(--color-danger);
@@ -214,13 +214,13 @@ code {
   max-width: 560px;
 }
 .raw-key-warning {
-  color: #dc2626;
+  color: var(--color-danger);
   font-size: 13px;
   margin-bottom: 1rem;
 }
 .raw-key-box {
   background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -236,16 +236,16 @@ code {
   font-size: 13px;
 }
 .btn-copy {
-  background: #fff;
-  color: #111;
-  border-color: rgba(0, 0, 0, 0.15);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
   padding: 4px 12px;
   font-size: 12px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 .btn-copy:hover {
-  background: #f5f5f5;
+  background: var(--color-surface-muted);
   box-shadow: none;
 }
 </style>

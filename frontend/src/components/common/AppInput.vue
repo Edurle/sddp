@@ -39,7 +39,7 @@ div {
 }
 
 label {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 13px;
   margin-bottom: 4px;
   display: block;
@@ -49,7 +49,7 @@ input {
   width: 100%;
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   padding: 9px 14px;
   font-family: inherit;

@@ -18,19 +18,19 @@ defineEmits(['update:page'])
   justify-content: center;
   gap: 12px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--color-surface);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .app-pagination button {
   background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 6px 14px;
-  color: #333;
+  color: var(--color-text);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -48,6 +48,6 @@ defineEmits(['update:page'])
 
 .app-pagination span {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 </style>

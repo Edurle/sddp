@@ -90,9 +90,9 @@ const assigneeName = computed(() => {
 
 <style scoped>
 .info-card {
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--color-surface);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0.85rem;
 }
@@ -100,10 +100,10 @@ const assigneeName = computed(() => {
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #111;
+  color: var(--color-text);
 }
 .info-desc {
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 10px;
@@ -119,21 +119,21 @@ const assigneeName = computed(() => {
   margin-bottom: 0;
 }
 .info-row-label {
-  color: #999;
+  color: var(--color-text-subtle);
   min-width: 50px;
 }
 .info-row-value {
-  color: #333;
+  color: var(--color-text);
 }
 .info-row-value.mono {
   font-family: monospace;
   font-size: 11px;
-  background: #f5f5f5;
+  background: var(--color-surface-muted);
   padding: 1px 6px;
   border-radius: 3px;
 }
 .info-link {
-  color: #1677ff;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }

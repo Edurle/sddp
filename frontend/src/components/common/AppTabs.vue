@@ -41,7 +41,7 @@ defineEmits(['update:modelValue'])
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: #111 !important;
+  color: var(--color-text) !important;
   cursor: pointer;
   font-size: 13px;
   font-family: inherit;
@@ -56,6 +56,6 @@ defineEmits(['update:modelValue'])
 
 .tab-buttons button:hover:not(.active) {
   background: var(--color-primary-soft);
-  color: #333;
+  color: var(--color-text);
 }
 </style>

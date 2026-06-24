@@ -428,12 +428,12 @@ onMounted(async () => {
   display: flex;
   gap: 1rem;
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 .tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 2px solid var(--color-border);
   margin-bottom: 1.5rem;
 }
 .tabs button {
@@ -443,16 +443,16 @@ onMounted(async () => {
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   background: transparent;
-  color: #999;
+  color: var(--color-text-subtle);
   cursor: pointer;
   font-weight: 500;
   font-family: inherit;
 }
-.tabs button:hover { color: #2563eb; }
+.tabs button:hover { color: var(--color-primary); }
 .tabs button.active {
   color: #fff;
-  background: #2563eb;
-  border-bottom-color: #2563eb;
+  background: var(--color-primary);
+  border-bottom-color: var(--color-primary);
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
@@ -463,10 +463,10 @@ onMounted(async () => {
 }
 .sub-tabs button {
   padding: 6px 14px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: #fff;
-  color: #666;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   font-size: 13px;
   cursor: pointer;
 }
@@ -478,12 +478,12 @@ onMounted(async () => {
 .empty-state {
   padding: 2rem;
   text-align: center;
-  color: #999;
+  color: var(--color-text-subtle);
   font-size: 14px;
 }
 .tree-empty {
   padding: 0.75rem 1rem;
-  color: #bbb;
+  color: var(--color-text-subtle);
   font-size: 12px;
   font-style: italic;
 }
@@ -502,13 +502,13 @@ onMounted(async () => {
 .tree-node:hover { background: rgba(0, 0, 0, 0.03); }
 .expand-icon {
   font-size: 10px;
-  color: #bbb;
+  color: var(--color-text-subtle);
   width: 14px;
   text-align: center;
   flex-shrink: 0;
 }
 .node-icon { flex-shrink: 0; }
-.node-title { font-weight: 600; color: #111; }
+.node-title { font-weight: 600; color: var(--color-text); }
 .node-status {
   font-size: 11px;
   padding: 2px 8px;
@@ -517,18 +517,18 @@ onMounted(async () => {
   margin-left: 4px;
   white-space: nowrap;
 }
-.status-active, .status-in_progress { background: #dcfce7; color: #166534; }
-.status-planning { background: #fef3c7; color: #92400e; }
+.status-active, .status-in_progress { background: var(--intent-success-bg); color: var(--intent-success-text); }
+.status-planning { background: var(--intent-warning-bg); color: var(--intent-warning-text); }
 .status-completed { background: #e0e7ff; color: #3730a3; }
 .node-date {
   font-size: 12px;
-  color: #aaa;
+  color: var(--color-text-subtle);
   margin-left: 4px;
 }
 .node-count {
   font-size: 11px;
-  color: #888;
-  background: #f3f4f6;
+  color: var(--color-text-subtle);
+  background: var(--color-surface-muted);
   padding: 2px 8px;
   border-radius: 10px;
   margin-left: 4px;
@@ -544,7 +544,7 @@ onMounted(async () => {
   padding: 6px 10px;
   border-radius: 6px;
   text-decoration: none;
-  color: #333;
+  color: var(--color-text);
   font-size: 13px;
   transition: background 0.15s;
 }
@@ -560,17 +560,17 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   text-decoration: none;
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 12px;
   padding: 3px 8px;
   border-radius: 4px;
   transition: background 0.15s;
 }
-.task-link:hover { background: rgba(0, 0, 0, 0.02); color: #333; }
+.task-link:hover { background: rgba(0, 0, 0, 0.02); color: var(--color-text); }
 .form-group { margin-bottom: 1rem; }
-.form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
-.form-group input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-.success-message { color: #22c55e; font-size: 13px; margin-bottom: 0.5rem; }
+.form-group label { display: block; font-size: 13px; color: var(--color-text-muted); margin-bottom: 4px; }
+.form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-size: 14px; }
+.success-message { color: var(--intent-success-text); font-size: 13px; margin-bottom: 0.5rem; }
 .error-message { color: #ef4444; font-size: 13px; margin-bottom: 0.5rem; }
 .dialog-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -578,7 +578,7 @@ onMounted(async () => {
   display: flex; align-items: center; justify-content: center; z-index: 100;
 }
 .dialog {
-  background: #fff; padding: 24px; border-radius: 12px; width: 360px; max-width: 90vw;
+  background: var(--color-surface); padding: 24px; border-radius: 12px; width: 360px; max-width: 90vw;
 }
 .dialog h3 { margin-bottom: 16px; }
 .stat-cards {
@@ -600,17 +600,17 @@ onMounted(async () => {
   font-size: 13px;
   margin-top: 4px;
 }
-.stat-draft { background: #f3f4f6; color: #4b5563; }
-.stat-review { background: #fef3c7; color: #92400e; }
-.stat-work { background: #eff6ff; color: #1e40af; }
-.stat-approved { background: #f0fdf4; color: #166534; }
+.stat-draft { background: var(--color-surface-muted); color: var(--color-text-muted); }
+.stat-review { background: var(--intent-warning-bg); color: var(--intent-warning-text); }
+.stat-work { background: var(--intent-info-bg); color: var(--intent-info-text); }
+.stat-approved { background: #f0fdf4; color: var(--intent-success-text); }
 .progress-iteration-group {
   margin-bottom: 24px;
 }
 .progress-iteration-label {
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 12px;
   padding-left: 4px;
 }
@@ -620,7 +620,7 @@ onMounted(async () => {
   gap: 8px;
 }
 .progress-req-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -635,19 +635,19 @@ onMounted(async () => {
 }
 .progress-req-title {
   font-weight: 600;
-  color: #111;
+  color: var(--color-text);
   text-decoration: none;
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 300px;
 }
-.progress-req-title:hover { color: #4f46e5; }
+.progress-req-title:hover { color: var(--color-primary); }
 .progress-req-status-badge { flex-shrink: 0; }
 .progress-priority-dot { margin-left: auto; }
 .progress-req-detail {
   padding: 0 16px 16px 40px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--color-border);
 }
 .progress-stages {
   display: flex;
@@ -665,9 +665,9 @@ onMounted(async () => {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.stage-done { background: #dcfce7; color: #166534; }
-.stage-current { background: #3b82f6; color: white; font-weight: 600; }
-.stage-pending { background: #f3f4f6; color: #aaa; }
+.stage-done { background: var(--intent-success-bg); color: var(--intent-success-text); }
+.stage-current { background: var(--color-primary); color: white; font-weight: 600; }
+.stage-pending { background: var(--color-surface-muted); color: var(--color-text-subtle); }
 .stage-arrow {
   font-size: 11px;
   color: #d1d5db;
@@ -675,7 +675,7 @@ onMounted(async () => {
 }
 .progress-task-summary {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-subtle);
 }
 .pending-item {
   display: flex;
@@ -684,7 +684,7 @@ onMounted(async () => {
   padding: 8px 12px;
   border-radius: 6px;
   text-decoration: none;
-  color: #333;
+  color: var(--color-text);
   transition: background 0.15s;
 }
 .pending-item:hover { background: rgba(0, 0, 0, 0.03); }
@@ -692,15 +692,15 @@ onMounted(async () => {
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 4px;
-  background: #f3f4f6;
-  color: #666;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
 }
 .loading-state {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  color: #999;
+  color: var(--color-text-subtle);
   font-size: 14px;
 }
 </style>

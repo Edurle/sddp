@@ -23,9 +23,9 @@ defineEmits(['close'])
   z-index: 1000;
 }
 .app-dialog {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--color-surface);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
   border-radius: 16px;
   padding: 1.5rem;

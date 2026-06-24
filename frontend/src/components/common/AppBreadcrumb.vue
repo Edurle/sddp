@@ -14,21 +14,21 @@ defineProps<{ testId?: string }>()
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .app-breadcrumb :deep(a) {
-  color: #666;
+  color: var(--color-text-muted);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .app-breadcrumb :deep(a:hover) {
-  color: #111;
+  color: var(--color-text);
 }
 
 .app-breadcrumb :deep(span) {
-  color: #111;
+  color: var(--color-text);
   font-weight: 500;
 }
 </style>

@@ -408,7 +408,7 @@ onMounted(async () => {
 <style scoped>
 .failure-reason {
   font-size: 11px;
-  color: #ff4d4f;
+  color: var(--color-danger);
   margin-top: 2px;
   line-height: 1.4;
 }
@@ -434,7 +434,7 @@ onMounted(async () => {
 .detail-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 2px solid var(--color-border);
   margin-bottom: 1.25rem;
   flex-shrink: 0;
 }
@@ -445,14 +445,14 @@ onMounted(async () => {
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   background: transparent;
-  color: #999;
+  color: var(--color-text-subtle);
   cursor: pointer;
   font-weight: 500;
   font-family: inherit;
   transition: all 0.2s;
 }
 .tab-btn:hover {
-  color: #333;
+  color: var(--color-text);
 }
 .tab-btn.active {
   color: var(--color-primary);
@@ -464,14 +464,14 @@ onMounted(async () => {
 }
 .spec-content {
   background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 1rem 1.25rem;
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
   font-size: 13px;
   line-height: 1.8;
   white-space: pre-wrap;
-  color: #333;
+  color: var(--color-text);
 }
 .test-summary-cards {
   display: grid;
@@ -480,8 +480,8 @@ onMounted(async () => {
   margin-bottom: 0.75rem;
 }
 .summary-card {
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0.75rem;
   text-align: center;
@@ -492,16 +492,16 @@ onMounted(async () => {
 }
 .summary-label {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-subtle);
   margin-top: 2px;
 }
-.num-total { color: #111; }
-.num-pass { color: #52c41a; }
-.num-fail { color: #ff4d4f; }
-.num-skip { color: #faad14; }
+.num-total { color: var(--color-text); }
+.num-pass { color: var(--intent-success-text); }
+.num-fail { color: var(--color-danger); }
+.num-skip { color: var(--intent-warning-text); }
 .test-summary-text {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 1rem;
   font-weight: 500;
 }
@@ -509,17 +509,17 @@ onMounted(async () => {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--color-surface);
   backdrop-filter: blur(20px);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   margin-bottom: 1.25rem;
 }
 .test-table th, .test-table td {
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
   font-size: 13px;
 }
@@ -529,7 +529,7 @@ onMounted(async () => {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #666;
+  color: var(--color-text-muted);
 }
 .test-table tr:last-child td {
   border-bottom: none;
@@ -538,24 +538,24 @@ onMounted(async () => {
   font-weight: 500;
 }
 .rec-pass, .rec-passed {
-  color: #52c41a;
+  color: var(--intent-success-text);
 }
 .rec-fail, .rec-failed {
-  color: #ff4d4f;
+  color: var(--color-danger);
 }
 .rec-skip, .rec-skipped {
-  color: #faad14;
+  color: var(--intent-warning-text);
 }
 .rec-pending {
-  color: #bbb;
+  color: var(--color-text-subtle);
 }
 .update-btn {
   padding: 3px 12px;
   border-radius: 4px;
   font-size: 11px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #fff;
-  color: #1677ff;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-primary);
   cursor: pointer;
   font-family: inherit;
   font-weight: 500;
@@ -563,17 +563,17 @@ onMounted(async () => {
   transition: all 0.15s;
 }
 .update-btn:hover {
-  border-color: #1677ff;
+  border-color: var(--color-primary);
   background: rgba(22, 119, 255, 0.04);
 }
 .exec-history {
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid var(--color-border);
   padding-top: 1rem;
 }
 .exec-title {
   font-size: 13px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 0.75rem;
 }
 .round-bar {
@@ -582,9 +582,9 @@ onMounted(async () => {
 .round-bar button, .round-btn {
   padding: 5px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #fff;
-  color: #333;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   font-size: 12px;
   font-family: inherit;
@@ -593,8 +593,8 @@ onMounted(async () => {
   margin: 0 4px 4px 0;
 }
 .round-bar button:hover, .round-btn:hover {
-  border-color: #1677ff;
-  color: #1677ff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 @media (max-width: 768px) {
@@ -613,7 +613,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  color: #999;
+  color: var(--color-text-subtle);
   font-size: 14px;
 }
 </style>

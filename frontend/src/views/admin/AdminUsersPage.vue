@@ -259,7 +259,7 @@ h1 {
 .toolbar input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
 }
@@ -273,7 +273,7 @@ table {
 th, td {
   padding: 10px 12px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   font-size: 14px;
 }
 
@@ -286,24 +286,24 @@ th, td {
   font-size: 13px;
   padding: 4px 10px;
   border-radius: 4px;
-  border: 1px solid #ddd;
-  background: #fff;
-  color: #333;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   margin: 0;
 }
 
 .action-cell button:hover {
-  border-color: #999;
+  border-color: var(--color-border-strong);
 }
 
 .btn-reset-pw {
-  color: #2563eb !important;
-  border-color: #2563eb !important;
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
 }
 
 .btn-reset-pw:hover {
-  background: #2563eb !important;
+  background: var(--color-primary) !important;
   color: #fff !important;
 }
 
@@ -318,7 +318,7 @@ th, td {
 }
 
 .dialog {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 1.5rem;
   min-width: 360px;
@@ -344,13 +344,13 @@ th, td {
 }
 
 .btn-cancel {
-  background: #fff;
-  color: #333;
-  border: 1px solid #ddd;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
 }
 
 .btn-cancel:hover {
-  border-color: #999;
+  border-color: var(--color-border-strong);
 }
 
 .form-group {
@@ -361,13 +361,13 @@ th, td {
   display: block;
   font-size: 13px;
   margin-bottom: 4px;
-  color: #666;
+  color: var(--color-text-muted);
 }
 
 .form-group input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
@@ -376,13 +376,13 @@ th, td {
 
 
 .error-message {
-  color: #dc2626;
+  color: var(--color-danger);
   font-size: 13px;
   margin-top: 8px;
 }
 
 .success-message {
-  color: #16a34a;
+  color: var(--intent-success-text);
   font-size: 13px;
   margin-top: 8px;
 }

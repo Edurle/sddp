@@ -77,32 +77,32 @@ function formatVal(v: unknown): string {
 
 <style scoped>
 .dsl-assert-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
-  background: #fff;
+  background: var(--color-surface);
 }
 .dsl-assert-header {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #fafbfc;
-  border-bottom: 1px solid #f3f4f6;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
 }
 .dsl-assert-check {
-  color: #22c55e;
+  color: var(--intent-success-text);
   font-weight: 700;
   font-size: 14px;
 }
 .dsl-assert-name {
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text);
 }
 .dsl-phase-tag {
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-weight: 600;
   margin-left: auto;
 }
@@ -119,19 +119,19 @@ function formatVal(v: unknown): string {
   line-height: 1.5;
 }
 .dsl-assert-key {
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-weight: 500;
   min-width: 90px;
 }
 .dsl-assert-val {
-  color: #374151;
+  color: var(--color-text);
 }
 .dsl-assert-val.is-true {
-  color: #16a34a;
+  color: var(--intent-success-text);
   font-weight: 600;
 }
 .dsl-assert-val.is-false {
-  color: #dc2626;
+  color: var(--color-danger);
   font-weight: 600;
 }
 .dsl-assert-section {
@@ -139,11 +139,11 @@ function formatVal(v: unknown): string {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  border-top: 1px solid #f9fafb;
+  border-top: 1px solid var(--color-border);
 }
 .dsl-field-key {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-weight: 600;
   min-width: 40px;
   padding-top: 2px;
@@ -162,20 +162,20 @@ function formatVal(v: unknown): string {
   line-height: 1.5;
 }
 .dsl-kv-key {
-  color: #7c3aed;
+  color: var(--intent-review-text);
   font-weight: 500;
   min-width: 60px;
   flex-shrink: 0;
 }
 .dsl-kv-val {
-  color: #374151;
+  color: var(--color-text);
   word-break: break-all;
 }
 .dsl-value-code {
   font-family: 'SF Mono', 'Menlo', monospace;
   font-size: 12px;
-  color: #111;
-  background: #f3f4f6;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
   padding: 1px 6px;
   border-radius: 4px;
 }

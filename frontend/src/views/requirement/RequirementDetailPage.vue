@@ -83,9 +83,9 @@
                       <td><code v-if="col.default != null">{{ col.default }}</code><span v-else class="spec-muted">—</span></td>
                       <td>{{ col.comment || '' }}</td>
                       <td>
-                        <span v-if="col.primary_key" class="spec-tag" style="background:#eff6ff;color:#3b82f6">PK</span>
-                        <span v-if="col.unique" class="spec-tag" style="background:#f0fdf4;color:#22c55e">UNIQUE</span>
-                        <span v-if="col.auto_increment" class="spec-tag" style="background:#f3e8ff;color:#6b21a8">自增</span>
+                        <span v-if="col.primary_key" class="spec-tag" style="background:var(--intent-info-bg);color:var(--color-primary)">PK</span>
+                        <span v-if="col.unique" class="spec-tag" style="background:#f0fdf4;color:var(--intent-success-text)">UNIQUE</span>
+                        <span v-if="col.auto_increment" class="spec-tag" style="background:var(--intent-review-bg);color:var(--intent-review-text)">自增</span>
                         <code v-if="col.foreign_key" class="spec-fk">→ {{ col.foreign_key }}</code>
                       </td>
                     </tr>
@@ -94,7 +94,7 @@
                 <div v-if="tbl.indexes && tbl.indexes.length" class="spec-indexes">
                   <span class="spec-index-label">索引：</span>
                   <span v-for="(idx, ii) in tbl.indexes" :key="ii" class="spec-index-item">
-                    <code>{{ idx.name }}</code><span v-if="idx.unique" class="spec-tag" style="background:#fef3c7;color:#92400e;font-size:10px">UNIQUE</span>
+                    <code>{{ idx.name }}</code><span v-if="idx.unique" class="spec-tag" style="background:var(--intent-warning-bg);color:var(--intent-warning-text);font-size:10px">UNIQUE</span>
                     ({{ (idx.fields || []).join(', ') }})
                   </span>
                 </div>
@@ -551,7 +551,7 @@
         </div>
         <div class="form-group">
           <label>关联类型</label>
-          <span class="spec-tag" style="background:#eff6ff;color:#3b82f6">relates_to（关联）</span>
+          <span class="spec-tag" style="background:var(--intent-info-bg);color:var(--color-primary)">relates_to（关联）</span>
         </div>
         <button data-testid="req-detail-dlg-add-link-btn-confirm" :disabled="isPending('createLink')" @click="createLink">确认</button>
         <button @click="showAddLinkDialog = false">取消</button>
@@ -852,36 +852,36 @@ function hasSectionContent(sectionName: string): boolean {
 }
 
 const CONSTRAINT_COLORS: Record<string, string> = {
-  required: 'background:#fef2f2;color:#ef4444',
-  unique: 'background:#f0fdf4;color:#22c55e',
-  primary_key: 'background:#eff6ff;color:#3b82f6',
-  auto_increment: 'background:#f3e8ff;color:#6b21a8',
+  required: 'background:var(--intent-danger-bg);color:var(--color-danger)',
+  unique: 'background:#f0fdf4;color:var(--intent-success-text)',
+  primary_key: 'background:var(--intent-info-bg);color:var(--color-primary)',
+  auto_increment: 'background:var(--intent-review-bg);color:var(--intent-review-text)',
 }
 
 function constraintStyle(c: string): string {
-  return CONSTRAINT_COLORS[c] || 'background:#f3f4f6;color:#666'
+  return CONSTRAINT_COLORS[c] || 'background:var(--color-surface-muted);color:var(--color-text-muted)'
 }
 
 const METHOD_COLORS: Record<string, string> = {
-  GET: 'background:#dcfce7;color:#166534',
-  POST: 'background:#dbeafe;color:#1e40af',
-  PUT: 'background:#fef3c7;color:#92400e',
-  DELETE: 'background:#fee2e2;color:#991b1b',
-  PATCH: 'background:#f3e8ff;color:#6b21a8',
+  GET: 'background:var(--intent-success-bg);color:var(--intent-success-text)',
+  POST: 'background:var(--intent-info-bg);color:var(--intent-info-text)',
+  PUT: 'background:var(--intent-warning-bg);color:var(--intent-warning-text)',
+  DELETE: 'background:var(--intent-danger-bg);color:var(--intent-danger-text)',
+  PATCH: 'background:var(--intent-review-bg);color:var(--intent-review-text)',
 }
 
 function methodStyle(m: string): string {
-  return METHOD_COLORS[m] || 'background:#f3f4f6;color:#666'
+  return METHOD_COLORS[m] || 'background:var(--color-surface-muted);color:var(--color-text-muted)'
 }
 
 function paramInStyle(p: string): string {
   const map: Record<string, string> = {
-    query: 'background:#dbeafe;color:#1e40af',
-    body: 'background:#fef3c7;color:#92400e',
-    path: 'background:#dcfce7;color:#166534',
-    header: 'background:#f3e8ff;color:#6b21a8',
+    query: 'background:var(--intent-info-bg);color:var(--intent-info-text)',
+    body: 'background:var(--intent-warning-bg);color:var(--intent-warning-text)',
+    path: 'background:var(--intent-success-bg);color:var(--intent-success-text)',
+    header: 'background:var(--intent-review-bg);color:var(--intent-review-text)',
   }
-  return map[p] || 'background:#f0f0f0;color:#666'
+  return map[p] || 'background:var(--color-surface-muted);color:var(--color-text-muted)'
 }
 
 function mapReqData(data: any): RequirementData {
@@ -1177,9 +1177,9 @@ function tcResultText(status: string) {
 }
 
 function resultTagStyle(status: string) {
-  if (status === 'passed') return 'background: #dcfce7; color: #166534'
-  if (status === 'failed') return 'background: #fee2e2; color: #991b1b'
-  if (status === 'skipped') return 'background: #f3f4f6; color: #6b7280'
+  if (status === 'passed') return 'background: var(--intent-success-bg); color: var(--intent-success-text)'
+  if (status === 'failed') return 'background: var(--intent-danger-bg); color: var(--intent-danger-text)'
+  if (status === 'skipped') return 'background: var(--color-surface-muted); color: var(--color-text-muted)'
   return ''
 }
 
@@ -1329,10 +1329,10 @@ function linkTypeLabel(type: string): string {
 
 function linkTypeStyle(type: string): string {
   const map: Record<string, string> = {
-    supersede: 'background:#fef3c7;color:#92400e',
-    relates_to: 'background:#eff6ff;color:#3b82f6',
+    supersede: 'background:var(--intent-warning-bg);color:var(--intent-warning-text)',
+    relates_to: 'background:var(--intent-info-bg);color:var(--color-primary)',
   }
-  return map[type] || 'background:#f3f4f6;color:#666'
+  return map[type] || 'background:var(--color-surface-muted);color:var(--color-text-muted)'
 }
 
 onMounted(async () => {
@@ -1357,23 +1357,23 @@ onMounted(async () => {
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #333;
+  color: var(--color-text);
 }
 .tc-title {
   cursor: pointer;
-  color: #1677ff;
+  color: var(--color-primary);
 }
 .tc-title:hover {
   text-decoration: underline;
 }
 .tc-no-result {
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-size: 13px;
 }
 .tc-detail-dialog {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--color-surface);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
   border-radius: 16px;
   width: 780px;
@@ -1388,20 +1388,20 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 .tc-detail-header h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #111;
+  color: var(--color-text);
 }
 .tc-detail-close {
   background: none;
   border: none;
   font-size: 22px;
-  color: #999;
+  color: var(--color-text-subtle);
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;
@@ -1414,8 +1414,8 @@ onMounted(async () => {
   transition: background 0.15s;
 }
 .tc-detail-close:hover {
-  background: #f3f4f6;
-  color: #333;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
 }
 .tc-detail-body {
   padding: 1rem 1.5rem 1.5rem;
@@ -1431,12 +1431,12 @@ onMounted(async () => {
 .tc-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-border);
 }
 .tc-detail-grid {
   display: grid;
@@ -1449,12 +1449,12 @@ onMounted(async () => {
 .tc-detail-field label {
   display: block;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   margin-bottom: 4px;
   font-weight: 500;
 }
 .tc-empty-hint {
-  color: #9ca3af;
+  color: var(--color-text-subtle);
   font-size: 13px;
   margin: 0;
   padding: 0.5rem 0;
@@ -1465,14 +1465,14 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 .tc-exec-collapsible {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 }
 .tc-exec-collapsible summary {
   padding: 0.5rem 0.75rem;
   cursor: pointer;
-  background: #fafbfc;
+  background: var(--color-surface-muted);
   user-select: none;
   list-style: none;
   display: flex;
@@ -1484,13 +1484,13 @@ onMounted(async () => {
   font-size: 11px;
   transition: transform 0.15s;
   display: inline-block;
-  color: #9ca3af;
+  color: var(--color-text-subtle);
 }
 .tc-exec-collapsible[open] summary::before {
   transform: rotate(90deg);
 }
 .tc-exec-collapsible summary:hover {
-  background: #f3f4f6;
+  background: var(--color-surface-muted);
 }
 .tc-exec-summary {
   display: flex;
@@ -1499,24 +1499,24 @@ onMounted(async () => {
 }
 .tc-exec-time {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-subtle);
 }
 .tc-exec-dur {
   font-size: 11px;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
   padding: 1px 6px;
   border-radius: 4px;
   margin-left: auto;
 }
 .tc-exec-detail {
   padding: 0.6rem 0.75rem;
-  border-top: 1px solid #f3f4f6;
-  background: #fff;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 .tc-exec-field {
   font-size: 13px;
-  color: #374151;
+  color: var(--color-text);
   margin-top: 0.25rem;
   line-height: 1.5;
 }
@@ -1524,7 +1524,7 @@ onMounted(async () => {
   margin-top: 0;
 }
 .tc-exec-fail {
-  color: #991b1b;
+  color: var(--intent-danger-text);
 }
 .requirement-detail-page {
   min-height: 100vh;
@@ -1543,7 +1543,7 @@ onMounted(async () => {
 .detail-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 2px solid var(--color-border);
   margin-bottom: 1rem;
   flex-shrink: 0;
 }
@@ -1554,14 +1554,14 @@ onMounted(async () => {
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   background: transparent;
-  color: #999;
+  color: var(--color-text-subtle);
   cursor: pointer;
   font-weight: 500;
   font-family: inherit;
   transition: all 0.2s;
 }
 .tab-btn:hover {
-  color: #333;
+  color: var(--color-text);
 }
 .tab-btn.active {
   color: var(--color-primary);
@@ -1585,14 +1585,14 @@ onMounted(async () => {
   background: rgba(0, 0, 0, 0.02);
   border-radius: 8px;
   margin-bottom: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
 }
 .spec-hint {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-subtle);
 }
 .save-msg {
-  color: #52c41a;
+  color: var(--intent-success-text);
   font-size: 13px;
   font-weight: 500;
 }
@@ -1603,18 +1603,18 @@ onMounted(async () => {
 .spec-section {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 .section-title {
   font-size: 15px;
   font-weight: 600;
-  color: #111;
+  color: var(--color-text);
   margin: 0 0 0.75rem 0;
 }
 .required-mark {
-  color: #ff4d4f;
+  color: var(--color-danger);
   margin-left: 2px;
 }
 .field-group {
@@ -1624,12 +1624,12 @@ onMounted(async () => {
   display: block;
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 .field-desc {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-subtle);
   margin: 0 0 4px 0;
 }
 .spec-field-textarea {
@@ -1640,7 +1640,7 @@ onMounted(async () => {
   line-height: 1.6;
   padding: 0.5rem;
   background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   resize: vertical;
 }
@@ -1652,7 +1652,7 @@ onMounted(async () => {
   line-height: 1.6;
   padding: 0.5rem;
   background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   resize: vertical;
 }
@@ -1665,7 +1665,7 @@ onMounted(async () => {
 }
 .validation-error-item {
   font-size: 12px;
-  color: #ff4d4f;
+  color: var(--color-danger);
   margin-bottom: 4px;
 }
 .version-list {
@@ -1679,37 +1679,37 @@ onMounted(async () => {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
 }
 .version-card:hover {
-  border-color: rgba(0, 0, 0, 0.12);
+  border-color: var(--color-border-strong);
 }
 .version-card.selected {
-  border-color: #1677ff;
+  border-color: var(--color-primary);
   background: rgba(22, 119, 255, 0.04);
 }
 .version-num {
   font-weight: 600;
   font-size: 14px;
-  color: #111;
+  color: var(--color-text);
   min-width: 40px;
 }
 .version-preview {
   flex: 1;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-subtle);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .version-view-btn {
   background: transparent;
-  color: #1677ff;
-  border: 1px solid #1677ff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
   padding: 2px 10px;
   border-radius: 4px;
   font-size: 11px;
@@ -1718,7 +1718,7 @@ onMounted(async () => {
 }
 .version-content {
   background: rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 1rem;
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
@@ -1734,8 +1734,8 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .stat-card {
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 0.75rem;
   text-align: center;
@@ -1743,19 +1743,19 @@ onMounted(async () => {
 .stat-num {
   font-size: 20px;
   font-weight: 700;
-  color: #111;
+  color: var(--color-text);
 }
 .stat-label {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-subtle);
   margin-top: 2px;
 }
-.stat-pass .stat-num { color: #52c41a; }
-.stat-fail .stat-num { color: #ff4d4f; }
-.stat-skip .stat-num { color: #faad14; }
-.stat-rate .stat-num { color: #1677ff; }
+.stat-pass .stat-num { color: var(--intent-success-text); }
+.stat-fail .stat-num { color: var(--color-danger); }
+.stat-skip .stat-num { color: var(--intent-warning-text); }
+.stat-rate .stat-num { color: var(--color-primary); }
 .task-link {
-  color: #1677ff;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -1777,7 +1777,7 @@ onMounted(async () => {
 .spec-empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: #999;
+  color: var(--color-text-subtle);
   font-size: 14px;
 }
 .link-direction {
@@ -1787,20 +1787,20 @@ onMounted(async () => {
   border-radius: 10px;
 }
 .link-direction.outgoing {
-  background: #eff6ff;
-  color: #3b82f6;
+  background: var(--intent-info-bg);
+  color: var(--color-primary);
 }
 .link-direction.incoming {
   background: #f0fdf4;
-  color: #22c55e;
+  color: var(--intent-success-text);
 }
 .dialog-hint {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 1rem;
 }
 .spec-description {
-  color: #555;
+  color: var(--color-text-muted);
   line-height: 1.6;
   margin-bottom: 1rem;
   font-size: 14px;
@@ -1811,21 +1811,21 @@ onMounted(async () => {
   font-size: 13px;
 }
 .spec-table th {
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--color-border);
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 .spec-table td {
   padding: 9px 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border);
   vertical-align: top;
 }
 .spec-table tr:hover td {
-  background: #fafbfc;
+  background: var(--color-surface-muted);
 }
 .spec-table.nested th {
   background: #f0f1f3;
@@ -1841,12 +1841,12 @@ onMounted(async () => {
 .spec-trigger {
   font-family: 'SF Mono', 'Menlo', monospace;
   font-weight: 600;
-  color: #111;
+  color: var(--color-text);
   font-size: 12px;
 }
 .spec-type {
   font-family: 'SF Mono', 'Menlo', monospace;
-  color: #4f46e5;
+  color: var(--color-primary);
   font-size: 12px;
 }
 .spec-tag {
@@ -1859,18 +1859,18 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .spec-muted {
-  color: #ccc;
+  color: var(--color-text-subtle);
 }
 .spec-fk {
   font-family: 'SF Mono', 'Menlo', monospace;
   font-size: 11px;
-  color: #f59e0b;
-  background: #fffbeb;
+  color: var(--intent-warning-text);
+  background: var(--intent-warning-bg);
   padding: 1px 6px;
   border-radius: 3px;
 }
 .spec-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
   margin-bottom: 12px;
   overflow: hidden;
@@ -1880,12 +1880,12 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #fafbfc;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 .spec-card-desc {
-  color: #888;
+  color: var(--color-text-subtle);
   font-size: 13px;
 }
 .spec-card-body {
@@ -1900,7 +1900,7 @@ onMounted(async () => {
 .spec-sub-title {
   font-size: 12px;
   font-weight: 600;
-  color: #888;
+  color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 8px;
@@ -1915,23 +1915,23 @@ onMounted(async () => {
 }
 .spec-badge {
   font-size: 12px;
-  color: #4f46e5;
-  background: #eff6ff;
+  color: var(--color-primary);
+  background: var(--intent-info-bg);
   padding: 2px 8px;
   border-radius: 4px;
 }
 .spec-route {
-  color: #888;
+  color: var(--color-text-subtle);
   font-size: 12px;
 }
 .spec-response-block {
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
 }
 .spec-json-tree {
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
   border-radius: 6px;
   padding: 12px 14px;
   font-size: 13px;
@@ -1942,11 +1942,11 @@ onMounted(async () => {
   margin-bottom: 2px;
 }
 .spec-key {
-  color: #4f46e5;
+  color: var(--color-primary);
   font-weight: 500;
 }
 .spec-val {
-  color: #333;
+  color: var(--color-text);
 }
 .spec-error-row {
   display: flex;
@@ -1958,58 +1958,58 @@ onMounted(async () => {
 .spec-error-code {
   font-family: monospace;
   font-weight: 700;
-  color: #ef4444;
-  background: #fef2f2;
+  color: var(--color-danger);
+  background: var(--intent-danger-bg);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 12px;
 }
 .spec-indexes {
   padding: 10px 16px;
-  background: #fafbfc;
-  border-top: 1px solid #e5e7eb;
+  background: var(--color-surface-muted);
+  border-top: 1px solid var(--color-border);
   font-size: 12px;
 }
 .spec-index-label {
   font-weight: 600;
-  color: #888;
+  color: var(--color-text-subtle);
   margin-right: 4px;
 }
 .spec-index-item {
   margin-right: 16px;
 }
 .spec-index-item code {
-  color: #4f46e5;
+  color: var(--color-primary);
 }
 .spec-interactions {
   padding: 10px 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--color-border);
 }
 .spec-interaction-item {
   display: flex;
   gap: 8px;
   padding: 5px 0;
   font-size: 12px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--color-border);
 }
 .spec-interaction-item:last-child {
   border-bottom: none;
 }
 .spec-trigger {
-  color: #f59e0b;
+  color: var(--intent-warning-text);
   font-weight: 500;
   white-space: nowrap;
 }
 .spec-code-block {
-  background: #f8f9fa;
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   padding: 12px;
   font-family: 'SF Mono', 'Menlo', monospace;
   font-size: 12px;
   line-height: 1.6;
   white-space: pre-wrap;
-  color: #333;
+  color: var(--color-text);
   margin: 0;
 }
 .version-content pre {
@@ -2026,8 +2026,8 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
 .review-history-dot {
@@ -2037,8 +2037,8 @@ onMounted(async () => {
   margin-top: 4px;
   flex-shrink: 0;
 }
-.dot-approve { background: #22c55e; }
-.dot-reject { background: #ef4444; }
+.dot-approve { background: var(--intent-success-solid); }
+.dot-reject { background: var(--intent-danger-solid); }
 .review-history-body {
   flex: 1;
   min-width: 0;
@@ -2057,12 +2057,12 @@ onMounted(async () => {
   white-space: nowrap;
 }
 .review-history-action.approve {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--intent-success-bg);
+  color: var(--intent-success-text);
 }
 .review-history-action.reject {
-  background: #fef2f2;
-  color: #991b1b;
+  background: var(--intent-danger-bg);
+  color: var(--intent-danger-text);
 }
 .review-history-type {
   font-size: 12px;
@@ -2071,16 +2071,16 @@ onMounted(async () => {
   border-radius: 10px;
   white-space: nowrap;
   background: rgba(17, 17, 17, 0.06);
-  color: #555;
+  color: var(--color-text-muted);
 }
 .review-history-time {
   font-size: 12px;
-  color: #aaa;
+  color: var(--color-text-subtle);
   white-space: nowrap;
 }
 .review-history-comment {
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-muted);
   line-height: 1.6;
   word-break: break-word;
   padding: 0.5rem 0.75rem;
@@ -2093,20 +2093,20 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  color: #999;
+  color: var(--color-text-subtle);
   font-size: 14px;
 }
 .markdown-body {
   font-size: 14px;
   line-height: 1.75;
-  color: #333;
+  color: var(--color-text);
   max-width: 800px;
 }
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
-  color: #111;
+  color: var(--color-text);
   margin: 1.5em 0 0.75em;
   font-weight: 600;
 }
@@ -2134,8 +2134,8 @@ onMounted(async () => {
   color: #c7254e;
 }
 .markdown-body pre {
-  background: #f8f9fa;
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 1em;
   overflow-x: auto;
@@ -2144,20 +2144,20 @@ onMounted(async () => {
 .markdown-body pre code {
   background: none;
   padding: 0;
-  color: #333;
+  color: var(--color-text);
   font-size: 13px;
   line-height: 1.6;
 }
 .markdown-body blockquote {
-  border-left: 4px solid #ddd;
+  border-left: 4px solid var(--color-border);
   margin: 1em 0;
   padding: 0.5em 1em;
-  color: #666;
-  background: #fafafa;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
   border-radius: 0 6px 6px 0;
 }
 .markdown-body a {
-  color: #1677ff;
+  color: var(--color-primary);
   text-decoration: none;
 }
 .markdown-body a:hover {
@@ -2165,11 +2165,11 @@ onMounted(async () => {
 }
 .markdown-body strong {
   font-weight: 600;
-  color: #111;
+  color: var(--color-text);
 }
 .markdown-body hr {
   border: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border);
   margin: 1.5em 0;
 }
 .markdown-body table {
@@ -2180,12 +2180,12 @@ onMounted(async () => {
 }
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   padding: 8px 12px;
   text-align: left;
 }
 .markdown-body th {
-  background: #f8f9fa;
+  background: var(--color-surface-muted);
   font-weight: 600;
 }
 .markdown-body img {
