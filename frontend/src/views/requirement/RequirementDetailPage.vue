@@ -334,25 +334,7 @@
           <div v-if="links.length === 0" class="spec-empty">暂无关联需求</div>
         </div>
 
-        <div v-if="activeTab === 'commits'" class="tab-panel">
-          <table data-testid="req-detail-tbl-commits">
-            <thead>
-              <tr><th>Commit</th><th>消息</th><th>作者</th><th>任务</th><th>提交时间</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="c in commits" :key="c.id">
-                <td><code>{{ c.commit_sha }}</code></td>
-                <td>{{ c.message || '' }}</td>
-                <td>{{ c.author || '' }}</td>
-                <td>
-                  <router-link :to="`/tasks/${c.task_id}`" class="task-link">任务 #{{ c.task_id }}</router-link>
-                </td>
-                <td>{{ formatTime(c.committed_at) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="commits.length === 0" class="spec-empty">暂无提交记录</div>
-        </div>
+        <RequirementCommitsTab v-if="activeTab === 'commits'" :commits="commits" />
       </div>
     </div>
 
@@ -554,6 +536,8 @@ import { useAsyncAction } from '@/composables/useAsyncAction'
 import { taskStatusLabel } from '@/utils/status'
 import { marked } from 'marked'
 import RequirementSidebar from './RequirementSidebar.vue'
+import RequirementCommitsTab from './RequirementCommitsTab.vue'
+import { formatTime } from '@/utils/date'
 import JsonTree from '@/components/JsonTree.vue'
 import TestDslFlow from '@/components/TestDslFlow.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
@@ -768,12 +752,6 @@ function reviewTypeLabel(type?: string): string {
     test_case: '测试审核',
   }
   return type ? (map[type] || type) : ''
-}
-
-function formatTime(iso: string | null): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
 function toggleDropdown(name: string) {
