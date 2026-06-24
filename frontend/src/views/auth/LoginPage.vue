@@ -44,7 +44,7 @@
           </label>
         </div>
         <div v-if="error" class="error-message">{{ error }}</div>
-        <button type="submit" class="login-btn" data-testid="login-btn-submit">登录</button>
+        <button type="submit" class="login-btn" data-testid="login-btn-submit" :disabled="isPending('handleLogin')">登录</button>
       </form>
     </div>
   </div>
@@ -54,9 +54,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { isPending, run } = useAsyncAction()
 
 const email = ref('')
 const password = ref('')
@@ -65,22 +67,24 @@ const error = ref('')
 const showPassword = ref(false)
 
 async function handleLogin() {
-  error.value = ''
-  try {
-    await authStore.login(email.value, password.value, remember.value)
-    router.push('/dashboard')
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '登录失败'
-    if (msg.includes('密码错误') || msg.includes('密码不正确')) {
-      error.value = '邮箱或密码错误'
-    } else if (msg.includes('未验证') || msg.includes('未激活')) {
-      error.value = '邮箱未验证'
-    } else if (msg.includes('不存在') || msg.includes('未注册')) {
-      error.value = '邮箱或密码错误'
-    } else {
-      error.value = msg
+  await run('handleLogin', async () => {
+    error.value = ''
+    try {
+      await authStore.login(email.value, password.value, remember.value)
+      router.push('/dashboard')
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '登录失败'
+      if (msg.includes('密码错误') || msg.includes('密码不正确')) {
+        error.value = '邮箱或密码错误'
+      } else if (msg.includes('未验证') || msg.includes('未激活')) {
+        error.value = '邮箱未验证'
+      } else if (msg.includes('不存在') || msg.includes('未注册')) {
+        error.value = '邮箱或密码错误'
+      } else {
+        error.value = msg
+      }
     }
-  }
+  })
 }
 </script>
 

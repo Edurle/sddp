@@ -30,6 +30,7 @@
           <td class="action-cell">
             <button
               :data-testid="`user-mgmt-btn-toggle-status-${u.id}`"
+              :disabled="isPending(`toggleStatus-${u.id}`)"
               @click="toggleStatus(u)"
             >
               {{ u.is_active ? '禁用' : '启用' }}
@@ -68,7 +69,7 @@
         </div>
         <div v-if="createError" class="error-message">{{ createError }}</div>
         <div class="dialog-actions">
-          <button data-testid="admin-users-dlg-create-btn-submit" @click="createUser">确认创建</button>
+          <button data-testid="admin-users-dlg-create-btn-submit" :disabled="isPending('createUser')" @click="createUser">确认创建</button>
           <button class="btn-cancel" @click="showCreateDialog = false">关闭</button>
         </div>
       </div>
@@ -88,7 +89,7 @@
         <div v-if="resetError" class="error-message">{{ resetError }}</div>
         <div v-if="resetSuccess" class="success-message">密码已重置</div>
         <div class="dialog-actions">
-          <button @click="resetPassword">确认重置</button>
+          <button :disabled="isPending('resetPassword')" @click="resetPassword">确认重置</button>
           <button class="btn-cancel" @click="showResetDialog = false">关闭</button>
         </div>
       </div>
@@ -102,6 +103,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 interface UserItem {
   id: number
@@ -110,6 +112,8 @@ interface UserItem {
   is_active: boolean
   is_admin: boolean
 }
+
+const { isPending, run } = useAsyncAction()
 
 const search = ref('')
 const users = ref<UserItem[]>([])
@@ -156,42 +160,46 @@ async function fetchUsers() {
 }
 
 async function createUser() {
-  createError.value = ''
-  if (!newUser.email || !newUser.nickname || !newUser.password) {
-    createError.value = '所有字段必填，不能为空'
-    return
-  }
-  try {
-    await apiClient.post('/api/v1/admin/users', newUser)
-    showCreateDialog.value = false
-    newUser.email = ''
-    newUser.nickname = ''
-    newUser.password = ''
-    await fetchUsers()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '创建失败'
-    if (msg.includes('已注册') || msg.includes('已存在')) {
-      createError.value = '邮箱已注册'
-    } else {
-      createError.value = msg
+  await run('createUser', async () => {
+    createError.value = ''
+    if (!newUser.email || !newUser.nickname || !newUser.password) {
+      createError.value = '所有字段必填，不能为空'
+      return
     }
-  }
+    try {
+      await apiClient.post('/api/v1/admin/users', newUser)
+      showCreateDialog.value = false
+      newUser.email = ''
+      newUser.nickname = ''
+      newUser.password = ''
+      await fetchUsers()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '创建失败'
+      if (msg.includes('已注册') || msg.includes('已存在')) {
+        createError.value = '邮箱已注册'
+      } else {
+        createError.value = msg
+      }
+    }
+  })
 }
 
 async function toggleStatus(u: UserItem) {
-  errorMsg.value = ''
-  try {
-    const newIsActive = !u.is_active
-    await apiClient.put(`/api/v1/admin/users/${u.id}/status`, { is_active: newIsActive })
-    u.is_active = newIsActive
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '操作失败'
-    if (msg.includes('不能禁用自己') || msg.includes('不能禁用自身')) {
-      errorMsg.value = '不能禁用自己'
-    } else {
-      errorMsg.value = msg
+  await run(`toggleStatus-${u.id}`, async () => {
+    errorMsg.value = ''
+    try {
+      const newIsActive = !u.is_active
+      await apiClient.put(`/api/v1/admin/users/${u.id}/status`, { is_active: newIsActive })
+      u.is_active = newIsActive
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '操作失败'
+      if (msg.includes('不能禁用自己') || msg.includes('不能禁用自身')) {
+        errorMsg.value = '不能禁用自己'
+      } else {
+        errorMsg.value = msg
+      }
     }
-  }
+  })
 }
 
 function openResetDialog(u: UserItem) {
@@ -204,25 +212,27 @@ function openResetDialog(u: UserItem) {
 }
 
 async function resetPassword() {
-  resetError.value = ''
-  resetSuccess.value = false
-  if (!resetPw.newPassword || resetPw.newPassword.length < 8) {
-    resetError.value = '密码至少 8 位'
-    return
-  }
-  if (resetPw.newPassword !== resetPw.confirmPassword) {
-    resetError.value = '两次密码不一致'
-    return
-  }
-  try {
-    await apiClient.put(`/api/v1/admin/users/${resetTargetUser.value!.id}/password`, {
-      new_password: resetPw.newPassword,
-    })
-    resetSuccess.value = true
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '重置失败'
-    resetError.value = msg
-  }
+  await run('resetPassword', async () => {
+    resetError.value = ''
+    resetSuccess.value = false
+    if (!resetPw.newPassword || resetPw.newPassword.length < 8) {
+      resetError.value = '密码至少 8 位'
+      return
+    }
+    if (resetPw.newPassword !== resetPw.confirmPassword) {
+      resetError.value = '两次密码不一致'
+      return
+    }
+    try {
+      await apiClient.put(`/api/v1/admin/users/${resetTargetUser.value!.id}/password`, {
+        new_password: resetPw.newPassword,
+      })
+      resetSuccess.value = true
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '重置失败'
+      resetError.value = msg
+    }
+  })
 }
 
 onMounted(() => fetchUsers())

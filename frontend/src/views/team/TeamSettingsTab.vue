@@ -8,7 +8,7 @@
       <label>团队描述</label>
       <textarea v-model="form.description" data-testid="team-settings-txtarea-desc"></textarea>
     </div>
-    <button data-testid="team-settings-btn-save" @click="saveSettings">保存</button>
+    <button data-testid="team-settings-btn-save" :disabled="isPending('saveSettings')" @click="saveSettings">保存</button>
     <div v-if="successMsg" class="success-message" data-testid="team-settings-txt-success">{{ successMsg }}</div>
 
     <div class="form-group" style="margin-top: 2rem;">
@@ -29,7 +29,7 @@
           <option value="">选择新所有者</option>
           <option v-for="m in members.filter(m => m.user_id !== currentUserId)" :key="m.user_id" :value="m.user_id">{{ m.nickname }}</option>
         </select>
-        <button data-testid="team-settings-dlg-transfer-btn-confirm" @click="transferOwnership">确认转让</button>
+        <button data-testid="team-settings-dlg-transfer-btn-confirm" :disabled="isPending('transferOwnership')" @click="transferOwnership">确认转让</button>
         <button @click="showTransferDialog = false">取消</button>
       </div>
     </div>
@@ -38,7 +38,7 @@
       <div data-testid="team-settings-dlg-dissolve" class="dialog">
         <h3>解散团队</h3>
         <p>确定要解散团队吗？此操作不可撤销。</p>
-        <button class="btn-danger" data-testid="team-settings-dlg-dissolve-btn-confirm" @click="dissolveTeam">确认解散</button>
+        <button class="btn-danger" data-testid="team-settings-dlg-dissolve-btn-confirm" :disabled="isPending('dissolveTeam')" @click="dissolveTeam">确认解散</button>
         <button @click="showDissolveDialog = false">取消</button>
       </div>
     </div>
@@ -50,12 +50,14 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const props = defineProps<{ teamId: string; team: unknown }>()
 const emit = defineEmits<{ teamUpdated: [] }>()
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { isPending, run } = useAsyncAction()
 
 interface TeamData {
   id: number
@@ -120,34 +122,40 @@ function initForm() {
 }
 
 async function saveSettings() {
-  successMsg.value = ''
-  try {
-    await apiClient.put(`/api/v1/teams/${props.teamId}`, form)
-    successMsg.value = '保存成功'
-    emit('teamUpdated')
-  } catch {
-    // ignore
-  }
+  await run('saveSettings', async () => {
+    successMsg.value = ''
+    try {
+      await apiClient.put(`/api/v1/teams/${props.teamId}`, form)
+      successMsg.value = '保存成功'
+      emit('teamUpdated')
+    } catch {
+      // ignore
+    }
+  })
 }
 
 async function transferOwnership() {
-  try {
-    await apiClient.post(`/api/v1/teams/${props.teamId}/transfer`, { new_owner_id: transferTarget.value })
-    showTransferDialog.value = false
-    emit('teamUpdated')
-  } catch {
-    // ignore
-  }
+  await run('transferOwnership', async () => {
+    try {
+      await apiClient.post(`/api/v1/teams/${props.teamId}/transfer`, { new_owner_id: transferTarget.value })
+      showTransferDialog.value = false
+      emit('teamUpdated')
+    } catch {
+      // ignore
+    }
+  })
 }
 
 async function dissolveTeam() {
-  try {
-    await apiClient.delete(`/api/v1/teams/${props.teamId}`)
-    showDissolveDialog.value = false
-    router.push('/dashboard')
-  } catch {
-    // ignore
-  }
+  await run('dissolveTeam', async () => {
+    try {
+      await apiClient.delete(`/api/v1/teams/${props.teamId}`)
+      showDissolveDialog.value = false
+      router.push('/dashboard')
+    } catch {
+      // ignore
+    }
+  })
 }
 
 onMounted(() => {

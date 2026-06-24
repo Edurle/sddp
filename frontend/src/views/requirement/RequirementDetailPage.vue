@@ -6,6 +6,9 @@
         :req="req"
         :editing="editingReq"
         :edit-form="editForm"
+        :saving="isPending('saveReq')"
+        :deleting="isPending('deleteReq')"
+        :approving="isPending('approveReview')"
         @edit="startEditReq"
         @save="saveReq"
         @delete="deleteReq"
@@ -253,7 +256,7 @@
                 <td>
                   <button @click="openTestCaseDetail(tc)">查看</button>
                   <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="openEditTestCase(tc)">编辑</button>
-                  <button class="btn-danger" :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" @click="deleteTestCase(tc.id)">删除</button>
+                  <button class="btn-danger" :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" :disabled="isPending('deleteTestCase')" @click="deleteTestCase(tc.id)">删除</button>
                 </td>
               </tr>
             </tbody>
@@ -322,7 +325,7 @@
                 </td>
                 <td>{{ formatTime(link.created_at) }}</td>
                 <td>
-                  <button v-if="link.link_type === 'relates_to'" class="btn-danger" data-testid="req-detail-btn-unlink" @click="deleteLink(link.id)">删除</button>
+                  <button v-if="link.link_type === 'relates_to'" class="btn-danger" data-testid="req-detail-btn-unlink" :disabled="isPending('deleteLink')" @click="deleteLink(link.id)">删除</button>
                   <span v-else class="spec-muted">系统关联</span>
                 </td>
               </tr>
@@ -362,7 +365,7 @@
             <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
           </div>
         </div>
-        <button data-testid="req-detail-dlg-submit-review-btn-confirm" @click="submitReview">确认</button>
+        <button data-testid="req-detail-dlg-submit-review-btn-confirm" :disabled="isPending('submitReview')" @click="submitReview">确认</button>
         <button @click="showSubmitReviewDialog = false">取消</button>
       </div>
     </div>
@@ -371,7 +374,7 @@
       <div data-testid="req-detail-dlg-reject" class="dialog">
         <h3>驳回</h3>
         <textarea v-model="rejectForm.comment" data-testid="req-detail-dlg-reject-txtarea-comment"></textarea>
-        <button class="btn-danger" data-testid="req-detail-dlg-reject-btn-confirm" @click="rejectReview">确认</button>
+        <button class="btn-danger" data-testid="req-detail-dlg-reject-btn-confirm" :disabled="isPending('rejectReview')" @click="rejectReview">确认</button>
         <button @click="showRejectDialog = false">取消</button>
       </div>
     </div>
@@ -385,7 +388,7 @@
             <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitSpecReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
           </div>
         </div>
-        <button data-testid="req-detail-dlg-submit-spec-review-btn-confirm" @click="submitSpecReview">确认</button>
+        <button data-testid="req-detail-dlg-submit-spec-review-btn-confirm" :disabled="isPending('submitSpecReview')" @click="submitSpecReview">确认</button>
         <button @click="showSubmitSpecReviewDialog = false">取消</button>
       </div>
     </div>
@@ -399,7 +402,7 @@
             <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitTestsReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
           </div>
         </div>
-        <button data-testid="req-detail-dlg-submit-tests-review-btn-confirm" @click="submitTestsReview">确认</button>
+        <button data-testid="req-detail-dlg-submit-tests-review-btn-confirm" :disabled="isPending('submitTestsReview')" @click="submitTestsReview">确认</button>
         <button @click="showSubmitTestsReviewDialog = false">取消</button>
       </div>
     </div>
@@ -424,7 +427,7 @@
             </div>
           </div>
         </div>
-        <button data-testid="req-detail-dlg-add-task-btn-submit" @click="createTask">提交</button>
+        <button data-testid="req-detail-dlg-add-task-btn-submit" :disabled="isPending('createTask')" @click="createTask">提交</button>
         <button @click="showAddTaskDialog = false">取消</button>
       </div>
     </div>
@@ -460,7 +463,7 @@
           <label>关联 API</label>
           <input v-model="testCaseForm.related_api" data-testid="req-detail-dlg-test-case-inp-related-api" />
         </div>
-        <button data-testid="req-detail-dlg-test-case-btn-save" @click="saveTestCase">保存</button>
+        <button data-testid="req-detail-dlg-test-case-btn-save" :disabled="isPending('saveTestCase')" @click="saveTestCase">保存</button>
         <button @click="showTestCaseDialog = false">取消</button>
       </div>
     </div>
@@ -534,7 +537,7 @@
           <label>新需求描述</label>
           <textarea v-model="supersedeForm.description" data-testid="req-detail-dlg-supersede-txtarea-desc" :placeholder="req?.description || ''"></textarea>
         </div>
-        <button data-testid="req-detail-dlg-supersede-btn-confirm" @click="supersedeReq">确认</button>
+        <button data-testid="req-detail-dlg-supersede-btn-confirm" :disabled="isPending('supersedeReq')" @click="supersedeReq">确认</button>
         <button @click="showSupersedeDialog = false">取消</button>
       </div>
     </div>
@@ -550,7 +553,7 @@
           <label>关联类型</label>
           <span class="spec-tag" style="background:#eff6ff;color:#3b82f6">relates_to（关联）</span>
         </div>
-        <button data-testid="req-detail-dlg-add-link-btn-confirm" @click="createLink">确认</button>
+        <button data-testid="req-detail-dlg-add-link-btn-confirm" :disabled="isPending('createLink')" @click="createLink">确认</button>
         <button @click="showAddLinkDialog = false">取消</button>
       </div>
     </div>
@@ -562,6 +565,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
+import { useConfirm } from '@/composables/useConfirm'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 import { taskStatusLabel } from '@/utils/status'
 import { marked } from 'marked'
 import RequirementSidebar from './RequirementSidebar.vue'
@@ -572,6 +577,8 @@ const route = useRoute()
 const router = useRouter()
 const reqId = computed(() => route.params.id as string)
 const notification = useNotificationStore()
+const confirm = useConfirm()
+const { isPending, run } = useAsyncAction()
 
 interface TypeDetail {
   reproduce_steps?: string
@@ -942,27 +949,31 @@ async function startEditReq() {
 }
 
 async function saveReq() {
-  try {
-    await apiClient.put(`/api/v1/requirements/${reqId.value}`, editForm)
-    editingReq.value = false
-    await fetchReq()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run('saveReq', async () => {
+    try {
+      await apiClient.put(`/api/v1/requirements/${reqId.value}`, editForm)
+      editingReq.value = false
+      await fetchReq()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function deleteReq() {
-  if (!confirm('确定要删除此需求吗？')) return
-  try {
-    await apiClient.delete(`/api/v1/requirements/${reqId.value}`)
-    if (req.value?.iteration_id) {
-      router.push(`/iterations/${req.value.iteration_id}/kanban`)
-    } else {
-      router.push('/dashboard')
+  await run('deleteReq', async () => {
+    if (!(await confirm({ title: '删除需求', message: '确定要删除此需求吗？此操作不可撤销。', danger: true, confirmText: '删除' }))) return
+    try {
+      await apiClient.delete(`/api/v1/requirements/${reqId.value}`)
+      if (req.value?.iteration_id) {
+        router.push(`/iterations/${req.value.iteration_id}/kanban`)
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '删除失败')
     }
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
-  }
+  })
 }
 
 async function openSubmitReviewDialog() {
@@ -971,42 +982,48 @@ async function openSubmitReviewDialog() {
 }
 
 async function submitReview() {
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/submit-review`, {
-      reviewer_id: Number(submitReviewForm.reviewer_id),
-    })
-    showSubmitReviewDialog.value = false
-    await fetchReq()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '提交审核失败')
-  }
+  await run('submitReview', async () => {
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/submit-review`, {
+        reviewer_id: Number(submitReviewForm.reviewer_id),
+      })
+      showSubmitReviewDialog.value = false
+      await fetchReq()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '提交审核失败')
+    }
+  })
 }
 
 async function approveReview() {
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/review`, {
-      action: 'approve',
-    })
-    await fetchReq()
-    fetchReviewComments()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '审核操作失败')
-  }
+  await run('approveReview', async () => {
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/review`, {
+        action: 'approve',
+      })
+      await fetchReq()
+      fetchReviewComments()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '审核操作失败')
+    }
+  })
 }
 
 async function rejectReview() {
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/review`, {
-      action: 'reject',
-      comment: rejectForm.comment,
-    })
-    showRejectDialog.value = false
-    rejectForm.comment = ''
-    await fetchReq()
-    fetchReviewComments()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '驳回操作失败')
-  }
+  await run('rejectReview', async () => {
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/review`, {
+        action: 'reject',
+        comment: rejectForm.comment,
+      })
+      showRejectDialog.value = false
+      rejectForm.comment = ''
+      await fetchReq()
+      fetchReviewComments()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '驳回操作失败')
+    }
+  })
 }
 
 function loadSpecContent(content: Record<string, any>) {
@@ -1039,15 +1056,17 @@ async function openSubmitSpecReviewDialog() {
 }
 
 async function submitSpecReview() {
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/submit-review`, {
-      reviewer_id: Number(submitSpecReviewForm.reviewer_id),
-    })
-    showSubmitSpecReviewDialog.value = false
-    await fetchReq()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '提交规范审核失败')
-  }
+  await run('submitSpecReview', async () => {
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/submit-review`, {
+        reviewer_id: Number(submitSpecReviewForm.reviewer_id),
+      })
+      showSubmitSpecReviewDialog.value = false
+      await fetchReq()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '提交规范审核失败')
+    }
+  })
 }
 
 async function openSubmitTestsReviewDialog() {
@@ -1056,15 +1075,17 @@ async function openSubmitTestsReviewDialog() {
 }
 
 async function submitTestsReview() {
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/submit-review`, {
-      reviewer_id: Number(submitTestsReviewForm.reviewer_id),
-    })
-    showSubmitTestsReviewDialog.value = false
-    await fetchReq()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '提交测试审核失败')
-  }
+  await run('submitTestsReview', async () => {
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/submit-review`, {
+        reviewer_id: Number(submitTestsReviewForm.reviewer_id),
+      })
+      showSubmitTestsReviewDialog.value = false
+      await fetchReq()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '提交测试审核失败')
+    }
+  })
 }
 
 async function fetchSpecVersions() {
@@ -1095,20 +1116,22 @@ async function fetchTasks() {
 }
 
 async function createTask() {
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/tasks`, {
-      title: addTaskForm.title,
-      description: addTaskForm.description,
-      assignee_id: Number(addTaskForm.assignee_id) || undefined,
-    })
-    showAddTaskDialog.value = false
-    addTaskForm.title = ''
-    addTaskForm.description = ''
-    addTaskForm.assignee_id = ''
-    await fetchTasks()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run('createTask', async () => {
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/tasks`, {
+        title: addTaskForm.title,
+        description: addTaskForm.description,
+        assignee_id: Number(addTaskForm.assignee_id) || undefined,
+      })
+      showAddTaskDialog.value = false
+      addTaskForm.title = ''
+      addTaskForm.description = ''
+      addTaskForm.assignee_id = ''
+      await fetchTasks()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function fetchTestCases() {
@@ -1176,42 +1199,46 @@ function openEditTestCase(tc: TestCaseItem) {
 }
 
 async function saveTestCase() {
-  try {
-    if (editingTestCase.value) {
-      await apiClient.put(`/api/v1/test-cases/${editingTestCase.value.id}`, {
-        title: testCaseForm.title,
-        case_type: testCaseForm.case_type,
-        precondition: testCaseForm.precondition,
-        steps: testCaseForm.steps,
-        expected_result: testCaseForm.expected_result,
-        related_api: testCaseForm.related_api,
-      })
-    } else {
-      await apiClient.post(`/api/v1/requirements/${reqId.value}/test-cases`, {
-        title: testCaseForm.title,
-        case_type: testCaseForm.case_type,
-        precondition: testCaseForm.precondition,
-        steps: testCaseForm.steps,
-        expected_result: testCaseForm.expected_result,
-        related_api: testCaseForm.related_api,
-      })
+  await run('saveTestCase', async () => {
+    try {
+      if (editingTestCase.value) {
+        await apiClient.put(`/api/v1/test-cases/${editingTestCase.value.id}`, {
+          title: testCaseForm.title,
+          case_type: testCaseForm.case_type,
+          precondition: testCaseForm.precondition,
+          steps: testCaseForm.steps,
+          expected_result: testCaseForm.expected_result,
+          related_api: testCaseForm.related_api,
+        })
+      } else {
+        await apiClient.post(`/api/v1/requirements/${reqId.value}/test-cases`, {
+          title: testCaseForm.title,
+          case_type: testCaseForm.case_type,
+          precondition: testCaseForm.precondition,
+          steps: testCaseForm.steps,
+          expected_result: testCaseForm.expected_result,
+          related_api: testCaseForm.related_api,
+        })
+      }
+      showTestCaseDialog.value = false
+      editingTestCase.value = null
+      await fetchTestCases()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
     }
-    showTestCaseDialog.value = false
-    editingTestCase.value = null
-    await fetchTestCases()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  })
 }
 
 async function deleteTestCase(tcId: number) {
-  if (!confirm('确定要删除此测试用例吗？')) return
-  try {
-    await apiClient.delete(`/api/v1/test-cases/${tcId}`)
-    await fetchTestCases()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
-  }
+  await run('deleteTestCase', async () => {
+    if (!(await confirm({ title: '删除测试用例', message: '确定要删除此测试用例吗？', danger: true, confirmText: '删除' }))) return
+    try {
+      await apiClient.delete(`/api/v1/test-cases/${tcId}`)
+      await fetchTestCases()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '删除失败')
+    }
+  })
 }
 
 async function fetchTestStats() {
@@ -1242,51 +1269,57 @@ async function fetchCommits() {
 }
 
 async function createLink() {
-  if (!addLinkForm.target_id) {
-    notification.showError('请输入目标需求 ID')
-    return
-  }
-  try {
-    await apiClient.post(`/api/v1/requirements/${reqId.value}/links`, {
-      target_id: addLinkForm.target_id,
-      link_type: 'relates_to',
-    })
-    showAddLinkDialog.value = false
-    addLinkForm.target_id = 0
-    await fetchLinks()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '添加关联失败')
-  }
+  await run('createLink', async () => {
+    if (!addLinkForm.target_id) {
+      notification.showError('请输入目标需求 ID')
+      return
+    }
+    try {
+      await apiClient.post(`/api/v1/requirements/${reqId.value}/links`, {
+        target_id: addLinkForm.target_id,
+        link_type: 'relates_to',
+      })
+      showAddLinkDialog.value = false
+      addLinkForm.target_id = 0
+      await fetchLinks()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '添加关联失败')
+    }
+  })
 }
 
 async function deleteLink(linkId: number) {
-  if (!confirm('确定要删除此关联吗？')) return
-  try {
-    await apiClient.delete(`/api/v1/requirements/${reqId.value}/links/${linkId}`)
-    await fetchLinks()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '删除关联失败')
-  }
+  await run('deleteLink', async () => {
+    if (!(await confirm({ title: '删除关联', message: '确定要删除此关联吗？', danger: true, confirmText: '删除' }))) return
+    try {
+      await apiClient.delete(`/api/v1/requirements/${reqId.value}/links/${linkId}`)
+      await fetchLinks()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '删除关联失败')
+    }
+  })
 }
 
 async function supersedeReq() {
-  try {
-    const body: Record<string, string> = {}
-    if (supersedeForm.title) body.title = supersedeForm.title
-    if (supersedeForm.description) body.description = supersedeForm.description
-    const res = await apiClient.post(`/api/v1/requirements/${reqId.value}/supersede`, body)
-    showSupersedeDialog.value = false
-    supersedeForm.title = ''
-    supersedeForm.description = ''
-    const newReq = res.data?.data?.new_requirement
-    if (newReq) {
-      router.push(`/requirements/${newReq.id}`)
-    } else {
-      await fetchReq()
+  await run('supersedeReq', async () => {
+    try {
+      const body: Record<string, string> = {}
+      if (supersedeForm.title) body.title = supersedeForm.title
+      if (supersedeForm.description) body.description = supersedeForm.description
+      const res = await apiClient.post(`/api/v1/requirements/${reqId.value}/supersede`, body)
+      showSupersedeDialog.value = false
+      supersedeForm.title = ''
+      supersedeForm.description = ''
+      const newReq = res.data?.data?.new_requirement
+      if (newReq) {
+        router.push(`/requirements/${newReq.id}`)
+      } else {
+        await fetchReq()
+      }
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '创建变更失败')
     }
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '创建变更失败')
-  }
+  })
 }
 
 function linkTypeLabel(type: string): string {

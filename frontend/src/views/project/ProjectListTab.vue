@@ -69,7 +69,7 @@
           <label>开始日期</label>
           <input v-model="newProject.start_date" type="date" data-testid="project-list-dlg-create-inp-start-date" />
         </div>
-        <button data-testid="project-list-dlg-create-btn-submit" @click="createProject">创建</button>
+        <button data-testid="project-list-dlg-create-btn-submit" :disabled="isPending('createProject')" @click="createProject">创建</button>
         <button @click="showCreateDialog = false">取消</button>
       </div>
     </div>
@@ -79,8 +79,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const props = defineProps<{ teamId: string }>()
+const { isPending, run } = useAsyncAction()
 
 interface Project {
   id: number
@@ -128,16 +130,18 @@ async function fetchProjects() {
 }
 
 async function createProject() {
-  try {
-    await apiClient.post(`/api/v1/teams/${props.teamId}/projects`, newProject)
-    showCreateDialog.value = false
-    newProject.name = ''
-    newProject.description = ''
-    newProject.start_date = ''
-    await fetchProjects()
-  } catch {
-    // ignore
-  }
+  await run('createProject', async () => {
+    try {
+      await apiClient.post(`/api/v1/teams/${props.teamId}/projects`, newProject)
+      showCreateDialog.value = false
+      newProject.name = ''
+      newProject.description = ''
+      newProject.start_date = ''
+      await fetchProjects()
+    } catch {
+      // ignore
+    }
+  })
 }
 
 onMounted(() => fetchProjects())

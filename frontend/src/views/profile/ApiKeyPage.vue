@@ -37,6 +37,7 @@
             <button
               v-if="k.is_active"
               class="btn-danger"
+              :disabled="isPending(`revokeKey-${k.id}`)"
               @click="revokeKey(k.id)"
             >撤销</button>
           </td>
@@ -56,7 +57,7 @@
           <input v-model="newKey.expires_at" type="datetime-local" />
         </div>
         <div v-if="createError" class="error-message">{{ createError }}</div>
-        <button @click="createKey">创建</button>
+        <button :disabled="isPending('createKey')" @click="createKey">创建</button>
         <button @click="showCreateDialog = false">取消</button>
       </div>
     </div>
@@ -81,6 +82,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { apiClient } from '@/api/client'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 interface ApiKeyItem {
   id: number
@@ -90,6 +92,8 @@ interface ApiKeyItem {
   expires_at: string | null
   created_at: string | null
 }
+
+const { isPending, run } = useAsyncAction()
 
 const keys = ref<ApiKeyItem[]>([])
 const showCreateDialog = ref(false)
@@ -111,41 +115,45 @@ async function fetchKeys() {
 }
 
 async function createKey() {
-  createError.value = ''
-  if (!newKey.name.trim()) {
-    createError.value = '名称不能为空'
-    return
-  }
-  try {
-    const body: Record<string, string> = { name: newKey.name }
-    if (newKey.expires_at) {
-      body.expires_at = new Date(newKey.expires_at).toISOString()
+  await run('createKey', async () => {
+    createError.value = ''
+    if (!newKey.name.trim()) {
+      createError.value = '名称不能为空'
+      return
     }
-    const res = await apiClient.post('/api/v1/users/me/api-keys', body)
-    const data = res.data?.data
-    if (data?.raw_key) {
-      rawKeyValue.value = data.raw_key
-      showCreateDialog.value = false
-      showRawKey.value = true
-      copied.value = false
+    try {
+      const body: Record<string, string> = { name: newKey.name }
+      if (newKey.expires_at) {
+        body.expires_at = new Date(newKey.expires_at).toISOString()
+      }
+      const res = await apiClient.post('/api/v1/users/me/api-keys', body)
+      const data = res.data?.data
+      if (data?.raw_key) {
+        rawKeyValue.value = data.raw_key
+        showCreateDialog.value = false
+        showRawKey.value = true
+        copied.value = false
+      }
+      newKey.name = ''
+      newKey.expires_at = ''
+      await fetchKeys()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '创建失败'
+      createError.value = msg
     }
-    newKey.name = ''
-    newKey.expires_at = ''
-    await fetchKeys()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '创建失败'
-    createError.value = msg
-  }
+  })
 }
 
 async function revokeKey(id: number) {
-  errorMsg.value = ''
-  try {
-    await apiClient.delete(`/api/v1/users/me/api-keys/${id}`)
-    await fetchKeys()
-  } catch (e: unknown) {
-    errorMsg.value = e instanceof Error ? e.message : '撤销失败'
-  }
+  await run(`revokeKey-${id}`, async () => {
+    errorMsg.value = ''
+    try {
+      await apiClient.delete(`/api/v1/users/me/api-keys/${id}`)
+      await fetchKeys()
+    } catch (e: unknown) {
+      errorMsg.value = e instanceof Error ? e.message : '撤销失败'
+    }
+  })
 }
 
 function copyKey() {

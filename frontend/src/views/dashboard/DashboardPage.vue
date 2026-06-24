@@ -153,8 +153,8 @@
         <div v-if="pendingInvitations.length === 0" class="empty-state">暂无待处理邀请</div>
         <div v-for="item in pendingInvitations" :key="item.id">
           {{ item.team_name || item.name }}
-          <button :data-testid="`dashboard-btn-accept-invitation-${item.id}`" @click="acceptInvitation(item.id)">接受</button>
-          <button class="btn-danger" :data-testid="`dashboard-btn-reject-invitation-${item.id}`" @click="rejectInvitation(item.id)">拒绝</button>
+          <button :data-testid="`dashboard-btn-accept-invitation-${item.id}`" :disabled="isPending(`acceptInvitation-${item.id}`)" @click="acceptInvitation(item.id)">接受</button>
+          <button class="btn-danger" :data-testid="`dashboard-btn-reject-invitation-${item.id}`" :disabled="isPending(`rejectInvitation-${item.id}`)" @click="rejectInvitation(item.id)">拒绝</button>
         </div>
       </div>
     </div>
@@ -165,7 +165,7 @@
         <input v-model="profileNickname" data-testid="dashboard-inp-nickname" />
       </div>
       <div v-if="profileSuccess" class="success-message">{{ profileSuccess }}</div>
-      <button data-testid="dashboard-btn-save-profile" @click="saveProfile">保存</button>
+      <button data-testid="dashboard-btn-save-profile" :disabled="isPending('saveProfile')" @click="saveProfile">保存</button>
       <button data-testid="dashboard-btn-change-password" @click="showPasswordDialog = true">修改密码</button>
 
       <div v-if="showPasswordDialog" class="dialog-overlay" @click.self="showPasswordDialog = false">
@@ -185,7 +185,7 @@
           </div>
           <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
           <div v-if="passwordSuccess" class="success-message">{{ passwordSuccess }}</div>
-          <button data-testid="dashboard-dlg-password-btn-submit" @click="changePassword">提交</button>
+          <button data-testid="dashboard-dlg-password-btn-submit" :disabled="isPending('changePassword')" @click="changePassword">提交</button>
           <button @click="showPasswordDialog = false">取消</button>
         </div>
       </div>
@@ -200,9 +200,11 @@ import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
 import { apiClient } from '@/api/client'
 import { reqStatusLabel, iterStatusLabel } from '@/utils/status'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const authStore = useAuthStore()
 const notification = useNotificationStore()
+const { isPending, run } = useAsyncAction()
 const user = computed(() => authStore.user)
 const myTeams = computed(() => (user.value as any)?.teams || [])
 
@@ -336,58 +338,66 @@ async function fetchData() {
 }
 
 async function acceptInvitation(id: number) {
-  try {
-    await apiClient.put(`/api/v1/invitations/${id}`, { action: 'accept' })
-    pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run(`acceptInvitation-${id}`, async () => {
+    try {
+      await apiClient.put(`/api/v1/invitations/${id}`, { action: 'accept' })
+      pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function rejectInvitation(id: number) {
-  try {
-    await apiClient.put(`/api/v1/invitations/${id}`, { action: 'reject' })
-    pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run(`rejectInvitation-${id}`, async () => {
+    try {
+      await apiClient.put(`/api/v1/invitations/${id}`, { action: 'reject' })
+      pendingInvitations.value = pendingInvitations.value.filter(i => i.id !== id)
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function saveProfile() {
-  profileSuccess.value = ''
-  try {
-    await apiClient.put('/api/v1/users/me', { nickname: profileNickname.value })
-    await authStore.fetchUser()
-    profileSuccess.value = '保存成功'
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run('saveProfile', async () => {
+    profileSuccess.value = ''
+    try {
+      await apiClient.put('/api/v1/users/me', { nickname: profileNickname.value })
+      await authStore.fetchUser()
+      profileSuccess.value = '保存成功'
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function changePassword() {
-  passwordError.value = ''
-  passwordSuccess.value = ''
-  if (passwordForm.newPassword !== passwordForm.confirm) {
-    passwordError.value = '两次输入的新密码不一致'
-    return
-  }
-  try {
-    await apiClient.put('/api/v1/users/me/password', {
-      old_password: passwordForm.old,
-      new_password: passwordForm.newPassword,
-    })
-    passwordSuccess.value = '密码修改成功'
-    passwordForm.old = ''
-    passwordForm.newPassword = ''
-    passwordForm.confirm = ''
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '修改失败'
-    if (msg.includes('旧密码') || msg.includes('原密码') || msg.includes('old password') || msg.includes('incorrect')) {
-      passwordError.value = '旧密码错误'
-    } else {
-      passwordError.value = msg
+  await run('changePassword', async () => {
+    passwordError.value = ''
+    passwordSuccess.value = ''
+    if (passwordForm.newPassword !== passwordForm.confirm) {
+      passwordError.value = '两次输入的新密码不一致'
+      return
     }
-  }
+    try {
+      await apiClient.put('/api/v1/users/me/password', {
+        old_password: passwordForm.old,
+        new_password: passwordForm.newPassword,
+      })
+      passwordSuccess.value = '密码修改成功'
+      passwordForm.old = ''
+      passwordForm.newPassword = ''
+      passwordForm.confirm = ''
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '修改失败'
+      if (msg.includes('旧密码') || msg.includes('原密码') || msg.includes('old password') || msg.includes('incorrect')) {
+        passwordError.value = '旧密码错误'
+      } else {
+        passwordError.value = msg
+      }
+    }
+  })
 }
 
 onMounted(async () => {

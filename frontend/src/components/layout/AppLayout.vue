@@ -27,9 +27,13 @@
     <main class="app-layout-main">
       <router-view />
     </main>
-    <div v-if="notification.visible" class="notification-toast" :class="notification.type">
-      {{ notification.message }}
-    </div>
+    <transition name="toast-slide">
+      <div v-if="notification.visible" class="notification-toast" :class="notification.type" role="alert">
+        <span class="toast-msg">{{ notification.message }}</span>
+        <button class="toast-close" aria-label="关闭" @click="notification.hide()">×</button>
+      </div>
+    </transition>
+    <ConfirmDialog />
   </div>
 </template>
 
@@ -38,6 +42,7 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -131,13 +136,39 @@ function handleLogout() {
 .notification-toast {
   position: fixed;
   top: 20px;
-  right: 20px;
-  padding: 12px 20px;
-  border-radius: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 18px;
+  border-radius: 10px;
   font-size: 14px;
-  z-index: 1000;
-  max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1100;
+  max-width: min(90vw, 480px);
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.16);
+}
+.toast-msg {
+  flex: 1;
+}
+.toast-close {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.toast-close:hover {
+  opacity: 1;
+  background: transparent;
+  box-shadow: none;
 }
 .notification-toast.error {
   background: #fef2f2;
@@ -148,6 +179,15 @@ function handleLogout() {
   background: #f0fdf4;
   color: #166534;
   border: 1px solid #bbf7d0;
+}
+.toast-slide-enter-active,
+.toast-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast-slide-enter-from,
+.toast-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px);
 }
 .breadcrumb-bar {
   padding: 8px 24px;

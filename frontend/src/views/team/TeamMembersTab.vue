@@ -56,7 +56,7 @@
           placeholder="输入邮箱或用户名"
         />
         <div v-if="inviteError" class="error-message" data-testid="team-members-dlg-invite-txt-error">{{ inviteError }}</div>
-        <button data-testid="team-members-dlg-invite-btn-submit" @click="inviteMember">发送邀请</button>
+        <button data-testid="team-members-dlg-invite-btn-submit" :disabled="isPending('inviteMember')" @click="inviteMember">发送邀请</button>
         <button @click="showInviteDialog = false">取消</button>
       </div>
     </div>
@@ -65,7 +65,7 @@
       <div data-testid="team-members-dlg-confirm" class="dialog">
         <h3>确认移除</h3>
         <p>确定要移除该成员吗？</p>
-        <button class="btn-danger" data-testid="team-members-dlg-confirm-btn-confirm" @click="removeMember(confirmRemoveMember.user_id)">确认</button>
+        <button class="btn-danger" data-testid="team-members-dlg-confirm-btn-confirm" :disabled="isPending('removeMember')" @click="removeMember(confirmRemoveMember.user_id)">确认</button>
         <button @click="confirmRemoveMember = null">取消</button>
       </div>
     </div>
@@ -84,7 +84,7 @@
             {{ r.name }}
           </label>
         </div>
-        <button data-testid="team-members-dlg-roles-btn-save" @click="saveRoles">保存</button>
+        <button data-testid="team-members-dlg-roles-btn-save" :disabled="isPending('saveRoles')" @click="saveRoles">保存</button>
         <button @click="showRoleDialog = false">取消</button>
       </div>
     </div>
@@ -95,9 +95,11 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const props = defineProps<{ teamId: string }>()
 const notification = useNotificationStore()
+const { isPending, run } = useAsyncAction()
 
 interface MemberUser {
   id?: number
@@ -190,36 +192,40 @@ async function fetchRoles() {
 }
 
 async function inviteMember() {
-  inviteError.value = ''
-  successMsg.value = ''
-  try {
-    await apiClient.post(`/api/v1/teams/${props.teamId}/invitations`, {
-      identifier: inviteIdentifier.value,
-    })
-    showInviteDialog.value = false
-    inviteIdentifier.value = ''
-    successMsg.value = '邀请已发送'
-    await fetchMembers()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '邀请失败'
-    if (msg.includes('不存在')) {
-      inviteError.value = '用户不存在'
-    } else if (msg.includes('已在团队') || msg.includes('已是团队')) {
-      inviteError.value = '用户已在团队中'
-    } else {
-      inviteError.value = msg
+  await run('inviteMember', async () => {
+    inviteError.value = ''
+    successMsg.value = ''
+    try {
+      await apiClient.post(`/api/v1/teams/${props.teamId}/invitations`, {
+        identifier: inviteIdentifier.value,
+      })
+      showInviteDialog.value = false
+      inviteIdentifier.value = ''
+      successMsg.value = '邀请已发送'
+      await fetchMembers()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '邀请失败'
+      if (msg.includes('不存在')) {
+        inviteError.value = '用户不存在'
+      } else if (msg.includes('已在团队') || msg.includes('已是团队')) {
+        inviteError.value = '用户已在团队中'
+      } else {
+        inviteError.value = msg
+      }
     }
-  }
+  })
 }
 
 async function removeMember(userId: number | string) {
-  try {
-    await apiClient.delete(`/api/v1/teams/${props.teamId}/members/${userId}`)
-    confirmRemoveMember.value = null
-    members.value = members.value.filter(m => String(m.user_id) !== String(userId))
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '移除成员失败')
-  }
+  await run('removeMember', async () => {
+    try {
+      await apiClient.delete(`/api/v1/teams/${props.teamId}/members/${userId}`)
+      confirmRemoveMember.value = null
+      members.value = members.value.filter(m => String(m.user_id) !== String(userId))
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '移除成员失败')
+    }
+  })
 }
 
 function openRoleDialog(member: Member) {
@@ -229,15 +235,17 @@ function openRoleDialog(member: Member) {
 }
 
 async function saveRoles() {
-  try {
-    await apiClient.put(`/api/v1/teams/${props.teamId}/members/${currentRoleMemberId.value}/roles`, {
-      role_ids: selectedRoleIds.value.map(Number),
-    })
-    showRoleDialog.value = false
-    await fetchMembers()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '保存角色失败')
-  }
+  await run('saveRoles', async () => {
+    try {
+      await apiClient.put(`/api/v1/teams/${props.teamId}/members/${currentRoleMemberId.value}/roles`, {
+        role_ids: selectedRoleIds.value.map(Number),
+      })
+      showRoleDialog.value = false
+      await fetchMembers()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '保存角色失败')
+    }
+  })
 }
 
 watch(() => props.teamId, () => {

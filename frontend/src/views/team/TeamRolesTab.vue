@@ -64,7 +64,7 @@
           </div>
         </div>
         <div v-if="editError" class="error-message" data-testid="team-roles-dlg-edit-txt-error">{{ editError }}</div>
-        <button data-testid="team-roles-dlg-edit-btn-save" @click="saveRole">保存</button>
+        <button data-testid="team-roles-dlg-edit-btn-save" :disabled="isPending('saveRole')" @click="saveRole">保存</button>
         <button @click="showEditDialog = false">取消</button>
       </div>
     </div>
@@ -73,7 +73,7 @@
       <div data-testid="team-roles-dlg-confirm" class="dialog">
         <h3>确认删除</h3>
         <p>确定要删除角色 "{{ confirmDeleteRole.name }}" 吗？</p>
-        <button class="btn-danger" data-testid="team-roles-dlg-confirm-btn-confirm" @click="deleteRole(confirmDeleteRole.id)">确认</button>
+        <button class="btn-danger" data-testid="team-roles-dlg-confirm-btn-confirm" :disabled="isPending('deleteRole')" @click="deleteRole(confirmDeleteRole.id)">确认</button>
         <button @click="confirmDeleteRole = null">取消</button>
       </div>
     </div>
@@ -83,8 +83,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
 import { apiClient } from '@/api/client'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const props = defineProps<{ teamId: string }>()
+const { isPending, run } = useAsyncAction()
 
 interface Role {
   id: string
@@ -212,34 +214,38 @@ async function fetchRoles() {
 }
 
 async function saveRole() {
-  editError.value = ''
-  if (editingRole.value) {
-    const idx = roles.value.findIndex(r => r.id === editingRole.value!.id)
-    if (idx !== -1) {
-      roles.value[idx] = { ...roles.value[idx], name: formData.name, description: formData.description, permissions: [...formData.permissions] }
+  await run('saveRole', async () => {
+    editError.value = ''
+    if (editingRole.value) {
+      const idx = roles.value.findIndex(r => r.id === editingRole.value!.id)
+      if (idx !== -1) {
+        roles.value[idx] = { ...roles.value[idx], name: formData.name, description: formData.description, permissions: [...formData.permissions] }
+      }
+      showEditDialog.value = false
+      apiClient.put(`/api/v1/teams/${props.teamId}/roles/${editingRole.value.id}`, formData).catch(() => {})
+      return
     }
-    showEditDialog.value = false
-    apiClient.put(`/api/v1/teams/${props.teamId}/roles/${editingRole.value.id}`, formData).catch(() => {})
-    return
-  }
-  try {
-    await apiClient.post(`/api/v1/teams/${props.teamId}/roles`, formData)
-    showEditDialog.value = false
-    await fetchRoles()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '保存失败'
-    if (msg.includes('已存在')) {
-      editError.value = '角色名称已存在'
-    } else {
-      editError.value = msg
+    try {
+      await apiClient.post(`/api/v1/teams/${props.teamId}/roles`, formData)
+      showEditDialog.value = false
+      await fetchRoles()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '保存失败'
+      if (msg.includes('已存在')) {
+        editError.value = '角色名称已存在'
+      } else {
+        editError.value = msg
+      }
     }
-  }
+  })
 }
 
-function deleteRole(roleId: string) {
-  confirmDeleteRole.value = null
-  roles.value = roles.value.filter(r => r.id !== roleId)
-  apiClient.delete(`/api/v1/teams/${props.teamId}/roles/${roleId}`).catch(() => {})
+async function deleteRole(roleId: string) {
+  await run('deleteRole', async () => {
+    confirmDeleteRole.value = null
+    roles.value = roles.value.filter(r => r.id !== roleId)
+    apiClient.delete(`/api/v1/teams/${props.teamId}/roles/${roleId}`).catch(() => {})
+  })
 }
 
 watch(() => props.teamId, () => fetchRoles())

@@ -19,12 +19,12 @@
     <div class="sidebar-section sidebar-actions">
       <div class="sidebar-label">操作</div>
       <div class="action-buttons">
-        <button v-if="task.status === 'pending' && !editing" data-testid="task-detail-btn-start" class="btn-primary" @click="$emit('start-coding')">开始编码</button>
-        <button v-if="task.status === 'coding' && !editing" data-testid="task-detail-btn-start-testing" class="btn-primary" @click="$emit('start-testing')">提交测试</button>
-        <button v-if="task.status === 'testing' && !editing" data-testid="task-detail-btn-complete" class="btn-success" @click="$emit('complete')">完成任务</button>
+        <button v-if="task.status === 'pending' && !editing" data-testid="task-detail-btn-start" class="btn-primary" :disabled="transitioning" @click="$emit('start-coding')">开始编码</button>
+        <button v-if="task.status === 'coding' && !editing" data-testid="task-detail-btn-start-testing" class="btn-primary" :disabled="transitioning" @click="$emit('start-testing')">提交测试</button>
+        <button v-if="task.status === 'testing' && !editing" data-testid="task-detail-btn-complete" class="btn-success" :disabled="transitioning" @click="$emit('complete')">完成任务</button>
         <button v-if="!editing" data-testid="task-detail-btn-edit" class="btn-default" @click="$emit('edit')">编辑</button>
-        <button v-if="!editing" data-testid="task-detail-btn-delete" class="btn-danger" @click="$emit('delete')">删除</button>
-        <button v-if="editing" data-testid="task-detail-btn-save" class="btn-primary" @click="$emit('save')">保存</button>
+        <button v-if="!editing" data-testid="task-detail-btn-delete" class="btn-danger" :disabled="deleting" @click="$emit('delete')">删除</button>
+        <button v-if="editing" data-testid="task-detail-btn-save" class="btn-primary" :disabled="saving" @click="$emit('save')">保存</button>
       </div>
     </div>
   </aside>
@@ -39,6 +39,9 @@ interface TaskData {
 const props = defineProps<{
   task: TaskData
   editing: boolean
+  saving?: boolean
+  deleting?: boolean
+  transitioning?: boolean
 }>()
 
 defineEmits(['edit', 'save', 'delete', 'start-coding', 'start-testing', 'complete'])

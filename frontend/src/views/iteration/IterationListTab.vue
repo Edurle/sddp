@@ -70,7 +70,7 @@
           <label>结束日期</label>
           <input v-model="newIter.end_date" type="date" data-testid="iteration-list-dlg-create-inp-end-date" />
         </div>
-        <button data-testid="iteration-list-dlg-create-btn-submit" @click="createIteration">创建</button>
+        <button data-testid="iteration-list-dlg-create-btn-submit" :disabled="isPending('createIteration')" @click="createIteration">创建</button>
         <button @click="showCreateDialog = false">取消</button>
       </div>
     </div>
@@ -86,7 +86,7 @@
           <label>结束日期</label>
           <input v-model="editForm.end_date" type="date" data-testid="iteration-list-dlg-edit-inp-end-date" />
         </div>
-        <button data-testid="iteration-list-dlg-edit-btn-submit" @click="saveEdit">保存</button>
+        <button data-testid="iteration-list-dlg-edit-btn-submit" :disabled="isPending('saveEdit')" @click="saveEdit">保存</button>
         <button @click="showEditDialog = false">取消</button>
       </div>
     </div>
@@ -95,7 +95,7 @@
       <div data-testid="iteration-list-dlg-confirm-start" class="dialog">
         <h3>确认开始</h3>
         <p>确定要开始该迭代吗？</p>
-        <button data-testid="iteration-list-dlg-confirm-start-btn-confirm" @click="confirmStart">确认</button>
+        <button data-testid="iteration-list-dlg-confirm-start-btn-confirm" :disabled="isPending('confirmStart')" @click="confirmStart">确认</button>
         <button @click="showStartConfirm = false">取消</button>
       </div>
     </div>
@@ -104,7 +104,7 @@
       <div data-testid="iteration-list-dlg-confirm-complete" class="dialog">
         <h3>确认完成</h3>
         <p>确定要完成该迭代吗？</p>
-        <button data-testid="iteration-list-dlg-confirm-complete-btn-confirm" @click="confirmComplete">确认</button>
+        <button data-testid="iteration-list-dlg-confirm-complete-btn-confirm" :disabled="isPending('confirmComplete')" @click="confirmComplete">确认</button>
         <button @click="showCompleteConfirm = false">取消</button>
       </div>
     </div>
@@ -116,10 +116,12 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const props = defineProps<{ projectId: string }>()
 const router = useRouter()
 const notification = useNotificationStore()
+const { isPending, run } = useAsyncAction()
 
 interface Iteration {
   id: number
@@ -179,17 +181,19 @@ async function fetchIterations() {
 }
 
 async function createIteration() {
-  try {
-    await apiClient.post(`/api/v1/projects/${props.projectId}/iterations`, newIter)
-    showCreateDialog.value = false
-    newIter.name = ''
-    newIter.goal = ''
-    newIter.start_date = ''
-    newIter.end_date = ''
-    await fetchIterations()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '创建迭代失败')
-  }
+  await run('createIteration', async () => {
+    try {
+      await apiClient.post(`/api/v1/projects/${props.projectId}/iterations`, newIter)
+      showCreateDialog.value = false
+      newIter.name = ''
+      newIter.goal = ''
+      newIter.start_date = ''
+      newIter.end_date = ''
+      await fetchIterations()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '创建迭代失败')
+    }
+  })
 }
 
 function openEditDialog(it: Iteration) {
@@ -200,13 +204,15 @@ function openEditDialog(it: Iteration) {
 }
 
 async function saveEdit() {
-  try {
-    await apiClient.put(`/api/v1/iterations/${editingId.value}`, { end_date: editForm.end_date })
-    showEditDialog.value = false
-    await fetchIterations()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
-  }
+  await run('saveEdit', async () => {
+    try {
+      await apiClient.put(`/api/v1/iterations/${editingId.value}`, { end_date: editForm.end_date })
+      showEditDialog.value = false
+      await fetchIterations()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '保存失败')
+    }
+  })
 }
 
 function startIteration(it: Iteration) {
@@ -216,14 +222,16 @@ function startIteration(it: Iteration) {
 }
 
 async function confirmStart() {
-  if (!pendingIter.value) return
-  try {
-    await apiClient.post(`/api/v1/iterations/${pendingIter.value.id}/start`)
-    showStartConfirm.value = false
-    await fetchIterations()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '开始迭代失败')
-  }
+  await run('confirmStart', async () => {
+    if (!pendingIter.value) return
+    try {
+      await apiClient.post(`/api/v1/iterations/${pendingIter.value.id}/start`)
+      showStartConfirm.value = false
+      await fetchIterations()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '开始迭代失败')
+    }
+  })
 }
 
 function completeIteration(it: Iteration) {
@@ -233,16 +241,18 @@ function completeIteration(it: Iteration) {
 }
 
 async function confirmComplete() {
-  if (!pendingIter.value) return
-  try {
-    await apiClient.post(`/api/v1/iterations/${pendingIter.value.id}/complete`)
-    showCompleteConfirm.value = false
-    await fetchIterations()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '完成失败'
-    completeError.value = msg
-    showCompleteConfirm.value = false
-  }
+  await run('confirmComplete', async () => {
+    if (!pendingIter.value) return
+    try {
+      await apiClient.post(`/api/v1/iterations/${pendingIter.value.id}/complete`)
+      showCompleteConfirm.value = false
+      await fetchIterations()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '完成失败'
+      completeError.value = msg
+      showCompleteConfirm.value = false
+    }
+  })
 }
 
 function goToKanban(id: number) {

@@ -29,7 +29,7 @@
           <label>项目名称</label>
           <input v-model="editForm.name" data-testid="project-detail-dlg-edit-inp-name" />
         </div>
-        <button data-testid="project-detail-dlg-edit-btn-save" @click="saveEdit">保存</button>
+        <button data-testid="project-detail-dlg-edit-btn-save" :disabled="isPending('saveEdit')" @click="saveEdit">保存</button>
         <button @click="showEditDialog = false">取消</button>
       </div>
     </div>
@@ -38,7 +38,7 @@
       <div data-testid="project-detail-dlg-confirm-archive" class="dialog">
         <h3>确认归档</h3>
         <p>确定要归档该项目吗？</p>
-        <button data-testid="project-detail-dlg-confirm-archive-btn-confirm" @click="archiveProject">确认</button>
+        <button data-testid="project-detail-dlg-confirm-archive-btn-confirm" :disabled="isPending('archiveProject')" @click="archiveProject">确认</button>
         <button @click="showArchiveConfirm = false">取消</button>
       </div>
     </div>
@@ -47,7 +47,7 @@
       <div data-testid="project-detail-dlg-confirm-delete" class="dialog">
         <h3>确认删除</h3>
         <p>确定要删除该项目吗？</p>
-        <button class="btn-danger" data-testid="project-detail-dlg-confirm-delete-btn-confirm" @click="deleteProject">确认</button>
+        <button class="btn-danger" data-testid="project-detail-dlg-confirm-delete-btn-confirm" :disabled="isPending('deleteProject')" @click="deleteProject">确认</button>
         <button @click="showDeleteConfirm = false">取消</button>
       </div>
     </div>
@@ -60,12 +60,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
 import { projectStatusLabel } from '@/utils/status'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 import IterationListTab from '../iteration/IterationListTab.vue'
 
 const route = useRoute()
 const router = useRouter()
 const projectId = computed(() => route.params.id as string)
 const notification = useNotificationStore()
+const { isPending, run } = useAsyncAction()
 
 interface ProjectData {
   id: number
@@ -102,38 +104,44 @@ function openEditDialog() {
 }
 
 async function saveEdit() {
-  try {
-    await apiClient.put(`/api/v1/projects/${projectId.value}`, editForm)
-    showEditDialog.value = false
-    await fetchProject()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
-  }
+  await run('saveEdit', async () => {
+    try {
+      await apiClient.put(`/api/v1/projects/${projectId.value}`, editForm)
+      showEditDialog.value = false
+      await fetchProject()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '保存失败')
+    }
+  })
 }
 
 async function archiveProject() {
-  try {
-    await apiClient.put(`/api/v1/projects/${projectId.value}/archive`)
-    showArchiveConfirm.value = false
-    await fetchProject()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '归档失败')
-  }
+  await run('archiveProject', async () => {
+    try {
+      await apiClient.put(`/api/v1/projects/${projectId.value}/archive`)
+      showArchiveConfirm.value = false
+      await fetchProject()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '归档失败')
+    }
+  })
 }
 
 async function deleteProject() {
-  try {
-    const teamId = project.value?.team_id
-    await apiClient.delete(`/api/v1/projects/${projectId.value}`)
-    showDeleteConfirm.value = false
-    if (teamId) {
-      router.push(`/teams/${teamId}`)
-    } else {
-      router.push('/dashboard')
+  await run('deleteProject', async () => {
+    try {
+      const teamId = project.value?.team_id
+      await apiClient.delete(`/api/v1/projects/${projectId.value}`)
+      showDeleteConfirm.value = false
+      if (teamId) {
+        router.push(`/teams/${teamId}`)
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '删除失败')
     }
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
-  }
+  })
 }
 
 onMounted(() => fetchProject())

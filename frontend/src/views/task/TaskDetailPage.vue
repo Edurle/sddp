@@ -5,6 +5,9 @@
       <TaskSidebar
         :task="task"
         :editing="editing"
+        :saving="isPending('saveEdit')"
+        :deleting="isPending('deleteTask')"
+        :transitioning="isPending('startCoding') || isPending('startTesting') || isPending('completeTask')"
         @edit="startEdit"
         @save="saveEdit"
         @delete="deleteTask"
@@ -127,7 +130,7 @@
           <textarea v-model="recordForm.failure_reason" data-testid="task-detail-dlg-record-txtarea-reason"></textarea>
         </div>
         <p v-if="recordError" class="error">{{ recordError }}</p>
-        <button data-testid="task-detail-dlg-record-btn-save" @click="saveRecord">保存</button>
+        <button data-testid="task-detail-dlg-record-btn-save" :disabled="isPending('saveRecord')" @click="saveRecord">保存</button>
         <button @click="showRecordDialog = false">取消</button>
       </div>
     </div>
@@ -139,6 +142,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useNotificationStore } from '@/stores/notification'
+import { useConfirm } from '@/composables/useConfirm'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 import TaskSidebar from './TaskSidebar.vue'
 import TaskInfoPanel from './TaskInfoPanel.vue'
 import JsonTree from '@/components/JsonTree.vue'
@@ -147,6 +152,8 @@ const route = useRoute()
 const router = useRouter()
 const taskId = computed(() => route.params.id as string)
 const notification = useNotificationStore()
+const confirm = useConfirm()
+const { isPending, run } = useAsyncAction()
 
 interface TestCase {
   id?: number
@@ -284,53 +291,63 @@ function startEdit() {
 }
 
 async function saveEdit() {
-  try {
-    await apiClient.put(`/api/v1/tasks/${taskId.value}`, editForm)
-    editing.value = false
-    await fetchTask()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
-  }
+  await run('saveEdit', async () => {
+    try {
+      await apiClient.put(`/api/v1/tasks/${taskId.value}`, editForm)
+      editing.value = false
+      await fetchTask()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '保存失败')
+    }
+  })
 }
 
 async function deleteTask() {
-  if (!confirm('确定要删除此任务吗？')) return
-  try {
-    await apiClient.delete(`/api/v1/tasks/${taskId.value}`)
-    router.push('/dashboard')
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '删除失败')
-  }
+  await run('deleteTask', async () => {
+    if (!(await confirm({ title: '删除任务', message: '确定要删除此任务吗？此操作不可撤销。', danger: true, confirmText: '删除' }))) return
+    try {
+      await apiClient.delete(`/api/v1/tasks/${taskId.value}`)
+      router.push('/dashboard')
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '删除失败')
+    }
+  })
 }
 
 async function startCoding() {
-  try {
-    await apiClient.patch(`/api/v1/tasks/${taskId.value}`, { status: 'coding' })
-    await fetchTask()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run('startCoding', async () => {
+    try {
+      await apiClient.patch(`/api/v1/tasks/${taskId.value}`, { status: 'coding' })
+      await fetchTask()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function startTesting() {
-  try {
-    await apiClient.post(`/api/v1/tasks/${taskId.value}/start-testing`)
-    await fetchTask()
-    activeTab.value = 'test-exec'
-    await fetchTestExecutions()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '操作失败')
-  }
+  await run('startTesting', async () => {
+    try {
+      await apiClient.post(`/api/v1/tasks/${taskId.value}/start-testing`)
+      await fetchTask()
+      activeTab.value = 'test-exec'
+      await fetchTestExecutions()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '操作失败')
+    }
+  })
 }
 
 async function completeTask() {
-  completeError.value = ''
-  try {
-    await apiClient.post(`/api/v1/tasks/${taskId.value}/complete`)
-    await fetchTask()
-  } catch (e: any) {
-    completeError.value = e?.message || e?.response?.data?.message || '操作失败'
-  }
+  await run('completeTask', async () => {
+    completeError.value = ''
+    try {
+      await apiClient.post(`/api/v1/tasks/${taskId.value}/complete`)
+      await fetchTask()
+    } catch (e: any) {
+      completeError.value = e?.message || e?.response?.data?.message || '操作失败'
+    }
+  })
 }
 
 function openRecordDialog(rec: TestRecord) {
@@ -343,21 +360,23 @@ function openRecordDialog(rec: TestRecord) {
 }
 
 async function saveRecord() {
-  if (recordForm.status === 'fail' && !recordForm.failure_reason) {
-    recordError.value = '失败原因必填'
-    return
-  }
-  try {
-    await apiClient.put(`/api/v1/test-execution-records/${recordForm.id}`, {
-      status: recordForm.status === 'pass' ? 'passed' : recordForm.status === 'fail' ? 'failed' : recordForm.status === 'skip' ? 'skipped' : recordForm.status,
-      actual_result: recordForm.actual_result,
-      failure_reason: recordForm.failure_reason,
-    })
-    showRecordDialog.value = false
-    await fetchTestExecutions()
-  } catch (e: any) {
-    notification.showError(e?.response?.data?.message || e?.message || '保存失败')
-  }
+  await run('saveRecord', async () => {
+    if (recordForm.status === 'fail' && !recordForm.failure_reason) {
+      recordError.value = '失败原因必填'
+      return
+    }
+    try {
+      await apiClient.put(`/api/v1/test-execution-records/${recordForm.id}`, {
+        status: recordForm.status === 'pass' ? 'passed' : recordForm.status === 'fail' ? 'failed' : recordForm.status === 'skip' ? 'skipped' : recordForm.status,
+        actual_result: recordForm.actual_result,
+        failure_reason: recordForm.failure_reason,
+      })
+      showRecordDialog.value = false
+      await fetchTestExecutions()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '保存失败')
+    }
+  })
 }
 
 async function viewRound(round: TestRound) {

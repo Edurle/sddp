@@ -12,11 +12,18 @@ export const useNotificationStore = defineStore('notification', () => {
     message.value = msg
     type.value = t
     visible.value = true
-    timer = setTimeout(() => { visible.value = false }, 3000)
+    // Errors stay longer so users can actually read them.
+    const duration = t === 'error' ? 6000 : 3000
+    timer = setTimeout(() => { visible.value = false; timer = null }, duration)
+  }
+
+  function hide() {
+    if (timer) { clearTimeout(timer); timer = null }
+    visible.value = false
   }
 
   function showError(msg: string) { show(msg, 'error') }
   function showSuccess(msg: string) { show(msg, 'success') }
 
-  return { message, type, visible, showError, showSuccess }
+  return { message, type, visible, showError, showSuccess, hide }
 })

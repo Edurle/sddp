@@ -81,10 +81,10 @@
       <div class="sidebar-label">操作</div>
       <div class="action-buttons">
         <button v-if="canEdit && !editing" data-testid="req-detail-btn-edit-req" @click="$emit('edit')">编辑需求</button>
-        <button v-if="editing" data-testid="req-detail-btn-save-req" @click="$emit('save')">保存</button>
-        <button v-if="canEdit" data-testid="req-detail-btn-delete-req" class="btn-danger" @click="$emit('delete')">删除</button>
+        <button v-if="editing" data-testid="req-detail-btn-save-req" :disabled="saving" @click="$emit('save')">保存</button>
+        <button v-if="canEdit" data-testid="req-detail-btn-delete-req" class="btn-danger" :disabled="deleting" @click="$emit('delete')">删除</button>
         <button v-if="canEdit" data-testid="req-detail-btn-submit-req-review" @click="$emit('submit-review')">提交审核</button>
-        <button v-if="canReview" data-testid="req-detail-btn-approve" @click="$emit('approve')">通过</button>
+        <button v-if="canReview" data-testid="req-detail-btn-approve" :disabled="approving" @click="$emit('approve')">通过</button>
         <button v-if="canReview" class="btn-danger" data-testid="req-detail-btn-reject" @click="$emit('reject')">驳回</button>
         <button v-if="canSupersede" data-testid="req-detail-btn-supersede" @click="$emit('supersede')">创建变更</button>
       </div>
@@ -147,6 +147,9 @@ const props = defineProps<{
   req: RequirementData
   editing: boolean
   editForm: { title: string; description: string; prototype_html: string }
+  saving?: boolean
+  deleting?: boolean
+  approving?: boolean
 }>()
 
 defineEmits(['edit', 'save', 'delete', 'submit-review', 'approve', 'reject', 'supersede'])

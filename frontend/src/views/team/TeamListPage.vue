@@ -35,7 +35,7 @@
           <label>描述</label>
           <textarea v-model="newTeam.description" data-testid="team-list-dlg-create-txtarea-desc"></textarea>
         </div>
-        <button data-testid="team-list-dlg-create-btn-submit" @click="createTeam">创建</button>
+        <button data-testid="team-list-dlg-create-btn-submit" :disabled="isPending('createTeam')" @click="createTeam">创建</button>
         <button @click="showCreateDialog = false">取消</button>
       </div>
     </div>
@@ -47,9 +47,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
+import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { isPending, run } = useAsyncAction()
 
 interface Team {
   id: number
@@ -72,24 +74,26 @@ async function fetchTeams() {
 }
 
 async function createTeam() {
-  createError.value = ''
-  if (!newTeam.name.trim()) {
-    createError.value = '团队名称不能为空'
-    return
-  }
-  try {
-    await apiClient.post('/api/v1/teams/', {
-      name: newTeam.name,
-      description: newTeam.description || null,
-    })
-    showCreateDialog.value = false
-    newTeam.name = ''
-    newTeam.description = ''
-    await fetchTeams()
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '创建失败'
-    createError.value = msg
-  }
+  await run('createTeam', async () => {
+    createError.value = ''
+    if (!newTeam.name.trim()) {
+      createError.value = '团队名称不能为空'
+      return
+    }
+    try {
+      await apiClient.post('/api/v1/teams/', {
+        name: newTeam.name,
+        description: newTeam.description || null,
+      })
+      showCreateDialog.value = false
+      newTeam.name = ''
+      newTeam.description = ''
+      await fetchTeams()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '创建失败'
+      createError.value = msg
+    }
+  })
 }
 
 function goToTeam(id: number) {
