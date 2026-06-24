@@ -372,6 +372,7 @@ async def approve_requirement_direct(
     if review_perm:
         await check_team_permission(db, user, await _team_id_from_requirement(db, id), review_perm)
 
+    prev_status = req.status
     approve_map = {
         "reviewing_req": "drafting_spec",
         "reviewing_spec": "drafting_tests",
@@ -392,6 +393,9 @@ async def approve_requirement_direct(
         from datetime import datetime, timezone
         review.reviewed_at = datetime.now(timezone.utc)
         review.reviewer_id = int(user["sub"])
+
+    if prev_status == "reviewing_spec":
+        await spec_svc.snapshot_spec_on_review(db, id, int(user["sub"]))
 
     await db.commit()
     await db.refresh(req)
@@ -440,6 +444,7 @@ async def approve_spec_direct(
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
 
+    prev_status = req.status
     approve_map = {
         "reviewing_spec": "drafting_tests",
     }
@@ -457,6 +462,9 @@ async def approve_spec_direct(
         review.status = "approved"
         from datetime import datetime, timezone
         review.reviewed_at = datetime.now(timezone.utc)
+
+    if prev_status == "reviewing_spec":
+        await spec_svc.snapshot_spec_on_review(db, id, int(user["sub"]))
 
     await db.commit()
     await db.refresh(req)

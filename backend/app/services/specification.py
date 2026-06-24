@@ -389,9 +389,10 @@ async def get_spec_document(
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
-    if doc is None or doc.current_version == 0:
+    if doc is None:
         return {"current_version": 0, "content": None, "is_draft": False}
 
+    # 工作内容（draft_content）即使尚无审批版本（current_version == 0）也应返回。
     if doc.draft_content is not None:
         return {
             "current_version": doc.current_version,
@@ -431,31 +432,23 @@ async def save_spec_document(
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
-    from datetime import datetime, timezone
-    new_version_num = (doc.current_version + 1) if doc else 1
-    new_version_entry = {
-        "version": new_version_num,
-        "content": content,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "created_by": user_id,
-    }
-
+    # 编辑不再生成版本：全量内容写入工作草稿，版本只在审批时切（见 snapshot_spec_on_review）。
     if doc is None:
         doc = SpecDocument(
             requirement_id=req_id,
-            current_version=new_version_num,
-            versions=[new_version_entry],
+            current_version=0,
+            versions=[],
+            draft_content=content,
+            draft_base_version=0,
         )
         db.add(doc)
     else:
-        versions = list(doc.versions or [])
-        versions.append(new_version_entry)
-        doc.current_version = new_version_num
-        doc.versions = versions
+        doc.draft_content = content
+        doc.draft_base_version = doc.current_version
 
     await db.commit()
     return {
-        "version": new_version_num,
+        "is_draft": True,
         "errors": [],
         "suggestions": suggestions,
     }
@@ -477,10 +470,10 @@ async def set_spec_draft_field(
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
-    if doc is None or doc.current_version == 0:
+    if doc is None or (doc.draft_content is None and not (doc.versions or [])):
         raise BusinessError(
             ERR_NOT_FOUND,
-            "尚无正式 spec 版本，无法局部更新草稿。请先用 save-spec 提交初始版本。",
+            "尚无 spec 内容，无法局部更新草稿。请先用 save-spec 提交初始内容。",
         )
 
     if doc.draft_content is None:
@@ -513,8 +506,6 @@ async def set_spec_draft_field(
 
 
 async def commit_spec_draft(db: AsyncSession, req_id: int, user_id: int) -> dict:
-    from datetime import datetime, timezone
-
     req = await _get_requirement(db, req_id)
     if req is None:
         raise BusinessError(ERR_NOT_FOUND, "需求不存在")
@@ -533,21 +524,8 @@ async def commit_spec_draft(db: AsyncSession, req_id: int, user_id: int) -> dict
             "无草稿可定版：当前 spec 无未提交草稿。用 set-spec-field 开始编辑草稿。",
         )
 
-    new_version_num = doc.current_version + 1
-    new_entry = {
-        "version": new_version_num,
-        "content": doc.draft_content,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "created_by": user_id,
-    }
-    versions = list(doc.versions or [])
-    versions.append(new_entry)
-    doc.versions = versions
-    doc.current_version = new_version_num
-    doc.draft_content = None
-    doc.draft_base_version = None
-    await db.commit()
-    return {"version": new_version_num, "committed_from_base": True}
+    # 版本只在审批（通过/驳回）时生成。草稿即工作内容，定版为幂等 no-op，不再切版本。
+    return {"version": doc.current_version, "committed": False}
 
 
 async def discard_spec_draft(db: AsyncSession, req_id: int) -> dict:
@@ -563,6 +541,42 @@ async def discard_spec_draft(db: AsyncSession, req_id: int) -> dict:
     doc.draft_base_version = None
     await db.commit()
     return {"discarded": True, "current_version": doc.current_version}
+
+
+async def snapshot_spec_on_review(db: AsyncSession, req_id: int, reviewer_id: int) -> None:
+    """规范审批（无论通过/驳回）时，对当前工作内容切一个版本快照。
+
+    版本只在此处产生；编辑路径（save/commit/set-field）均不再生成版本。
+    不提交事务，由调用方（审批流程）统一 commit。
+    """
+    from datetime import datetime, timezone
+
+    stmt = select(SpecDocument).where(SpecDocument.requirement_id == req_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+    if doc is None:
+        return
+
+    if doc.draft_content is not None:
+        content = doc.draft_content
+    else:
+        existing = doc.versions or []
+        content = existing[-1].get("content") if existing else None
+    if content is None:
+        return
+
+    new_version_num = doc.current_version + 1
+    versions = list(doc.versions or [])
+    versions.append({
+        "version": new_version_num,
+        "content": content,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": reviewer_id,
+    })
+    doc.versions = versions
+    doc.current_version = new_version_num
+    doc.draft_content = None
+    doc.draft_base_version = None
 
 
 async def list_spec_versions(

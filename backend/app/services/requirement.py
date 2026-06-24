@@ -26,6 +26,7 @@ from app.models import (
 from app.services import review_comment as rc_svc
 from app.services import webhook as wh_svc
 from app.services import requirement_link as link_svc
+from app.services import specification as spec_svc
 
 VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "drafting_req": {"reviewing_req"},
@@ -331,6 +332,9 @@ async def review_requirement(
     await rc_svc.create_review_comment(
         db, req.id, user_id, review.review_type, action, comment,
     )
+    # 规范审批（通过/驳回）时对当前内容切版本快照；编辑路径不再生成版本。
+    if review.review_type == "specification" and action in ("approve", "reject"):
+        await spec_svc.snapshot_spec_on_review(db, req.id, user_id)
     await db.commit()
     if action == "approve":
         await _fire_review_event(db, req, "review.approved", user_id, comment)

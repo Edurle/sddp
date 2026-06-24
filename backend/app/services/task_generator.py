@@ -24,11 +24,18 @@ async def generate_tasks(
     spec_stmt = select(SpecDocument).where(SpecDocument.requirement_id == requirement_id)
     spec_result = await db.execute(spec_stmt)
     spec_doc = spec_result.scalar_one_or_none()
-    if spec_doc is None or spec_doc.current_version == 0:
+    if spec_doc is None:
         raise BusinessError(ERR_VALIDATION, "规范文档为空，请先填写规范")
 
+    # 取当前规范内容：优先工作草稿，否则最后一个审批版本。
     versions = spec_doc.versions or []
-    content = versions[-1].get("content", {}) if versions else {}
+    content = (
+        spec_doc.draft_content
+        if spec_doc.draft_content is not None
+        else (versions[-1].get("content", {}) if versions else {})
+    )
+    if not content:
+        raise BusinessError(ERR_VALIDATION, "规范文档为空，请先填写规范")
 
     created = []
     suggestions = []

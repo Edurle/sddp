@@ -163,7 +163,7 @@ class TestGetSpecDocument:
 
 class TestSaveSpecDocument:
     @pytest.mark.asyncio
-    async def test_save_spec_document_creates_new_version(
+    async def test_save_spec_document_no_version_until_review(
         self, client, normal_user, sample_requirement, db
     ):
         sample_requirement.status = "drafting_spec"
@@ -187,10 +187,18 @@ class TestSaveSpecDocument:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert "version" in body["data"]
+        # 编辑不再生成版本：返回工作草稿标记，且版本列表仍为空。
+        assert body["data"].get("is_draft") is True
+        assert "version" not in body["data"]
+
+        versions = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )
+        assert versions.json()["data"] == []
 
     @pytest.mark.asyncio
-    async def test_save_spec_document_multiple_versions(
+    async def test_save_spec_document_multiple_saves_no_version(
         self, client, normal_user, sample_requirement, db
     ):
         sample_requirement.status = "drafting_spec"
@@ -212,9 +220,7 @@ class TestSaveSpecDocument:
             },
             headers=headers,
         )
-        body1 = resp1.json()
-        assert body1["code"] == 0
-        v1 = body1["data"]["version"]
+        assert resp1.json()["code"] == 0
 
         resp2 = await client.put(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
@@ -229,10 +235,20 @@ class TestSaveSpecDocument:
             },
             headers=headers,
         )
-        body2 = resp2.json()
-        assert body2["code"] == 0
-        v2 = body2["data"]["version"]
-        assert v2 == v1 + 1
+        assert resp2.json()["code"] == 0
+
+        # 多次保存不产生任何版本；当前内容为最后一次保存。
+        versions = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )
+        assert versions.json()["data"] == []
+
+        get_resp = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            headers=auth_headers(normal_user.id),
+        )
+        assert get_resp.json()["data"]["content"]["entity_definition"]["description"] == "v2"
 
     @pytest.mark.asyncio
     async def test_save_spec_document_only_in_drafting_spec(
@@ -326,45 +342,38 @@ class TestSaveSpecDocument:
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
-        assert "version" in body["data"]
+        assert body["data"].get("is_draft") is True
 
 
 class TestListSpecVersions:
     @pytest.mark.asyncio
     async def test_list_spec_versions_success(
-        self, client, normal_user, sample_requirement, db
+        self, client, normal_user, another_user, sample_requirement, db
     ):
+        # 先编辑（不产生版本），再通过规范审核 → 切出一个版本。
         sample_requirement.status = "drafting_spec"
         db.add(sample_requirement)
         await db.commit()
 
-        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
         await client.put(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
-            json={
-                "content": {
-                    "entity_definition": {"description": "test", "fields": []},
-                    "table_design": {"tables": []},
-                    "page_structure": {"pages": []},
-                    "api_design": {"endpoints": []},
-                    "constraints": {},
-                }
-            },
-            headers=headers,
+            json={"content": dict(_VALID_FULL_CONTENT)},
+            headers=auth_headers(normal_user.id, permissions=["requirement:edit"]),
         )
 
-        headers = auth_headers(normal_user.id)
+        await _spec_review(client, db, sample_requirement, another_user, "approve")
+
         resp = await client.get(
             f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
-            headers=headers,
+            headers=auth_headers(normal_user.id),
         )
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
         assert isinstance(body["data"], list)
-        assert len(body["data"]) >= 1
+        assert len(body["data"]) == 1
         item = body["data"][0]
-        assert "version" in item
+        assert item["version"] == 1
         assert "created_by" in item
         assert "created_at" in item
 
@@ -387,38 +396,28 @@ class TestListSpecVersions:
 class TestGetSpecVersionDetail:
     @pytest.mark.asyncio
     async def test_get_spec_version_detail_success(
-        self, client, normal_user, sample_requirement, db
+        self, client, normal_user, another_user, sample_requirement, db
     ):
         sample_requirement.status = "drafting_spec"
         db.add(sample_requirement)
         await db.commit()
 
-        headers = auth_headers(normal_user.id, permissions=["requirement:edit"])
-        save_resp = await client.put(
+        await client.put(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
-            json={
-                "content": {
-                    "entity_definition": {"description": "test", "fields": []},
-                    "table_design": {"tables": []},
-                    "page_structure": {"pages": []},
-                    "api_design": {"endpoints": []},
-                    "constraints": {},
-                }
-            },
-            headers=headers,
+            json={"content": dict(_VALID_FULL_CONTENT)},
+            headers=auth_headers(normal_user.id, permissions=["requirement:edit"]),
         )
-        version = save_resp.json()["data"]["version"]
+        await _spec_review(client, db, sample_requirement, another_user, "approve")
 
-        headers = auth_headers(normal_user.id)
         resp = await client.get(
-            f"/api/v1/requirements/{sample_requirement.id}/specification/versions/{version}",
-            headers=headers,
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions/1",
+            headers=auth_headers(normal_user.id),
         )
         assert resp.status_code == 200
         body = resp.json()
         assert body["code"] == 0
         data = body["data"]
-        assert data["version"] == version
+        assert data["version"] == 1
         assert "content" in data
         assert "created_by" in data
         assert "created_at" in data
@@ -645,6 +644,32 @@ _VALID_FULL_CONTENT = {
 }
 
 
+async def _spec_review(client, db, requirement, reviewer, action, comment=None):
+    """置为 reviewing_spec、建 pending 规范审核、并以 reviewer 身份审批（approve/reject）。"""
+    from app.models import RequirementReview
+
+    requirement.status = "reviewing_spec"
+    db.add(requirement)
+    await db.flush()
+    review = RequirementReview(
+        requirement_id=requirement.id,
+        review_type="specification",
+        reviewer_id=reviewer.id,
+        status="pending",
+    )
+    db.add(review)
+    await db.commit()
+
+    payload = {"action": action}
+    if comment is not None:
+        payload["comment"] = comment
+    return await client.post(
+        f"/api/v1/requirements/{requirement.id}/review",
+        json=payload,
+        headers=auth_headers(reviewer.id, permissions=["requirement:review_spec"]),
+    )
+
+
 class TestSpecDraftSetField:
     @pytest.mark.asyncio
     async def test_set_field_creates_draft_from_current_version(
@@ -669,7 +694,8 @@ class TestSpecDraftSetField:
         body = resp.json()
         assert body["code"] == 0
         assert body["data"]["is_draft"] is True
-        assert body["data"]["base_version"] == 1
+        # 尚无审批版本，工作内容基于 base_version 0。
+        assert body["data"]["base_version"] == 0
 
         get_resp = await client.get(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
@@ -788,7 +814,7 @@ class TestSpecDraftSetField:
 
 class TestSpecDraftCommitDiscard:
     @pytest.mark.asyncio
-    async def test_commit_creates_new_version_clears_draft(
+    async def test_commit_is_noop_no_version(
         self, client, normal_user, sample_requirement, db
     ):
         sample_requirement.status = "drafting_spec"
@@ -798,13 +824,7 @@ class TestSpecDraftCommitDiscard:
 
         await client.put(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
-            json={"content": {
-                "entity_definition": {"description": "v1", "fields": []},
-                "table_design": {"tables": []},
-                "page_structure": {"pages": []},
-                "api_design": {"endpoints": []},
-                "constraints": {},
-            }},
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "v1", "fields": []})},
             headers=headers,
         )
         await client.patch(
@@ -819,36 +839,32 @@ class TestSpecDraftCommitDiscard:
         )
         body = resp.json()
         assert body["code"] == 0
-        assert body["data"]["version"] == 2
+        # commit 不再生成版本（幂等 no-op）。
+        assert body["data"].get("committed") is False
 
         get_resp = await client.get(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
             headers=auth_headers(normal_user.id),
         )
         gdata = get_resp.json()["data"]
-        assert gdata["is_draft"] is False
         assert gdata["content"]["entity_definition"]["description"] == "v2-draft"
-        assert gdata["current_version"] == 2
+        assert gdata["current_version"] == 0
+
+        versions = await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )
+        assert versions.json()["data"] == []
 
     @pytest.mark.asyncio
     async def test_commit_no_draft(
         self, client, normal_user, sample_requirement, db
     ):
+        # 从未编辑过 → 无 spec 文档 → 无草稿可定版。
         sample_requirement.status = "drafting_spec"
         db.add(sample_requirement)
         await db.commit()
         headers = auth_headers(normal_user.id, permissions=["specification:edit"])
-        await client.put(
-            f"/api/v1/requirements/{sample_requirement.id}/specification",
-            json={"content": {
-                "entity_definition": {"description": "v1", "fields": []},
-                "table_design": {"tables": []},
-                "page_structure": {"pages": []},
-                "api_design": {"endpoints": []},
-                "constraints": {},
-            }},
-            headers=headers,
-        )
         resp = await client.post(
             f"/api/v1/requirements/{sample_requirement.id}/specification/commit",
             headers=headers,
@@ -858,33 +874,30 @@ class TestSpecDraftCommitDiscard:
         assert "无草稿" in body["message"]
 
     @pytest.mark.asyncio
-    async def test_discard_returns_to_committed(
-        self, client, normal_user, sample_requirement, db
+    async def test_discard_reverts_to_last_reviewed_version(
+        self, client, normal_user, another_user, sample_requirement, db
     ):
         sample_requirement.status = "drafting_spec"
         db.add(sample_requirement)
         await db.commit()
-        headers = auth_headers(normal_user.id, permissions=["specification:edit"])
+
+        # 编辑并经一次审核（驳回）→ 切出 v1 基线，状态回到 drafting_spec。
         await client.put(
             f"/api/v1/requirements/{sample_requirement.id}/specification",
-            json={"content": {
-                "entity_definition": {"description": "committed", "fields": []},
-                "table_design": {"tables": []},
-                "page_structure": {"pages": []},
-                "api_design": {"endpoints": []},
-                "constraints": {},
-            }},
-            headers=headers,
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "baseline", "fields": []})},
+            headers=auth_headers(normal_user.id, permissions=["requirement:edit"]),
         )
+        await _spec_review(client, db, sample_requirement, another_user, "reject", comment="需修改")
+
+        # 再次编辑草稿，然后丢弃 → 应回到已审版本 baseline。
         await client.patch(
             f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
-            json={"path": "entity_definition.description", "value": "drafted"},
-            headers=headers,
+            json={"path": "entity_definition.description", "value": "edited"},
+            headers=auth_headers(normal_user.id, permissions=["specification:edit"]),
         )
-
         resp = await client.delete(
             f"/api/v1/requirements/{sample_requirement.id}/specification/draft",
-            headers=headers,
+            headers=auth_headers(normal_user.id, permissions=["specification:edit"]),
         )
         assert resp.json()["code"] == 0
 
@@ -894,4 +907,96 @@ class TestSpecDraftCommitDiscard:
         )
         gdata = get_resp.json()["data"]
         assert gdata["is_draft"] is False
-        assert gdata["content"]["entity_definition"]["description"] == "committed"
+        assert gdata["content"]["entity_definition"]["description"] == "baseline"
+
+
+class TestSpecVersionOnReview:
+    """版本只在规范审批（通过/驳回）时生成。"""
+
+    @pytest.mark.asyncio
+    async def test_spec_approve_creates_version(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "ready", "fields": []})},
+            headers=auth_headers(normal_user.id, permissions=["requirement:edit"]),
+        )
+        resp = await _spec_review(client, db, sample_requirement, another_user, "approve")
+        assert resp.json()["code"] == 0
+
+        versions = (await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )).json()["data"]
+        assert len(versions) == 1
+        assert versions[0]["version"] == 1
+        assert versions[0]["content"]["entity_definition"]["description"] == "ready"
+
+    @pytest.mark.asyncio
+    async def test_spec_reject_creates_version(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "rough", "fields": []})},
+            headers=auth_headers(normal_user.id, permissions=["requirement:edit"]),
+        )
+        resp = await _spec_review(client, db, sample_requirement, another_user, "reject", comment="需完善")
+        assert resp.json()["code"] == 0
+
+        versions = (await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )).json()["data"]
+        assert len(versions) == 1
+        assert versions[0]["content"]["entity_definition"]["description"] == "rough"
+
+    @pytest.mark.asyncio
+    async def test_multiple_edits_before_review_single_version(
+        self, client, normal_user, another_user, sample_requirement, db
+    ):
+        sample_requirement.status = "drafting_spec"
+        db.add(sample_requirement)
+        await db.commit()
+        edit_headers = auth_headers(normal_user.id, permissions=["requirement:edit", "specification:edit"])
+
+        # 多次全量保存 + 字段级编辑，均不产生版本。
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "d1", "fields": []})},
+            headers=edit_headers,
+        )
+        await client.put(
+            f"/api/v1/requirements/{sample_requirement.id}/specification",
+            json={"content": dict(_VALID_FULL_CONTENT, entity_definition={"description": "d2", "fields": []})},
+            headers=edit_headers,
+        )
+        await client.patch(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/draft/field",
+            json={"path": "entity_definition.description", "value": "d3"},
+            headers=edit_headers,
+        )
+
+        pre = (await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )).json()["data"]
+        assert pre == []
+
+        # 审批一次 → 只切出一个版本，内容为最终的 d3。
+        await _spec_review(client, db, sample_requirement, another_user, "approve")
+        post = (await client.get(
+            f"/api/v1/requirements/{sample_requirement.id}/specification/versions",
+            headers=auth_headers(normal_user.id),
+        )).json()["data"]
+        assert len(post) == 1
+        assert post[0]["content"]["entity_definition"]["description"] == "d3"
