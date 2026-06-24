@@ -173,8 +173,8 @@
       <button @click="showTestCaseDialog = false">取消</button>
     </AppDialog>
 
-    <div v-if="viewTestCase" class="dialog-overlay" @click.self="viewTestCase = null">
-      <div class="tc-detail-dialog">
+    <AppDialog :open="!!viewTestCase" dialog-class="tc-detail-dialog" @close="viewTestCase = null">
+      <template v-if="viewTestCase">
         <div class="tc-detail-header">
           <h3>测试用例详情</h3>
           <button class="tc-detail-close" @click="viewTestCase = null">&times;</button>
@@ -227,8 +227,8 @@
             <p v-else class="tc-empty-hint">暂无执行记录</p>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </AppDialog>
 
     <AppDialog :open="showSupersedeDialog" test-id="req-detail-dlg-supersede" @close="showSupersedeDialog = false">
       <h3>创建变更需求</h3>
@@ -962,19 +962,6 @@ onMounted(async () => {
 .tc-no-result {
   color: var(--color-text-subtle);
   font-size: var(--text-sm);
-}
-.tc-detail-dialog {
-  background: var(--color-surface);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
-  border-radius: var(--radius-xl);
-  width: 780px;
-  max-width: 92vw;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 .tc-detail-header {
   display: flex;

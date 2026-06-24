@@ -327,6 +327,18 @@ label {
 .dialog.dialog-md { max-width: 560px; }
 .dialog.dialog-wide { max-width: 720px; }
 
+/* Test-case detail — custom scrollable panel (own header/body padding) */
+.dialog.tc-detail-dialog {
+  width: 780px;
+  max-width: 92vw;
+  max-height: 85vh;
+  min-width: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .dialog h3 {
   margin: 0 0 1rem;
   font-weight: 600;
