@@ -28,6 +28,61 @@
   /* Current / in-progress step — fresh green */
   --color-current: #10b981;
   --color-current-hover: #059669;
+
+  /* ── Semantic status "intents" — single source of truth for badges/pills ── */
+  /* Each intent = soft background + readable text + a solid dot color. */
+  --intent-neutral-bg: #f3f4f6;
+  --intent-neutral-text: #4b5563;
+  --intent-neutral-solid: #9ca3af;
+
+  --intent-info-bg: #eff6ff;
+  --intent-info-text: #1e40af;
+  --intent-info-solid: #3b82f6;
+
+  --intent-review-bg: #f5f0ff;
+  --intent-review-text: #6b21a8;
+  --intent-review-solid: #8b5cf6;
+
+  --intent-success-bg: #dcfce7;
+  --intent-success-text: #166534;
+  --intent-success-solid: #22c55e;
+
+  --intent-warning-bg: #fef3c7;
+  --intent-warning-text: #92400e;
+  --intent-warning-solid: #f59e0b;
+
+  --intent-danger-bg: #fee2e2;
+  --intent-danger-text: #991b1b;
+  --intent-danger-solid: #ef4444;
+
+  /* Priority aliases (high=danger, medium=warning, low=success) */
+  --priority-high: var(--intent-danger-solid);
+  --priority-medium: var(--intent-warning-solid);
+  --priority-low: var(--intent-success-solid);
+
+  /* ── Radius scale ── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ── Spacing scale ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* ── Typography scale ── */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
 }
 
 *, *::before, *::after {

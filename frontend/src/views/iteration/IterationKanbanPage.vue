@@ -32,10 +32,12 @@
         class="kanban-card"
         :data-testid="`iteration-kanban-card-req-${req.id}`"
       >
-        <span
-          data-testid="iteration-kanban-card-req-badge-status"
-          :class="['status-badge', `status-badge-${req.mappedStatus}`]"
-        >{{ reqStatusLabel(req.status) }}</span>
+        <StatusBadge
+          test-id="iteration-kanban-card-req-badge-status"
+          class="kanban-card-status"
+          :intent="mappedReqStatusIntent(req.mappedStatus)"
+          :label="reqStatusLabel(req.status)"
+        />
         <div
           :data-testid="`iteration-kanban-btn-req-${req.id}`"
           @click="goToRequirement(req.id)"
@@ -43,7 +45,7 @@
         >
           <div data-testid="iteration-kanban-card-req-title">{{ req.title }}</div>
           <div data-testid="iteration-kanban-card-req-type">{{ req.req_type }}</div>
-          <span class="priority-badge" :class="'priority-' + req.priority">{{ priorityText(req.priority) }}</span>
+          <StatusBadge class="kanban-card-priority" :intent="priorityIntent(req.priority)" :label="priorityText(req.priority)" />
         </div>
       </div>
     </div>
@@ -86,7 +88,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { apiClient } from '@/api/client'
-import { reqStatusLabel } from '@/utils/status'
+import { reqStatusLabel, mappedReqStatusIntent, priorityIntent } from '@/utils/status'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -256,53 +259,12 @@ onMounted(() => fetchData())
 .kanban-card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.status-badge {
+.kanban-card-status {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 10px;
-  font-size: 0.75rem;
-  font-weight: 500;
 }
-.status-badge-draft {
-  background: #f0f0f0;
-  color: #666;
-}
-.status-badge-in_review {
-  background: #fff7e6;
-  color: #d48806;
-}
-.status-badge-approved {
-  background: #e6f7ff;
-  color: #1677ff;
-}
-.status-badge-in_progress {
-  background: #f9f0ff;
-  color: #722ed1;
-}
-.status-badge-completed {
-  background: #f6ffed;
-  color: #52c41a;
-}
-.priority-badge {
-  display: inline-block;
-  font-size: 11px;
-  padding: 1px 7px;
-  border-radius: 4px;
-  font-weight: 600;
+.kanban-card-priority {
   margin-top: 4px;
-}
-.priority-3 {
-  background: #fef2f2;
-  color: #ef4444;
-}
-.priority-2 {
-  background: #fffbeb;
-  color: #f59e0b;
-}
-.priority-1 {
-  background: #f0fdf4;
-  color: #22c55e;
 }
 </style>

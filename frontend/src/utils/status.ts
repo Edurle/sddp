@@ -29,3 +29,78 @@ export function projectStatusLabel(status: string): string {
   }
   return map[status] || status
 }
+
+/** Semantic colour intents — map to the --intent-* tokens in main.css. */
+export type BadgeIntent =
+  | 'neutral'
+  | 'info'
+  | 'review'
+  | 'success'
+  | 'warning'
+  | 'danger'
+
+export function reqStatusIntent(status: string): BadgeIntent {
+  const map: Record<string, BadgeIntent> = {
+    drafting_req: 'neutral',
+    drafting_spec: 'info',
+    drafting_tests: 'warning',
+    reviewing_req: 'review',
+    reviewing_spec: 'review',
+    reviewing_tests: 'review',
+    approved: 'success',
+    deprecated: 'danger',
+  }
+  return map[status] || 'neutral'
+}
+
+export function taskStatusIntent(status: string): BadgeIntent {
+  const map: Record<string, BadgeIntent> = {
+    pending: 'neutral',
+    coding: 'info',
+    testing: 'warning',
+    completed: 'success',
+  }
+  return map[status] || 'neutral'
+}
+
+export function iterStatusIntent(status: string): BadgeIntent {
+  const map: Record<string, BadgeIntent> = {
+    planning: 'neutral',
+    in_progress: 'info',
+    completed: 'success',
+  }
+  return map[status] || 'neutral'
+}
+
+/** Kanban column / coarse req status keys (draft, in_review, in_progress…). */
+export function mappedReqStatusIntent(mapped: string): BadgeIntent {
+  const map: Record<string, BadgeIntent> = {
+    draft: 'neutral',
+    in_review: 'review',
+    approved: 'success',
+    in_progress: 'info',
+    completed: 'success',
+    deprecated: 'danger',
+  }
+  return map[mapped] || 'neutral'
+}
+
+export type PriorityLevel = 'high' | 'medium' | 'low'
+
+/** Priority is stored as 1 (low) / 2 (medium) / 3 (high). */
+export function priorityLevel(priority: string | number): PriorityLevel {
+  const p = Number(priority)
+  if (p >= 3) return 'high'
+  if (p === 2) return 'medium'
+  return 'low'
+}
+
+export function priorityLabel(priority: string | number): string {
+  return { high: '高', medium: '中', low: '低' }[priorityLevel(priority)]
+}
+
+export function priorityIntent(priority: string | number): BadgeIntent {
+  return { high: 'danger', medium: 'warning', low: 'success' }[
+    priorityLevel(priority)
+  ] as BadgeIntent
+}

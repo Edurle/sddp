@@ -24,7 +24,7 @@
           <div class="info-badges">
             <AppBadge data-testid="req-detail-tag-type" :text="typeLabel(req.type)" />
             <AppBadge data-testid="req-detail-txt-priority" :text="priorityLabel(req.priority)" />
-            <span data-testid="req-detail-tag-status" class="status-tag">{{ reqStatusLabel(req.status) }}</span>
+            <StatusBadge test-id="req-detail-tag-status" :intent="reqStatusIntent(req.status)" :label="reqStatusLabel(req.status)" :strike="req.status === 'deprecated'" />
           </div>
           <p data-testid="req-detail-txt-review-status" class="status-text">{{ reqStatusLabel(req.status) }}</p>
 
@@ -109,7 +109,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppBadge from '@/components/common/AppBadge.vue'
-import { reqStatusLabel } from '@/utils/status'
+import StatusBadge from '@/components/common/StatusBadge.vue'
+import { reqStatusLabel, reqStatusIntent } from '@/utils/status'
 
 interface TypeDetail {
   reproduce_steps?: string
@@ -257,14 +258,6 @@ function stepCircle(step: string) {
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 8px;
-}
-.status-tag {
-  background: #f0f0f0;
-  color: #666;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 0.8em;
-  font-weight: 500;
 }
 .status-text {
   font-size: 12px;

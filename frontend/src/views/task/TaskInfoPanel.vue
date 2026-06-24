@@ -5,7 +5,7 @@
       <p class="info-desc" data-testid="task-detail-txt-description">{{ task.description }}</p>
       <div class="info-row">
         <span class="info-row-label">状态</span>
-        <span :class="['status-badge', `badge-${task.status}`]" data-testid="task-detail-txt-status">{{ taskStatusLabel(task.status) }}</span>
+        <StatusBadge test-id="task-detail-txt-status" :intent="taskStatusIntent(task.status)" :label="taskStatusLabel(task.status)" />
       </div>
       <div class="info-row">
         <span class="info-row-label">指派人</span>
@@ -49,7 +49,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { taskStatusLabel } from '@/utils/status'
+import { taskStatusLabel, taskStatusIntent } from '@/utils/status'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 
 interface Assignee {
   id?: number
@@ -138,28 +139,5 @@ const assigneeName = computed(() => {
 }
 .info-link:hover {
   text-decoration: underline;
-}
-.status-badge {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.badge-pending {
-  background: #f0f0f0;
-  color: #666;
-}
-.badge-coding {
-  background: #f9f0ff;
-  color: #722ed1;
-}
-.badge-testing {
-  background: #fff7e6;
-  color: #d48806;
-}
-.badge-completed {
-  background: #f6ffed;
-  color: #52c41a;
 }
 </style>

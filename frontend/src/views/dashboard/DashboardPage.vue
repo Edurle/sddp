@@ -41,13 +41,13 @@
                 <router-link :to="`/requirements/${req.id}`" class="req-link">
                   <span class="node-icon">{{ reqTypeIcon(req.req_type) }}</span>
                   <span class="node-title">{{ req.title }}</span>
-                  <span class="req-status-tag" :class="'req-status-' + req.status">{{ reqStatusLabel(req.status) }}</span>
-                  <span class="priority-dot" :class="'priority-' + req.priority"></span>
+                  <StatusBadge :intent="reqStatusIntent(req.status)" :label="reqStatusLabel(req.status)" :strike="req.status === 'deprecated'" />
+                  <StatusBadge variant="dot" class="tree-priority-dot" :intent="priorityIntent(req.priority)" :label="`优先级：${priorityLabel(req.priority)}`" />
                 </router-link>
                 <div v-if="req.tasks.length > 0" class="task-list">
                   <div v-for="task in req.tasks" :key="task.id" class="task-item">
                     <router-link :to="`/tasks/${task.id}`" class="task-link">
-                      <span class="task-status-dot" :class="'task-' + task.status"></span>
+                      <StatusBadge variant="dot" :intent="taskStatusIntent(task.status)" :label="taskStatusLabel(task.status)" />
                       {{ task.title }}
                     </router-link>
                   </div>
@@ -87,8 +87,8 @@
             <div class="progress-req-header" @click="toggleExpand('pr', req.id)">
               <span class="expand-icon">{{ isExpanded('pr', req.id) ? '▼' : '▶' }}</span>
               <router-link :to="`/requirements/${req.id}`" class="progress-req-title" @click.stop>{{ req.title }}</router-link>
-              <span class="progress-req-status" :class="'prs-' + req.status">{{ reqStatusLabel(req.status) }}</span>
-              <span class="priority-indicator" :class="'pi-' + req.priority"></span>
+              <StatusBadge class="progress-req-status-badge" :intent="reqStatusIntent(req.status)" :label="reqStatusLabel(req.status)" :strike="req.status === 'deprecated'" />
+              <StatusBadge variant="dot" class="progress-priority-dot" :intent="priorityIntent(req.priority)" :label="`优先级：${priorityLabel(req.priority)}`" />
             </div>
             <div v-if="isExpanded('pr', req.id)" class="progress-req-detail">
               <div class="progress-stages">
@@ -199,7 +199,11 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotificationStore } from '@/stores/notification'
 import { apiClient } from '@/api/client'
-import { reqStatusLabel, iterStatusLabel } from '@/utils/status'
+import {
+  reqStatusLabel, iterStatusLabel, taskStatusLabel,
+  reqStatusIntent, taskStatusIntent, priorityIntent, priorityLabel,
+} from '@/utils/status'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const authStore = useAuthStore()
@@ -545,29 +549,7 @@ onMounted(async () => {
   transition: background 0.15s;
 }
 .req-link:hover { background: rgba(79, 70, 229, 0.04); }
-.req-status-tag {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 8px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.req-status-drafting_req { background: #f3f4f6; color: #666; }
-.req-status-reviewing_req, .req-status-reviewing_spec, .req-status-reviewing_tests { background: #f3e8ff; color: #6b21a8; }
-.req-status-drafting_spec { background: #eff6ff; color: #1e40af; }
-.req-status-drafting_tests { background: #fef3c7; color: #92400e; }
-.req-status-approved { background: #dcfce7; color: #166534; }
-.req-status-deprecated { background: #fee2e2; color: #991b1b; text-decoration: line-through; }
-.priority-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-.priority-3 { background: #ef4444; }
-.priority-2 { background: #f59e0b; }
-.priority-1 { background: #22c55e; }
+.tree-priority-dot { margin-left: auto; }
 .task-list {
   margin-left: 34px;
   padding: 2px 0 4px;
@@ -585,16 +567,6 @@ onMounted(async () => {
   transition: background 0.15s;
 }
 .task-link:hover { background: rgba(0, 0, 0, 0.02); color: #333; }
-.task-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.task-pending { background: #9ca3af; }
-.task-coding { background: #3b82f6; }
-.task-testing { background: #f59e0b; }
-.task-completed { background: #22c55e; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
 .form-group input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
@@ -671,26 +643,8 @@ onMounted(async () => {
   max-width: 300px;
 }
 .progress-req-title:hover { color: #4f46e5; }
-.progress-req-status {
-  font-size: 11px;
-  padding: 2px 10px;
-  border-radius: 10px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-.prs-drafting_req, .prs-drafting_spec, .prs-drafting_tests { background: #f3f4f6; color: #666; }
-.prs-reviewing_req, .prs-reviewing_spec, .prs-reviewing_tests { background: #fef3c7; color: #92400e; }
-.prs-approved { background: #dcfce7; color: #166534; }
-.priority-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-.pi-3 { background: #ef4444; }
-.pi-2 { background: #f59e0b; }
-.pi-1 { background: #22c55e; }
+.progress-req-status-badge { flex-shrink: 0; }
+.progress-priority-dot { margin-left: auto; }
 .progress-req-detail {
   padding: 0 16px 16px 40px;
   border-top: 1px solid #f3f4f6;
