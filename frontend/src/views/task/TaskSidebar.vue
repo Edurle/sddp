@@ -127,7 +127,7 @@ function stepCircle(step: string) {
   color: var(--color-primary);
 }
 .step-item.current {
-  background: #1677ff;
+  background: var(--color-current);
   color: #fff;
 }
 .step-item.current .step-circle {
