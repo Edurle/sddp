@@ -415,6 +415,11 @@ label {
   margin-top: 0.5rem;
 }
 
+/* Tab panel fills the remaining height of a flex-column container */
+.tab-panel {
+  flex: 1;
+}
+
 .actions {
   margin: 1rem 0;
   display: flex;
