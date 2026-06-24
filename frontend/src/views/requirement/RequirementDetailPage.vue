@@ -356,117 +356,105 @@
       </div>
     </div>
 
-    <div v-if="showSubmitReviewDialog" class="dialog-overlay" @click.self="showSubmitReviewDialog = false">
-      <div data-testid="req-detail-dlg-submit-review" class="dialog">
-        <h3>提交审核</h3>
-        <div class="custom-select" data-testid="req-detail-dlg-submit-review-sel-reviewer" @click="toggleDropdown('submitReview')">
-          <span>{{ getSelectedReviewerName(submitReviewForm.reviewer_id) || '请选择审核人' }}</span>
-          <div v-if="dropdownOpen === 'submitReview'" class="dropdown-options">
-            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+    <AppDialog :open="showSubmitReviewDialog" test-id="req-detail-dlg-submit-review" @close="showSubmitReviewDialog = false">
+      <h3>提交审核</h3>
+      <div class="custom-select" data-testid="req-detail-dlg-submit-review-sel-reviewer" @click="toggleDropdown('submitReview')">
+        <span>{{ getSelectedReviewerName(submitReviewForm.reviewer_id) || '请选择审核人' }}</span>
+        <div v-if="dropdownOpen === 'submitReview'" class="dropdown-options">
+          <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+        </div>
+      </div>
+      <button data-testid="req-detail-dlg-submit-review-btn-confirm" :disabled="isPending('submitReview')" @click="submitReview">确认</button>
+      <button @click="showSubmitReviewDialog = false">取消</button>
+    </AppDialog>
+
+    <AppDialog :open="showRejectDialog" test-id="req-detail-dlg-reject" @close="showRejectDialog = false">
+      <h3>驳回</h3>
+      <textarea v-model="rejectForm.comment" data-testid="req-detail-dlg-reject-txtarea-comment"></textarea>
+      <button class="btn-danger" data-testid="req-detail-dlg-reject-btn-confirm" :disabled="isPending('rejectReview')" @click="rejectReview">确认</button>
+      <button @click="showRejectDialog = false">取消</button>
+    </AppDialog>
+
+    <AppDialog :open="showSubmitSpecReviewDialog" test-id="req-detail-dlg-submit-spec-review" @close="showSubmitSpecReviewDialog = false">
+      <h3>提交规范审核</h3>
+      <div class="custom-select" data-testid="req-detail-dlg-submit-spec-review-sel-reviewer" @click="toggleDropdown('submitSpecReview')">
+        <span>{{ getSelectedReviewerName(submitSpecReviewForm.reviewer_id) || '请选择审核人' }}</span>
+        <div v-if="dropdownOpen === 'submitSpecReview'" class="dropdown-options">
+          <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitSpecReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+        </div>
+      </div>
+      <button data-testid="req-detail-dlg-submit-spec-review-btn-confirm" :disabled="isPending('submitSpecReview')" @click="submitSpecReview">确认</button>
+      <button @click="showSubmitSpecReviewDialog = false">取消</button>
+    </AppDialog>
+
+    <AppDialog :open="showSubmitTestsReviewDialog" test-id="req-detail-dlg-submit-tests-review" @close="showSubmitTestsReviewDialog = false">
+      <h3>提交测试审核</h3>
+      <div class="custom-select" data-testid="req-detail-dlg-submit-tests-review-sel-reviewer" @click="toggleDropdown('submitTestsReview')">
+        <span>{{ getSelectedReviewerName(submitTestsReviewForm.reviewer_id) || '请选择审核人' }}</span>
+        <div v-if="dropdownOpen === 'submitTestsReview'" class="dropdown-options">
+          <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitTestsReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
+        </div>
+      </div>
+      <button data-testid="req-detail-dlg-submit-tests-review-btn-confirm" :disabled="isPending('submitTestsReview')" @click="submitTestsReview">确认</button>
+      <button @click="showSubmitTestsReviewDialog = false">取消</button>
+    </AppDialog>
+
+    <AppDialog :open="showAddTaskDialog" test-id="req-detail-dlg-add-task" @close="showAddTaskDialog = false">
+      <h3>添加任务</h3>
+      <div class="form-group">
+        <label>标题</label>
+        <input v-model="addTaskForm.title" data-testid="req-detail-dlg-add-task-inp-title" />
+      </div>
+      <div class="form-group">
+        <label>描述</label>
+        <textarea v-model="addTaskForm.description" data-testid="req-detail-dlg-add-task-txtarea-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label>指派人</label>
+        <div class="custom-select" data-testid="req-detail-dlg-add-task-sel-assignee" @click="toggleDropdown('addTask')">
+          <span>{{ getSelectedReviewerName(addTaskForm.assignee_id) || '请选择' }}</span>
+          <div v-if="dropdownOpen === 'addTask'" class="dropdown-options">
+            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="addTaskForm.assignee_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
           </div>
         </div>
-        <button data-testid="req-detail-dlg-submit-review-btn-confirm" :disabled="isPending('submitReview')" @click="submitReview">确认</button>
-        <button @click="showSubmitReviewDialog = false">取消</button>
       </div>
-    </div>
+      <button data-testid="req-detail-dlg-add-task-btn-submit" :disabled="isPending('createTask')" @click="createTask">提交</button>
+      <button @click="showAddTaskDialog = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showRejectDialog" class="dialog-overlay" @click.self="showRejectDialog = false">
-      <div data-testid="req-detail-dlg-reject" class="dialog">
-        <h3>驳回</h3>
-        <textarea v-model="rejectForm.comment" data-testid="req-detail-dlg-reject-txtarea-comment"></textarea>
-        <button class="btn-danger" data-testid="req-detail-dlg-reject-btn-confirm" :disabled="isPending('rejectReview')" @click="rejectReview">确认</button>
-        <button @click="showRejectDialog = false">取消</button>
+    <AppDialog :open="showTestCaseDialog" test-id="req-detail-dlg-test-case" @close="showTestCaseDialog = false">
+      <h3>{{ editingTestCase ? '编辑测试用例' : '创建测试用例' }}</h3>
+      <div class="form-group">
+        <label>标题</label>
+        <input v-model="testCaseForm.title" data-testid="req-detail-dlg-test-case-inp-title" />
       </div>
-    </div>
-
-    <div v-if="showSubmitSpecReviewDialog" class="dialog-overlay" @click.self="showSubmitSpecReviewDialog = false">
-      <div data-testid="req-detail-dlg-submit-spec-review" class="dialog">
-        <h3>提交规范审核</h3>
-        <div class="custom-select" data-testid="req-detail-dlg-submit-spec-review-sel-reviewer" @click="toggleDropdown('submitSpecReview')">
-          <span>{{ getSelectedReviewerName(submitSpecReviewForm.reviewer_id) || '请选择审核人' }}</span>
-          <div v-if="dropdownOpen === 'submitSpecReview'" class="dropdown-options">
-            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitSpecReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-          </div>
-        </div>
-        <button data-testid="req-detail-dlg-submit-spec-review-btn-confirm" :disabled="isPending('submitSpecReview')" @click="submitSpecReview">确认</button>
-        <button @click="showSubmitSpecReviewDialog = false">取消</button>
+      <div class="form-group">
+        <label>类型</label>
+        <select v-model="testCaseForm.case_type" data-testid="req-detail-dlg-test-case-sel-type">
+          <option value="ui_test">UI测试</option>
+          <option value="happy_path">正常用例</option>
+          <option value="edge_case">边界用例</option>
+        </select>
       </div>
-    </div>
-
-    <div v-if="showSubmitTestsReviewDialog" class="dialog-overlay" @click.self="showSubmitTestsReviewDialog = false">
-      <div data-testid="req-detail-dlg-submit-tests-review" class="dialog">
-        <h3>提交测试审核</h3>
-        <div class="custom-select" data-testid="req-detail-dlg-submit-tests-review-sel-reviewer" @click="toggleDropdown('submitTestsReview')">
-          <span>{{ getSelectedReviewerName(submitTestsReviewForm.reviewer_id) || '请选择审核人' }}</span>
-          <div v-if="dropdownOpen === 'submitTestsReview'" class="dropdown-options">
-            <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="submitTestsReviewForm.reviewer_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-          </div>
-        </div>
-        <button data-testid="req-detail-dlg-submit-tests-review-btn-confirm" :disabled="isPending('submitTestsReview')" @click="submitTestsReview">确认</button>
-        <button @click="showSubmitTestsReviewDialog = false">取消</button>
+      <div class="form-group">
+        <label>前置条件</label>
+        <textarea v-model="testCaseForm.precondition" data-testid="req-detail-dlg-test-case-txtarea-precondition"></textarea>
       </div>
-    </div>
-
-    <div v-if="showAddTaskDialog" class="dialog-overlay" @click.self="showAddTaskDialog = false">
-      <div data-testid="req-detail-dlg-add-task" class="dialog">
-        <h3>添加任务</h3>
-        <div class="form-group">
-          <label>标题</label>
-          <input v-model="addTaskForm.title" data-testid="req-detail-dlg-add-task-inp-title" />
-        </div>
-        <div class="form-group">
-          <label>描述</label>
-          <textarea v-model="addTaskForm.description" data-testid="req-detail-dlg-add-task-txtarea-desc"></textarea>
-        </div>
-        <div class="form-group">
-          <label>指派人</label>
-          <div class="custom-select" data-testid="req-detail-dlg-add-task-sel-assignee" @click="toggleDropdown('addTask')">
-            <span>{{ getSelectedReviewerName(addTaskForm.assignee_id) || '请选择' }}</span>
-            <div v-if="dropdownOpen === 'addTask'" class="dropdown-options">
-              <div v-for="m in reviewers" :key="m.id" class="dropdown-option" @click.stop="addTaskForm.assignee_id = String(m.id); dropdownOpen = ''">{{ m.nickname || m.email }}</div>
-            </div>
-          </div>
-        </div>
-        <button data-testid="req-detail-dlg-add-task-btn-submit" :disabled="isPending('createTask')" @click="createTask">提交</button>
-        <button @click="showAddTaskDialog = false">取消</button>
+      <div class="form-group">
+        <label>步骤</label>
+        <textarea v-model="testCaseForm.steps" data-testid="req-detail-dlg-test-case-txtarea-steps"></textarea>
       </div>
-    </div>
-
-    <div v-if="showTestCaseDialog" class="dialog-overlay" @click.self="showTestCaseDialog = false">
-      <div data-testid="req-detail-dlg-test-case" class="dialog">
-        <h3>{{ editingTestCase ? '编辑测试用例' : '创建测试用例' }}</h3>
-        <div class="form-group">
-          <label>标题</label>
-          <input v-model="testCaseForm.title" data-testid="req-detail-dlg-test-case-inp-title" />
-        </div>
-        <div class="form-group">
-          <label>类型</label>
-          <select v-model="testCaseForm.case_type" data-testid="req-detail-dlg-test-case-sel-type">
-            <option value="ui_test">UI测试</option>
-            <option value="happy_path">正常用例</option>
-            <option value="edge_case">边界用例</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>前置条件</label>
-          <textarea v-model="testCaseForm.precondition" data-testid="req-detail-dlg-test-case-txtarea-precondition"></textarea>
-        </div>
-        <div class="form-group">
-          <label>步骤</label>
-          <textarea v-model="testCaseForm.steps" data-testid="req-detail-dlg-test-case-txtarea-steps"></textarea>
-        </div>
-        <div class="form-group">
-          <label>预期结果</label>
-          <textarea v-model="testCaseForm.expected_result" data-testid="req-detail-dlg-test-case-txtarea-expected"></textarea>
-        </div>
-        <div class="form-group">
-          <label>关联 API</label>
-          <input v-model="testCaseForm.related_api" data-testid="req-detail-dlg-test-case-inp-related-api" />
-        </div>
-        <button data-testid="req-detail-dlg-test-case-btn-save" :disabled="isPending('saveTestCase')" @click="saveTestCase">保存</button>
-        <button @click="showTestCaseDialog = false">取消</button>
+      <div class="form-group">
+        <label>预期结果</label>
+        <textarea v-model="testCaseForm.expected_result" data-testid="req-detail-dlg-test-case-txtarea-expected"></textarea>
       </div>
-    </div>
+      <div class="form-group">
+        <label>关联 API</label>
+        <input v-model="testCaseForm.related_api" data-testid="req-detail-dlg-test-case-inp-related-api" />
+      </div>
+      <button data-testid="req-detail-dlg-test-case-btn-save" :disabled="isPending('saveTestCase')" @click="saveTestCase">保存</button>
+      <button @click="showTestCaseDialog = false">取消</button>
+    </AppDialog>
 
     <div v-if="viewTestCase" class="dialog-overlay" @click.self="viewTestCase = null">
       <div class="tc-detail-dialog">
@@ -525,38 +513,34 @@
       </div>
     </div>
 
-    <div v-if="showSupersedeDialog" class="dialog-overlay" @click.self="showSupersedeDialog = false">
-      <div data-testid="req-detail-dlg-supersede" class="dialog">
-        <h3>创建变更需求</h3>
-        <p class="dialog-hint">将当前已通过需求标记为废弃，并创建一个新的变更需求</p>
-        <div class="form-group">
-          <label>新需求标题</label>
-          <input v-model="supersedeForm.title" data-testid="req-detail-dlg-supersede-inp-title" :placeholder="`${req?.title || ''}（变更）`" />
-        </div>
-        <div class="form-group">
-          <label>新需求描述</label>
-          <textarea v-model="supersedeForm.description" data-testid="req-detail-dlg-supersede-txtarea-desc" :placeholder="req?.description || ''"></textarea>
-        </div>
-        <button data-testid="req-detail-dlg-supersede-btn-confirm" :disabled="isPending('supersedeReq')" @click="supersedeReq">确认</button>
-        <button @click="showSupersedeDialog = false">取消</button>
+    <AppDialog :open="showSupersedeDialog" test-id="req-detail-dlg-supersede" @close="showSupersedeDialog = false">
+      <h3>创建变更需求</h3>
+      <p class="dialog-hint">将当前已通过需求标记为废弃，并创建一个新的变更需求</p>
+      <div class="form-group">
+        <label>新需求标题</label>
+        <input v-model="supersedeForm.title" data-testid="req-detail-dlg-supersede-inp-title" :placeholder="`${req?.title || ''}（变更）`" />
       </div>
-    </div>
+      <div class="form-group">
+        <label>新需求描述</label>
+        <textarea v-model="supersedeForm.description" data-testid="req-detail-dlg-supersede-txtarea-desc" :placeholder="req?.description || ''"></textarea>
+      </div>
+      <button data-testid="req-detail-dlg-supersede-btn-confirm" :disabled="isPending('supersedeReq')" @click="supersedeReq">确认</button>
+      <button @click="showSupersedeDialog = false">取消</button>
+    </AppDialog>
 
-    <div v-if="showAddLinkDialog" class="dialog-overlay" @click.self="showAddLinkDialog = false">
-      <div data-testid="req-detail-dlg-add-link" class="dialog">
-        <h3>添加关联</h3>
-        <div class="form-group">
-          <label>目标需求 ID</label>
-          <input v-model.number="addLinkForm.target_id" type="number" data-testid="req-detail-dlg-add-link-inp-target" />
-        </div>
-        <div class="form-group">
-          <label>关联类型</label>
-          <span class="spec-tag" style="background:var(--intent-info-bg);color:var(--color-primary)">relates_to（关联）</span>
-        </div>
-        <button data-testid="req-detail-dlg-add-link-btn-confirm" :disabled="isPending('createLink')" @click="createLink">确认</button>
-        <button @click="showAddLinkDialog = false">取消</button>
+    <AppDialog :open="showAddLinkDialog" test-id="req-detail-dlg-add-link" @close="showAddLinkDialog = false">
+      <h3>添加关联</h3>
+      <div class="form-group">
+        <label>目标需求 ID</label>
+        <input v-model.number="addLinkForm.target_id" type="number" data-testid="req-detail-dlg-add-link-inp-target" />
       </div>
-    </div>
+      <div class="form-group">
+        <label>关联类型</label>
+        <span class="spec-tag" style="background:var(--intent-info-bg);color:var(--color-primary)">relates_to（关联）</span>
+      </div>
+      <button data-testid="req-detail-dlg-add-link-btn-confirm" :disabled="isPending('createLink')" @click="createLink">确认</button>
+      <button @click="showAddLinkDialog = false">取消</button>
+    </AppDialog>
   </div>
 </template>
 
@@ -572,6 +556,7 @@ import { marked } from 'marked'
 import RequirementSidebar from './RequirementSidebar.vue'
 import JsonTree from '@/components/JsonTree.vue'
 import TestDslFlow from '@/components/TestDslFlow.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 
 const route = useRoute()
 const router = useRouter()

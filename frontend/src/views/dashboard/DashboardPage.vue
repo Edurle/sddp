@@ -168,27 +168,25 @@
       <button data-testid="dashboard-btn-save-profile" :disabled="isPending('saveProfile')" @click="saveProfile">保存</button>
       <button data-testid="dashboard-btn-change-password" @click="showPasswordDialog = true">修改密码</button>
 
-      <div v-if="showPasswordDialog" class="dialog-overlay" @click.self="showPasswordDialog = false">
-        <div data-testid="dashboard-dlg-password" class="dialog">
-          <h3>修改密码</h3>
-          <div class="form-group">
-            <label>旧密码</label>
-            <input v-model="passwordForm.old" type="password" data-testid="dashboard-dlg-password-inp-old" />
-          </div>
-          <div class="form-group">
-            <label>新密码</label>
-            <input v-model="passwordForm.newPassword" type="password" data-testid="dashboard-dlg-password-inp-new" />
-          </div>
-          <div class="form-group">
-            <label>确认新密码</label>
-            <input v-model="passwordForm.confirm" type="password" data-testid="dashboard-dlg-password-inp-confirm" />
-          </div>
-          <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
-          <div v-if="passwordSuccess" class="success-message">{{ passwordSuccess }}</div>
-          <button data-testid="dashboard-dlg-password-btn-submit" :disabled="isPending('changePassword')" @click="changePassword">提交</button>
-          <button @click="showPasswordDialog = false">取消</button>
+      <AppDialog :open="showPasswordDialog" test-id="dashboard-dlg-password" @close="showPasswordDialog = false">
+        <h3>修改密码</h3>
+        <div class="form-group">
+          <label>旧密码</label>
+          <input v-model="passwordForm.old" type="password" data-testid="dashboard-dlg-password-inp-old" />
         </div>
-      </div>
+        <div class="form-group">
+          <label>新密码</label>
+          <input v-model="passwordForm.newPassword" type="password" data-testid="dashboard-dlg-password-inp-new" />
+        </div>
+        <div class="form-group">
+          <label>确认新密码</label>
+          <input v-model="passwordForm.confirm" type="password" data-testid="dashboard-dlg-password-inp-confirm" />
+        </div>
+        <div v-if="passwordError" class="error-message">{{ passwordError }}</div>
+        <div v-if="passwordSuccess" class="success-message">{{ passwordSuccess }}</div>
+        <button data-testid="dashboard-dlg-password-btn-submit" :disabled="isPending('changePassword')" @click="changePassword">提交</button>
+        <button @click="showPasswordDialog = false">取消</button>
+      </AppDialog>
     </div>
     </template>
   </div>
@@ -204,6 +202,7 @@ import {
   reqStatusIntent, taskStatusIntent, priorityIntent, priorityLabel,
 } from '@/utils/status'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useAsyncAction } from '@/composables/useAsyncAction'
 
 const authStore = useAuthStore()
@@ -572,14 +571,6 @@ onMounted(async () => {
 .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: var(--text-base); }
 .success-message { color: var(--intent-success-text); font-size: var(--text-sm); margin-bottom: 0.5rem; }
 .error-message { color: #ef4444; font-size: var(--text-sm); margin-bottom: 0.5rem; }
-.dialog-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex; align-items: center; justify-content: center; z-index: 100;
-}
-.dialog {
-  background: var(--color-surface); padding: var(--space-6); border-radius: var(--radius-lg); width: 360px; max-width: 90vw;
-}
 .dialog h3 { margin-bottom: var(--space-4); }
 .stat-cards {
   display: flex;

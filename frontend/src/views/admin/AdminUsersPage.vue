@@ -304,15 +304,6 @@ th, td {
   color: #fff !important;
 }
 
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
 
 .dialog h3 {
   margin: 0 0 1rem;
