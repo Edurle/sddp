@@ -62,43 +62,43 @@ function formatVal(v: unknown): string {
 <style scoped>
 .dsl-api-card {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-surface);
 }
 .dsl-api-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px;
   background: var(--color-surface-muted);
   border-bottom: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 .dsl-method {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   letter-spacing: 0.5px;
   flex-shrink: 0;
 }
 .dsl-path {
   font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
   word-break: break-all;
 }
 .dsl-service {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-muted);
   background: var(--color-surface-muted);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin-left: auto;
 }
 .dsl-phase-tag {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   font-weight: 600;
 }
@@ -106,11 +106,11 @@ function formatVal(v: unknown): string {
   padding: 6px 12px;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
 .dsl-field-key {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   font-weight: 600;
   min-width: 36px;
@@ -118,7 +118,7 @@ function formatVal(v: unknown): string {
   flex-shrink: 0;
 }
 .dsl-field-value {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
 }
 .dsl-field-obj {
@@ -130,7 +130,7 @@ function formatVal(v: unknown): string {
 .dsl-kv-row {
   display: flex;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 .dsl-kv-key {
@@ -146,6 +146,6 @@ function formatVal(v: unknown): string {
 .dsl-kv-path {
   font-family: 'SF Mono', 'Menlo', monospace;
   color: var(--intent-review-text);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 </style>

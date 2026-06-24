@@ -19,9 +19,9 @@ defineEmits(['update:modelValue'])
 label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
 }
 
@@ -30,7 +30,7 @@ input[type="checkbox"] {
   width: 18px;
   height: 18px;
   border: 2px solid var(--color-border-strong);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.02);
   cursor: pointer;
   position: relative;
@@ -50,7 +50,7 @@ input[type="checkbox"]:checked::after {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 span {

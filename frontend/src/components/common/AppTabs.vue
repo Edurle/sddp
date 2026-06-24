@@ -29,21 +29,21 @@ defineEmits(['update:modelValue'])
 <style scoped>
 .tab-buttons {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   background: rgba(0, 0, 0, 0.03);
-  padding: 4px;
-  border-radius: 10px;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
 }
 
 .tab-buttons button {
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   background: transparent;
   color: var(--color-text) !important;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-family: inherit;
   transition: all 0.2s ease;
 }

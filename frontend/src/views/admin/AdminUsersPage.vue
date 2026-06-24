@@ -260,8 +260,8 @@ h1 {
   flex: 1;
   padding: 8px 12px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
 }
 
 table {
@@ -274,7 +274,7 @@ th, td {
   padding: 10px 12px;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 .action-cell {
@@ -283,9 +283,9 @@ th, td {
 }
 
 .action-cell button {
-  font-size: 13px;
+  font-size: var(--text-sm);
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
@@ -319,7 +319,7 @@ th, td {
 
 .dialog {
   background: var(--color-surface);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   min-width: 360px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
@@ -332,14 +332,14 @@ th, td {
 
 .dialog-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .dialog-actions button {
   padding: 8px 20px;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
   cursor: pointer;
 }
 
@@ -359,8 +359,8 @@ th, td {
 
 .form-group label {
   display: block;
-  font-size: 13px;
-  margin-bottom: 4px;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-1);
   color: var(--color-text-muted);
 }
 
@@ -368,8 +368,8 @@ th, td {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
   box-sizing: border-box;
 }
 
@@ -377,13 +377,13 @@ th, td {
 
 .error-message {
   color: var(--color-danger);
-  font-size: 13px;
-  margin-top: 8px;
+  font-size: var(--text-sm);
+  margin-top: var(--space-2);
 }
 
 .success-message {
   color: var(--intent-success-text);
-  font-size: 13px;
-  margin-top: 8px;
+  font-size: var(--text-sm);
+  margin-top: var(--space-2);
 }
 </style>

@@ -13,7 +13,7 @@ defineProps<{ testId?: string }>()
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
 }
 </style>

@@ -407,7 +407,7 @@ onMounted(async () => {
 
 <style scoped>
 .failure-reason {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-danger);
   margin-top: 2px;
   line-height: 1.4;
@@ -417,7 +417,7 @@ onMounted(async () => {
 }
 .error-message {
   color: #ef4444;
-  font-size: 13px;
+  font-size: var(--text-sm);
   margin-bottom: 0.5rem;
 }
 .detail-layout {
@@ -440,7 +440,7 @@ onMounted(async () => {
 }
 .tab-btn {
   padding: 8px 18px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
@@ -465,10 +465,10 @@ onMounted(async () => {
 .spec-content {
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.8;
   white-space: pre-wrap;
   color: var(--color-text);
@@ -482,16 +482,16 @@ onMounted(async () => {
 .summary-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.75rem;
   text-align: center;
 }
 .summary-num {
-  font-size: 22px;
+  font-size: var(--text-2xl);
   font-weight: 700;
 }
 .summary-label {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   margin-top: 2px;
 }
@@ -500,7 +500,7 @@ onMounted(async () => {
 .num-fail { color: var(--color-danger); }
 .num-skip { color: var(--intent-warning-text); }
 .test-summary-text {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin-bottom: 1rem;
   font-weight: 500;
@@ -511,7 +511,7 @@ onMounted(async () => {
   border-spacing: 0;
   background: var(--color-surface);
   backdrop-filter: blur(20px);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid var(--color-border);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
@@ -521,12 +521,12 @@ onMounted(async () => {
   padding: 10px 14px;
   border-bottom: 1px solid var(--color-border);
   text-align: left;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 .test-table th {
   background: rgba(0, 0, 0, 0.02);
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--color-text-muted);
@@ -551,8 +551,8 @@ onMounted(async () => {
 }
 .update-btn {
   padding: 3px 12px;
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: var(--radius-xs);
+  font-size: var(--text-2xs);
   border: 1px solid var(--color-border-strong);
   background: var(--color-surface);
   color: var(--color-primary);
@@ -564,14 +564,14 @@ onMounted(async () => {
 }
 .update-btn:hover {
   border-color: var(--color-primary);
-  background: rgba(22, 119, 255, 0.04);
+  background: var(--color-primary-soft);
 }
 .exec-history {
   border-top: 1px solid var(--color-border);
   padding-top: 1rem;
 }
 .exec-title {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-muted);
   margin-bottom: 0.75rem;
@@ -581,12 +581,12 @@ onMounted(async () => {
 }
 .round-bar button, .round-btn {
   padding: 5px 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--color-border-strong);
   background: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-family: inherit;
   font-weight: 500;
   transition: all 0.15s;
@@ -614,6 +614,6 @@ onMounted(async () => {
   justify-content: center;
   min-height: 200px;
   color: var(--color-text-subtle);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 </style>

@@ -16,22 +16,22 @@ defineEmits(['update:page'])
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 10px 16px;
   background: var(--color-surface);
   backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 .app-pagination button {
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 14px;
   color: var(--color-text);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -47,7 +47,7 @@ defineEmits(['update:page'])
 }
 
 .app-pagination span {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 </style>

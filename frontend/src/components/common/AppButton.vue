@@ -19,7 +19,7 @@ button[type="submit"] {
   background: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 9px 20px;
   font-weight: 500;
   cursor: pointer;
@@ -38,7 +38,7 @@ button[type="button"] {
   background: rgba(0, 0, 0, 0.04);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 9px 20px;
   cursor: pointer;
 }

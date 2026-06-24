@@ -78,14 +78,14 @@ function formatVal(v: unknown): string {
 <style scoped>
 .dsl-assert-card {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-surface);
 }
 .dsl-assert-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px;
   background: var(--color-surface-muted);
   border-bottom: 1px solid var(--color-border);
@@ -93,15 +93,15 @@ function formatVal(v: unknown): string {
 .dsl-assert-check {
   color: var(--intent-success-text);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .dsl-assert-name {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text);
 }
 .dsl-phase-tag {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   font-weight: 600;
   margin-left: auto;
@@ -110,12 +110,12 @@ function formatVal(v: unknown): string {
   padding: 6px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .dsl-assert-row {
   display: flex;
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 .dsl-assert-key {
@@ -138,11 +138,11 @@ function formatVal(v: unknown): string {
   padding: 6px 12px;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
 .dsl-field-key {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   font-weight: 600;
   min-width: 40px;
@@ -158,7 +158,7 @@ function formatVal(v: unknown): string {
 .dsl-kv-row {
   display: flex;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 .dsl-kv-key {
@@ -173,10 +173,10 @@ function formatVal(v: unknown): string {
 }
 .dsl-value-code {
   font-family: 'SF Mono', 'Menlo', monospace;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text);
   background: var(--color-surface-muted);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 </style>

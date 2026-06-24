@@ -114,7 +114,7 @@ onMounted(() => fetchTeams())
 }
 .team-card {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   cursor: pointer;
   transition: box-shadow 0.2s;

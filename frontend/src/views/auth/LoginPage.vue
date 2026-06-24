@@ -103,7 +103,7 @@ async function handleLogin() {
   max-width: 440px;
   background: var(--color-surface);
   backdrop-filter: blur(24px);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.06),
@@ -126,8 +126,8 @@ async function handleLogin() {
 
 .login-header p {
   color: var(--color-text-subtle);
-  font-size: 13px;
-  margin-top: 4px;
+  font-size: var(--text-sm);
+  margin-top: var(--space-1);
   letter-spacing: 0.02em;
 }
 
@@ -140,9 +140,9 @@ async function handleLogin() {
   width: 100%;
   padding: 11px 14px;
   border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--color-surface);
-  font-size: 14px;
+  font-size: var(--text-base);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -158,7 +158,7 @@ async function handleLogin() {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.25rem;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .remember-label {
@@ -182,8 +182,8 @@ async function handleLogin() {
   background: var(--color-primary);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s, transform 0.1s;

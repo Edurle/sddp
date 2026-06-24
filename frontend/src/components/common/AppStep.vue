@@ -14,8 +14,8 @@ defineProps<{ testId?: string; active?: boolean; completed?: boolean }>()
   align-items: center;
   gap: 6px;
   padding: 5px 14px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
   font-weight: 500;
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid var(--color-border);

@@ -80,35 +80,35 @@ const targetDesc = computed(() => {
 <style scoped>
 .dsl-ui-card {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-surface);
 }
 .dsl-ui-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px;
   background: var(--color-surface-muted);
   border-bottom: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 .dsl-action-badge {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--intent-info-bg);
   color: var(--color-primary);
   flex-shrink: 0;
 }
 .dsl-target-desc {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
   word-break: break-all;
 }
 .dsl-phase-tag {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   font-weight: 600;
   margin-left: auto;
@@ -117,11 +117,11 @@ const targetDesc = computed(() => {
   padding: 6px 12px;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
 .dsl-field-key {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   font-weight: 600;
   min-width: 40px;
@@ -129,7 +129,7 @@ const targetDesc = computed(() => {
   flex-shrink: 0;
 }
 .dsl-field-value {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
 }
 .dsl-field-obj {
@@ -141,7 +141,7 @@ const targetDesc = computed(() => {
 .dsl-kv-row {
   display: flex;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 .dsl-kv-key {
@@ -156,10 +156,10 @@ const targetDesc = computed(() => {
 }
 .dsl-value-code {
   font-family: 'SF Mono', 'Menlo', monospace;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text);
   background: var(--color-surface-muted);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 </style>

@@ -233,7 +233,7 @@ function stepCircle(step: string) {
   gap: 1rem;
 }
 .sidebar-label {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -244,40 +244,40 @@ function stepCircle(step: string) {
   background: var(--color-surface);
   backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.75rem;
 }
 .info-title {
-  font-size: 15px;
+  font-size: var(--text-lg);
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   color: var(--color-text);
 }
 .info-badges {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 .status-text {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-subtle);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 .info-desc {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 .type-detail {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
 .type-detail p {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 .reject-card {
   background: var(--intent-danger-bg);
@@ -287,15 +287,15 @@ function stepCircle(step: string) {
 .step-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .step-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   background: var(--color-surface-muted);
   color: var(--color-text-subtle);
   transition: all 0.2s;
@@ -307,7 +307,7 @@ function stepCircle(step: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   background: var(--color-border);
   color: var(--color-text-subtle);
@@ -348,26 +348,26 @@ function stepCircle(step: string) {
 .action-buttons button {
   width: 100%;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
   padding: 6px 12px;
 }
 .prototype-section {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 .prototype-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  margin-top: var(--space-3);
   margin-bottom: 0.5rem;
 }
 .prototype-zoom-btn {
   background: transparent;
   border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 2px 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--color-text-muted);
   line-height: 1;
 }
@@ -386,11 +386,11 @@ function stepCircle(step: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
 }
 .prototype-modal {
   background: var(--color-surface);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 95vw;
   max-width: 900px;
   height: 85vh;
@@ -407,18 +407,18 @@ function stepCircle(step: string) {
   flex-shrink: 0;
 }
 .prototype-modal-title {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text);
 }
 .prototype-modal-close {
   background: transparent;
   border: none;
-  font-size: 18px;
+  font-size: var(--text-xl);
   color: var(--color-text-subtle);
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .prototype-modal-close:hover {
   background: rgba(0, 0, 0, 0.04);
@@ -427,20 +427,20 @@ function stepCircle(step: string) {
 .prototype-modal-iframe {
   flex: 1;
   border: none;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   width: 100%;
 }
 .prototype-iframe {
   width: 100%;
   height: 200px;
   border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
 }
 .prototype-textarea {
   min-height: 80px;
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--text-2xs);
 }
 .prototype-preview-edit {
   margin-top: 6px;

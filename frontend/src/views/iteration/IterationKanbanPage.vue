@@ -227,7 +227,7 @@ onMounted(() => fetchData())
 .filter-btn {
   padding: 0.35rem 0.75rem;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
@@ -252,7 +252,7 @@ onMounted(() => fetchData())
   position: relative;
   background: var(--color-surface);
   padding: 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   transition: box-shadow 0.2s;
 }
@@ -265,6 +265,6 @@ onMounted(() => fetchData())
   right: 0.5rem;
 }
 .kanban-card-priority {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 </style>

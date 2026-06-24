@@ -27,7 +27,7 @@ defineEmits(['close'])
   backdrop-filter: blur(24px);
   border: 1px solid var(--color-border);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 1.5rem;
   min-width: 440px;
   max-width: 600px;

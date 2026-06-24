@@ -74,7 +74,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .confirm-actions button {
   margin: 0;

@@ -20,7 +20,7 @@ select {
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.03);
   border: 1px solid var(--color-border-strong);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 9px 14px;
   font-family: inherit;
   font-size: inherit;

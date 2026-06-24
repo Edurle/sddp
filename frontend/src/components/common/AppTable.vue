@@ -13,7 +13,7 @@ table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-border);
 }
@@ -22,7 +22,7 @@ th {
   padding: 10px 14px;
   text-align: left;
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
   border-bottom: 1px solid var(--color-border);
   text-transform: uppercase;
@@ -32,7 +32,7 @@ td {
   padding: 10px 14px;
   text-align: left;
   border-bottom: 1px solid var(--color-border);
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
 }
 tr:last-child td {

@@ -84,7 +84,7 @@ function stepCircle(step: string) {
   gap: 1.25rem;
 }
 .sidebar-label {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -94,15 +94,15 @@ function stepCircle(step: string) {
 .step-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .step-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 7px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
   font-weight: 500;
   background: var(--color-surface-muted);
   color: var(--color-text-subtle);
@@ -115,7 +115,7 @@ function stepCircle(step: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   background: var(--color-border);
   color: var(--color-text-subtle);
@@ -149,9 +149,9 @@ function stepCircle(step: string) {
 .action-buttons button {
   width: 100%;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-xs);
   padding: 7px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-family: inherit;
   font-weight: 500;

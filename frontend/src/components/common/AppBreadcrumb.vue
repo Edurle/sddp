@@ -12,8 +12,8 @@ defineProps<{ testId?: string }>()
 .app-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 

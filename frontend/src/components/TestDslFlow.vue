@@ -89,13 +89,13 @@ const rawExpected = computed(() => props.expectedResult || '')
 }
 .tc-dsl-plain-section {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .tc-plain-text {
   margin: 0;
   padding: 0.6rem 0.75rem;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -110,18 +110,18 @@ const rawExpected = computed(() => props.expectedResult || '')
 .tc-role-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--color-text-muted);
   background: var(--color-surface-muted);
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 .tc-flow-phase {
 }
 .tc-phase-label {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   color: var(--color-text-subtle);
   letter-spacing: 1px;

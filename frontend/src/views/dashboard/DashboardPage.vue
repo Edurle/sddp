@@ -427,7 +427,7 @@ onMounted(async () => {
   margin-bottom: 1rem;
   display: flex;
   gap: 1rem;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 .tabs {
@@ -438,7 +438,7 @@ onMounted(async () => {
 }
 .tabs button {
   padding: 8px 20px;
-  font-size: 14px;
+  font-size: var(--text-base);
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
@@ -464,10 +464,10 @@ onMounted(async () => {
 .sub-tabs button {
   padding: 6px 14px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 .sub-tabs button.active {
@@ -479,29 +479,29 @@ onMounted(async () => {
   padding: 2rem;
   text-align: center;
   color: var(--color-text-subtle);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .tree-empty {
   padding: 0.75rem 1rem;
   color: var(--color-text-subtle);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-style: italic;
 }
-.tree-project { margin-bottom: 4px; }
-.tree-children { margin-left: 20px; }
+.tree-project { margin-bottom: var(--space-1); }
+.tree-children { margin-left: var(--space-5); }
 .tree-node {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .tree-node:hover { background: rgba(0, 0, 0, 0.03); }
 .expand-icon {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   width: 14px;
   text-align: center;
@@ -510,31 +510,31 @@ onMounted(async () => {
 .node-icon { flex-shrink: 0; }
 .node-title { font-weight: 600; color: var(--color-text); }
 .node-status {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-weight: 500;
-  margin-left: 4px;
+  margin-left: var(--space-1);
   white-space: nowrap;
 }
 .status-active, .status-in_progress { background: var(--intent-success-bg); color: var(--intent-success-text); }
 .status-planning { background: var(--intent-warning-bg); color: var(--intent-warning-text); }
-.status-completed { background: #e0e7ff; color: #3730a3; }
+.status-completed { background: var(--intent-info-bg); color: var(--intent-info-text); }
 .node-date {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-subtle);
-  margin-left: 4px;
+  margin-left: var(--space-1);
 }
 .node-count {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--color-text-subtle);
   background: var(--color-surface-muted);
   padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: 4px;
+  border-radius: var(--radius-md);
+  margin-left: var(--space-1);
 }
 .tree-requirement {
-  margin-left: 20px;
+  margin-left: var(--space-5);
   padding: 4px 0;
 }
 .req-link {
@@ -542,10 +542,10 @@ onMounted(async () => {
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   color: var(--color-text);
-  font-size: 13px;
+  font-size: var(--text-sm);
   transition: background 0.15s;
 }
 .req-link:hover { background: rgba(79, 70, 229, 0.04); }
@@ -561,73 +561,73 @@ onMounted(async () => {
   gap: 6px;
   text-decoration: none;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: var(--text-xs);
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: background 0.15s;
 }
 .task-link:hover { background: rgba(0, 0, 0, 0.02); color: var(--color-text); }
 .form-group { margin-bottom: 1rem; }
-.form-group label { display: block; font-size: 13px; color: var(--color-text-muted); margin-bottom: 4px; }
-.form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 6px; font-size: 14px; }
-.success-message { color: var(--intent-success-text); font-size: 13px; margin-bottom: 0.5rem; }
-.error-message { color: #ef4444; font-size: 13px; margin-bottom: 0.5rem; }
+.form-group label { display: block; font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-1); }
+.form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: var(--text-base); }
+.success-message { color: var(--intent-success-text); font-size: var(--text-sm); margin-bottom: 0.5rem; }
+.error-message { color: #ef4444; font-size: var(--text-sm); margin-bottom: 0.5rem; }
 .dialog-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.4);
   display: flex; align-items: center; justify-content: center; z-index: 100;
 }
 .dialog {
-  background: var(--color-surface); padding: 24px; border-radius: 12px; width: 360px; max-width: 90vw;
+  background: var(--color-surface); padding: var(--space-6); border-radius: var(--radius-lg); width: 360px; max-width: 90vw;
 }
-.dialog h3 { margin-bottom: 16px; }
+.dialog h3 { margin-bottom: var(--space-4); }
 .stat-cards {
   display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 .stat-card {
   flex: 1;
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
   text-align: center;
 }
 .stat-number {
-  font-size: 28px;
+  font-size: var(--text-3xl);
   font-weight: 700;
 }
 .stat-label {
-  font-size: 13px;
-  margin-top: 4px;
+  font-size: var(--text-sm);
+  margin-top: var(--space-1);
 }
 .stat-draft { background: var(--color-surface-muted); color: var(--color-text-muted); }
 .stat-review { background: var(--intent-warning-bg); color: var(--intent-warning-text); }
 .stat-work { background: var(--intent-info-bg); color: var(--intent-info-text); }
-.stat-approved { background: #f0fdf4; color: var(--intent-success-text); }
+.stat-approved { background: var(--intent-success-bg); color: var(--intent-success-text); }
 .progress-iteration-group {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 .progress-iteration-label {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text-muted);
-  margin-bottom: 12px;
-  padding-left: 4px;
+  margin-bottom: var(--space-3);
+  padding-left: var(--space-1);
 }
 .progress-req-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .progress-req-card {
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .progress-req-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 14px 16px;
   cursor: pointer;
   white-space: nowrap;
@@ -637,7 +637,7 @@ onMounted(async () => {
   font-weight: 600;
   color: var(--color-text);
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--text-base);
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 300px;
@@ -655,13 +655,13 @@ onMounted(async () => {
   gap: 6px;
   flex-wrap: nowrap;
   overflow-x: auto;
-  padding-top: 12px;
-  margin-bottom: 8px;
+  padding-top: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 .stage-item {
-  font-size: 12px;
+  font-size: var(--text-xs);
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -669,29 +669,29 @@ onMounted(async () => {
 .stage-current { background: var(--color-primary); color: white; font-weight: 600; }
 .stage-pending { background: var(--color-surface-muted); color: var(--color-text-subtle); }
 .stage-arrow {
-  font-size: 11px;
-  color: #d1d5db;
+  font-size: var(--text-2xs);
+  color: var(--color-text-subtle);
   flex-shrink: 0;
 }
 .progress-task-summary {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-subtle);
 }
 .pending-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   color: var(--color-text);
   transition: background 0.15s;
 }
 .pending-item:hover { background: rgba(0, 0, 0, 0.03); }
 .pending-badge {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
 }
@@ -701,6 +701,6 @@ onMounted(async () => {
   justify-content: center;
   min-height: 200px;
   color: var(--color-text-subtle);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 </style>

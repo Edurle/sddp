@@ -93,18 +93,18 @@ const assigneeName = computed(() => {
   background: var(--color-surface);
   backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.85rem;
 }
 .info-title {
-  font-size: 16px;
+  font-size: var(--text-lg);
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   color: var(--color-text);
 }
 .info-desc {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.6;
   margin-bottom: 10px;
 }
@@ -113,7 +113,7 @@ const assigneeName = computed(() => {
   align-items: center;
   gap: 6px;
   margin-bottom: 6px;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 .info-row:last-child {
   margin-bottom: 0;
@@ -127,10 +127,10 @@ const assigneeName = computed(() => {
 }
 .info-row-value.mono {
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   background: var(--color-surface-muted);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 .info-link {
   color: var(--color-primary);

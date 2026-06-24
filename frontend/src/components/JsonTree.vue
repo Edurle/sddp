@@ -99,7 +99,7 @@ function isKeyCollapsed(k: string): boolean {
 </script>
 
 <style scoped>
-.jt-val { font-size: 13px; }
+.jt-val { font-size: var(--text-sm); }
 .jt-null { color: var(--color-text-subtle); }
 .jt-bool { color: var(--intent-warning-text); }
 .jt-num { color: var(--intent-warning-text); }
@@ -112,22 +112,22 @@ function isKeyCollapsed(k: string): boolean {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 
 .jt-toggle-row {
   cursor: pointer;
   user-select: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .jt-toggle-row:hover {
   background: var(--color-surface-muted);
 }
 
 .jt-arrow {
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--color-primary);
   margin-right: 6px;
   width: 12px;
@@ -141,13 +141,13 @@ function isKeyCollapsed(k: string): boolean {
 
 .jt-hint {
   color: var(--color-text-subtle);
-  font-size: 11px;
-  margin-left: 8px;
+  font-size: var(--text-2xs);
+  margin-left: var(--space-2);
 }
 
 .jt-label {
   color: var(--color-text-subtle);
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -158,9 +158,9 @@ function isKeyCollapsed(k: string): boolean {
 }
 
 .jt-indent {
-  margin-left: 12px;
+  margin-left: var(--space-3);
   border-left: 3px solid var(--color-border);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 .jt-indent-nested {
   border-left-color: var(--color-primary);
@@ -173,7 +173,7 @@ function isKeyCollapsed(k: string): boolean {
 .jt-card {
   background: var(--color-surface);
   margin: 4px 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   overflow: hidden;
 }
@@ -194,7 +194,7 @@ function isKeyCollapsed(k: string): boolean {
 
 .jt-idx {
   color: var(--color-text-subtle);
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 600;
 }
 </style>

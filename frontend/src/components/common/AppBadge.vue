@@ -10,7 +10,7 @@ defineProps<{ testId?: string; text?: string }>()
 .app-badge {
   display: inline-block;
   padding: 3px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 0.8em;
   font-weight: 500;
   background: rgba(0, 0, 0, 0.05);

@@ -182,15 +182,15 @@ onMounted(fetchKeys)
 }
 .page-desc {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
   margin-bottom: 1rem;
 }
 code {
   background: rgba(0, 0, 0, 0.05);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: 'SF Mono', Monaco, Consolas, monospace;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 .status-active {
   color: var(--intent-success-text);
@@ -204,7 +204,7 @@ code {
   color: #fff;
   border-color: var(--color-danger);
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 .btn-danger:hover {
   background: var(--color-danger-hover);
@@ -215,17 +215,17 @@ code {
 }
 .raw-key-warning {
   color: var(--color-danger);
-  font-size: 13px;
+  font-size: var(--text-sm);
   margin-bottom: 1rem;
 }
 .raw-key-box {
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin-bottom: 1rem;
   word-break: break-all;
 }
@@ -233,14 +233,14 @@ code {
   flex: 1;
   background: none;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 .btn-copy {
   background: var(--color-surface);
   color: var(--color-text);
   border-color: var(--color-border-strong);
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--text-xs);
   white-space: nowrap;
   flex-shrink: 0;
 }

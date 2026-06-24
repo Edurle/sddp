@@ -13,7 +13,7 @@ function onFileChange(e: Event) {
 
 <style scoped>
 input[type="file"] {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text);
   padding: 8px 0;
 }
@@ -21,12 +21,12 @@ input[type="file"] {
 input[type="file"]::file-selector-button {
   background: rgba(0, 0, 0, 0.04);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 14px;
   color: var(--color-text);
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--text-xs);
   margin-right: 10px;
   transition: all 0.2s ease;
 }

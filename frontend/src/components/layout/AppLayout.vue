@@ -117,8 +117,8 @@ function handleLogout() {
   color: var(--color-text-muted);
   text-decoration: none;
   padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   transition: all 0.2s ease;
 }
 .app-layout-nav a:hover {
@@ -140,10 +140,10 @@ function handleLogout() {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 12px 14px 12px 18px;
-  border-radius: 10px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   z-index: 1100;
   max-width: min(90vw, 480px);
   box-shadow: 0 6px 24px rgba(15, 23, 42, 0.16);
@@ -158,7 +158,7 @@ function handleLogout() {
   width: 20px;
   height: 20px;
   line-height: 1;
-  font-size: 18px;
+  font-size: var(--text-xl);
   background: transparent;
   border: none;
   color: inherit;
@@ -191,7 +191,7 @@ function handleLogout() {
 }
 .breadcrumb-bar {
   padding: 8px 24px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--color-text-subtle);
   display: flex;
   align-items: center;

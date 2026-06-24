@@ -262,9 +262,9 @@ onMounted(() => fetchRoles())
 }
 
 .permission-group-label {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--color-text-subtle);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -278,9 +278,9 @@ onMounted(() => fetchRoles())
 .permission-grid label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   margin-bottom: 0;
-  font-size: 13px;
+  font-size: var(--text-sm);
   cursor: pointer;
   color: var(--color-text);
   font-weight: 400;
@@ -292,7 +292,7 @@ onMounted(() => fetchRoles())
   width: 18px;
   height: 18px;
   border: 2px solid var(--color-border-strong);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.02);
   cursor: pointer;
   position: relative;
@@ -311,6 +311,6 @@ onMounted(() => fetchRoles())
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 </style>
