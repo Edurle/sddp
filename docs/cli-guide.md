@@ -1,6 +1,6 @@
 # SDD CLI 使用指南
 
-> `sdd-cli` 当前版本：**0.3.0**
+> `sdd-cli` 当前版本：**0.4.0**
 > 适用：通过命令行/脚本操作 SDD 平台，尤其面向 Agent 自动化场景。
 
 ---
@@ -75,33 +75,35 @@ SDD 的研发流程围绕以下对象流转，CLI 命令按此组织：
 
 错误信息对 Agent 可操作：包含出错位置、现状（现有键/数组长度/有效下标）、修正方向。
 
-### Spec 规范草稿编辑
+### Spec 规范编辑（草稿即工作内容）
+
+> **重要：版本只在审批时生成。** 编辑规范（`save-spec` / `set-spec-field` / `commit-spec`）**都不再产生版本**，只更新「工作内容」。版本仅在**规范审批（无论通过还是驳回）**时，对当时内容切一个快照。因此 `spec-versions` 列表里只有审批快照，不含中间编辑。
 
 Spec content 是 section-name-keyed dict，路径从 section 名直接开始：
 
 ```bash
-# 1. 先有一份正式版本（草稿基于它）
+# 1. 整份写入工作内容（不产生版本）
 sdd requirements save-spec <id> --content '<整份 JSON>'
 
-# 2. 局部改草稿某字段（自动建草稿基线，可多次累积）
+# 2. 局部改工作内容某字段（可多次累积，均不产生版本）
 sdd requirements set-spec-field <id> entity_definition.description --file desc.md
 sdd requirements set-spec-field <id> api_design.endpoints[0].description --file api.md
 
-# 3. 查看草稿（默认返回草稿，含 is_draft / base_version）
+# 3. 查看当前内容（含 is_draft / base_version）
 sdd requirements spec <id>
 
-# 4a. 定版：草稿 → 新正式版本（version+1），清空草稿
-sdd requirements commit-spec <id>
+# 4. 提交规范评审 → 评审【通过或驳回】时才对当时内容生成一个版本
+sdd requirements submit-spec-review <id> --reviewer <uid>
 
-# 4b. 或丢弃草稿，回到当前正式版本
+# （可选）丢弃工作草稿，回到最后一个审批版本
 sdd requirements discard-spec-draft <id>
 ```
 
-**草稿机制要点：**
-- `set-spec-field` 首次调用时自动从当前正式版本拷贝草稿基线；后续调用在草稿上累积修改。
-- 每次局部写都做整份 Schema 校验，失败则不落库（草稿不被污染）。
-- 只有需求处于 `drafting_spec` 状态才能编辑草稿/定版。
-- `commit` 产生新版本（version+1）；`discard` 回到定版前状态。
+**要点：**
+- 版本**只在审批（通过/驳回）时生成**；反复 `save-spec` / `set-spec-field` 不会刷版本。
+- `commit-spec` 现为**幂等 no-op**（不再产生版本，仅为兼容旧脚本保留）。
+- 每次写都做整份 Schema 校验，失败不落库。
+- 只有需求处于 `drafting_spec` 状态才能编辑。
 
 ### 需求字段局部更新
 
@@ -125,6 +127,33 @@ sdd test-cases set-field <id> precondition --file precondition.md
 ```
 
 支持的字段：`title` `type` `precondition` `steps` `expected` `related_api` `related_element`。
+
+### 测试用例废弃（v0.4.0 新增）
+
+功能变更让旧用例失效时，**不要删除**（会丢编号与执行历史），而是**废弃**：保留 `case_number`/历史、退出现役。废弃用例**不计入覆盖率、不可再执行、不可恢复**。`case_number` 永不变更、不复用——功能变更 = 新建用例拿新编号，绝不原地改旧用例语义。
+
+**自动废弃（无需 CLI 操作，服务端联动）：**
+
+```bash
+# 直接废弃需求（仅能从 approved）→ 该需求全部用例自动废弃
+sdd requirements patch <id> --status deprecated
+
+# 创建变更 → 旧需求若已过审(approved)则其用例全部自动废弃；未过审则原样保留
+sdd requirements supersede <id>
+```
+
+**手动废弃（逐条）：** 仅当用例所属需求处于 `approved` 时可用。典型场景：用**普通关联**(relates_to)把新需求关联到旧需求（旧需求**不**废弃、仍在用），但旧需求的某些过审用例已被取代，逐条废弃它们。
+
+```bash
+sdd requirements link <new_id> --target <old_id> --type relates_to   # 关联，不废弃旧需求
+sdd requirements test-cases <old_id>                                  # 看现役用例
+sdd test-cases deprecate <tc_id>                                      # 废弃过时的（不可恢复）
+
+# 审计/追溯时查看含已废弃的列表（默认隐藏）
+sdd requirements test-cases <req_id> --include-deprecated
+```
+
+> 小修用例（措辞/补步骤、语义不变）→ 不要废弃，直接 `test-cases update` / `set-field` 改，编号不变。
 
 ---
 
@@ -243,22 +272,22 @@ sdd test-cases set-field <id> precondition --file precondition.md
 
 | 命令 | 说明 |
 |---|---|
-| `requirements spec <id>` | 查看规范（默认返回草稿） |
-| `requirements save-spec <id> --content '<JSON>'` | 整份覆盖保存（定版） |
-| `requirements spec-versions <id>` | 版本列表 |
+| `requirements spec <id>` | 查看规范（默认返回工作内容/草稿） |
+| `requirements save-spec <id> --content '<JSON>'` | 整份写入工作内容（**不产生版本**） |
+| `requirements spec-versions <id>` | 版本列表（**仅审批快照**） |
 | `requirements spec-version <id> <ver>` | 某版本详情 |
-| `requirements set-spec-field <id> <path> --file <f>` | **v0.3.0** 局部改草稿 |
-| `requirements commit-spec <id>` | **v0.3.0** 草稿定版 |
-| `requirements discard-spec-draft <id>` | **v0.3.0** 丢弃草稿 |
+| `requirements set-spec-field <id> <path> --file <f>` | 局部改工作内容 |
+| `requirements commit-spec <id>` | **幂等 no-op**（不再产生版本，仅兼容保留） |
+| `requirements discard-spec-draft <id>` | 丢弃草稿，回到最后审批版本 |
 | `requirements set-field <id> <path> --file <f>` | **v0.3.0** 需求字段局部更新（prototype_html / type_detail.*） |
 
 **测试用例：**
 
 | 命令 | 说明 |
 |---|---|
-| `requirements test-cases <id>` | 用例列表 |
+| `requirements test-cases <id> [--include-deprecated]` | 用例列表（默认不含已废弃） |
 | `requirements create-test-case <id>` | 创建用例 |
-| `requirements test-stats <id>` | 测试统计 |
+| `requirements test-stats <id>` | 测试统计（不含已废弃） |
 
 **任务：**
 
@@ -305,6 +334,7 @@ sdd test-cases set-field <id> precondition --file precondition.md
 | `test-cases update <id>` | 更新用例（行内选项） |
 | `test-cases set-field <id> <field> --file <f>` | **v0.3.0** 单字段从文件更新 |
 | `test-cases delete <id>` | 删除用例 |
+| `test-cases deprecate <id>` | **v0.4.0** 废弃用例（仅所属需求 approved；不可恢复） |
 | `test-cases execution-results --requirement <id>` | 执行结果 |
 
 ### `sdd test-executions` — 测试执行
@@ -349,24 +379,20 @@ sdd test-cases set-field <id> precondition --file precondition.md
 ### Agent 编写并提交规范（草稿模式）
 
 ```bash
-# 1. 整体保存初始规范（建立版本基线）
+# 1. 整体保存初始规范（写入工作内容，不产生版本）
 sdd requirements save-spec 42 --content '@spec-v1.json'
-# 或用文件避免命令行长度（save-spec 目前接收字符串，超大时用管道或脚本）
 
-# 2. 局部迭代修改（每次只发改动的字段）
+# 2. 局部迭代修改（每次只发改动的字段，均不产生版本）
 echo "用户实体，含 id/email/role" > desc.md
 sdd requirements set-spec-field 42 entity_definition.description --file desc.md
 
 echo '[{"name":"id","type":"BIGINT"},{"name":"email","type":"VARCHAR(255)"}]' > fields.json
 sdd requirements set-spec-field 42 entity_definition.fields --file fields.json
 
-# 3. 确认草稿内容
+# 3. 确认内容
 sdd requirements spec 42
 
-# 4. 满意后定版
-sdd requirements commit-spec 42
-
-# 5. 提交评审
+# 4. 提交评审 →【评审通过或驳回时】才对当时内容生成一个版本
 sdd requirements submit-spec-review 42 --reviewer 3
 ```
 
@@ -397,11 +423,12 @@ sdd test-cases set-field 17 expected --file expected-result.md
 路径不存在：'type_detail.reproduce_steps' 中 'reproduce_steps' 键不存在。现有键：[severity, environment]
 ```
 
-### 草稿和正式版本的关系？
-- 草稿独立于正式版本存在，可多次局部修改累积。
-- `commit-spec` 把草稿固化为新正式版本（version+1），草稿清空。
-- `discard-spec-draft` 丢弃草稿，回到当前正式版本，不影响版本号。
-- `requirements spec <id>` 默认返回草稿（若有），响应里 `is_draft` 标识。
+### 工作内容、草稿和版本的关系？
+- 编辑（`save-spec` / `set-spec-field`）都写入「工作内容」，可多次累积，**不产生版本**。
+- **版本只在规范审批（通过/驳回）时生成**，是当时内容的快照；`spec-versions` 只列这些快照。
+- `commit-spec` 现为幂等 no-op（历史遗留命令，不再定版）。
+- `discard-spec-draft` 丢弃工作草稿，回到最后一个审批版本。
+- `requirements spec <id>` 默认返回工作内容（若有草稿），响应里 `is_draft` 标识。
 
 ### 想看清完整参数？
 任何命令加 `--help`：`sdd requirements set-spec-field --help`。
