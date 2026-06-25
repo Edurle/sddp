@@ -9,16 +9,26 @@
         <option value="edge_case">边界用例</option>
       </select>
       <button data-testid="req-detail-btn-submit-tests-review" @click="$emit('submit-review')">提交测试审核</button>
+      <label class="show-dep-toggle">
+        <input
+          type="checkbox"
+          data-testid="req-detail-chk-show-deprecated"
+          :checked="showDeprecated"
+          @change="$emit('update:showDeprecated', ($event.target as HTMLInputElement).checked)"
+        />
+        显示已废弃
+      </label>
     </div>
     <table data-testid="req-detail-tbl-test-cases">
       <thead>
         <tr><th>编号</th><th>标题</th><th>类型</th><th>最新结果</th><th>操作</th></tr>
       </thead>
       <tbody>
-        <tr v-for="tc in testCases" :key="tc.id">
+        <tr v-for="tc in testCases" :key="tc.id" :class="{ 'tc-deprecated': tc.status === 'deprecated' }">
           <td>{{ tc.case_number }}</td>
           <td>
             <span class="tc-title" @click="$emit('select', tc)">{{ tc.title }}</span>
+            <span v-if="tc.status === 'deprecated'" class="tc-dep-badge" data-testid="req-detail-tag-tc-deprecated">已废弃</span>
           </td>
           <td>{{ tc.case_type }}</td>
           <td>
@@ -27,8 +37,11 @@
           </td>
           <td>
             <button @click="$emit('view', tc)">查看</button>
-            <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="$emit('edit', tc)">编辑</button>
-            <button class="btn-danger" :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" :disabled="deleting" @click="$emit('delete', tc.id)">删除</button>
+            <template v-if="tc.status !== 'deprecated'">
+              <button :data-testid="`req-detail-btn-edit-test-case-${tc.id}`" @click="$emit('edit', tc)">编辑</button>
+              <button v-if="canDeprecate" :data-testid="`req-detail-btn-deprecate-test-case-${tc.id}`" :disabled="deprecating" @click="$emit('deprecate', tc.id)">废弃</button>
+              <button class="btn-danger" :data-testid="`req-detail-btn-delete-test-case-${tc.id}`" :disabled="deleting" @click="$emit('delete', tc.id)">删除</button>
+            </template>
           </td>
         </tr>
       </tbody>
@@ -71,6 +84,7 @@ interface TestCaseItem {
   expected_result?: string
   related_api?: string
   requirement_id?: number
+  status?: string
 }
 
 defineProps<{
@@ -79,17 +93,22 @@ defineProps<{
   executionMap: Record<number, { status: string; all_results?: any[] }>
   filter: string
   deleting?: boolean
+  deprecating?: boolean
+  canDeprecate?: boolean
+  showDeprecated?: boolean
 }>()
 
 const emit = defineEmits<{
   add: []
   'submit-review': []
   'update:filter': [value: string]
+  'update:showDeprecated': [value: boolean]
   change: []
   select: [tc: TestCaseItem]
   view: [tc: TestCaseItem]
   edit: [tc: TestCaseItem]
   delete: [id: number]
+  deprecate: [id: number]
 }>()
 
 function onFilterChange(value: string) {
@@ -132,6 +151,33 @@ function resultTagStyle(status: string) {
 .tc-no-result {
   color: var(--color-text-subtle);
   font-size: var(--text-sm);
+}
+.show-dep-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.tc-deprecated td {
+  opacity: 0.6;
+}
+.tc-deprecated .tc-title {
+  text-decoration: line-through;
+  color: var(--color-text-subtle);
+}
+.tc-dep-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  background: var(--intent-neutral-bg);
+  color: var(--color-text-subtle);
+  vertical-align: middle;
 }
 .spec-tag {
   display: inline-block;

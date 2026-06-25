@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import BusinessError, ERR_NOT_FOUND, ERR_REQUIREMENT_STATUS, ERR_VALIDATION
 from app.models import Requirement, RequirementLink
+from app.services import test_case as tc_svc
 
 
 async def supersede_requirement(
@@ -40,7 +41,11 @@ async def supersede_requirement(
     db.add(new_req)
     await db.flush()
 
+    prev_status = req.status
     req.status = "deprecated"
+    # 创建变更：旧需求若已过审（approved），其测试用例全部自动废弃；未过审则原样保留。
+    if prev_status == "approved":
+        await tc_svc.deprecate_test_cases_of_requirement(db, req.id)
 
     link = RequirementLink(
         source_id=req.id,

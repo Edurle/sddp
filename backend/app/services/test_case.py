@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions import (
@@ -20,11 +20,14 @@ async def list_test_cases(
     case_type: str | None = None,
     offset: int = 0,
     limit: int = 50,
+    include_deprecated: bool = False,
 ) -> dict:
     base_where = [
         TestCase.requirement_id == requirement_id,
         TestCase.is_deleted == False,
     ]
+    if not include_deprecated:
+        base_where.append(TestCase.status != "deprecated")
     if case_type:
         base_where.append(TestCase.case_type == case_type)
 
@@ -106,6 +109,8 @@ async def update_test_case(
     related_element: str | None = None,
 ) -> dict:
     tc = await _get_tc_or_fail(db, test_case_id)
+    if tc.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "已废弃的测试用例不可编辑")
 
     req_stmt = select(Requirement).where(Requirement.id == tc.requirement_id, Requirement.is_deleted == False)
     req_result = await db.execute(req_stmt)
@@ -152,6 +157,42 @@ async def delete_test_case(db: AsyncSession, test_case_id: int) -> dict:
     return {"id": tc.id}
 
 
+async def deprecate_test_cases_of_requirement(db: AsyncSession, requirement_id: int) -> int:
+    """把某需求所有 active 测试用例置 deprecated（批量）。
+
+    不提交事务，由调用方（需求废弃/创建变更流程）统一 commit。返回受影响行数。
+    """
+    stmt = (
+        update(TestCase)
+        .where(
+            TestCase.requirement_id == requirement_id,
+            TestCase.status == "active",
+            TestCase.is_deleted == False,
+        )
+        .values(status="deprecated")
+    )
+    result = await db.execute(stmt)
+    return result.rowcount or 0
+
+
+async def deprecate_test_case(db: AsyncSession, test_case_id: int) -> dict:
+    """手动废弃单条用例：仅当所属需求已过审（status==approved）时允许。"""
+    tc = await _get_tc_or_fail(db, test_case_id)
+    if tc.status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "测试用例已废弃")
+
+    req_stmt = select(Requirement).where(Requirement.id == tc.requirement_id, Requirement.is_deleted == False)
+    req_result = await db.execute(req_stmt)
+    req = req_result.scalar_one_or_none()
+    if req is None or req.status != "approved":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "仅已通过审核的用例可手动废弃")
+
+    tc.status = "deprecated"
+    await db.commit()
+    await db.refresh(tc)
+    return _tc_to_dict(tc)
+
+
 async def _get_tc_or_fail(db: AsyncSession, test_case_id: int) -> TestCase:
     stmt = select(TestCase).where(TestCase.id == test_case_id, TestCase.is_deleted == False)
     result = await db.execute(stmt)
@@ -173,5 +214,6 @@ def _tc_to_dict(tc: TestCase) -> dict:
         "expected_result": tc.expected_result,
         "related_api": tc.related_api,
         "related_element": tc.related_element,
+        "status": tc.status,
         "created_at": tc.created_at.isoformat() if tc.created_at else None,
     }

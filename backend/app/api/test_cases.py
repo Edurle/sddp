@@ -82,6 +82,17 @@ async def delete_test_case(
     return {"code": 0, "message": "success", "data": data}
 
 
+@router.post("/{id}/deprecate")
+async def deprecate_test_case(
+    id: int,
+    user: Annotated[dict, Depends(get_current_user)],
+    db=Depends(get_db_session),
+) -> dict:
+    await check_team_permission(db, user, await _team_id_from_test_case(db, id), "test_case:edit")
+    data = await tc_svc.deprecate_test_case(db, id)
+    return {"code": 0, "message": "success", "data": data}
+
+
 @router.get("/requirement/{requirement_id}/execution-results")
 async def get_test_case_execution_results(
     requirement_id: int,
@@ -94,6 +105,7 @@ async def get_test_case_execution_results(
     tc_stmt = select(TCModel).where(
         TCModel.requirement_id == requirement_id,
         TCModel.is_deleted == False,
+        TCModel.status != "deprecated",
     ).order_by(TCModel.id)
     tc_result = await db.execute(tc_stmt)
     test_cases = tc_result.scalars().all()

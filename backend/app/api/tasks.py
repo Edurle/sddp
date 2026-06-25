@@ -13,6 +13,18 @@ from app.services.test_execution import list_execution_rounds
 router = APIRouter()
 
 
+async def _reject_if_deprecated(db, test_case_id) -> None:
+    """废弃的测试用例不可再执行。"""
+    if test_case_id is None:
+        return
+    from app.models import TestCase
+    status = (
+        await db.execute(select(TestCase.status).where(TestCase.id == test_case_id))
+    ).scalar_one_or_none()
+    if status == "deprecated":
+        raise BusinessError(ERR_REQUIREMENT_STATUS, "已废弃的测试用例不可再执行")
+
+
 class DirectCreateTaskRequest(BaseModel):
     title: str
     description: str | None = None
@@ -112,6 +124,7 @@ async def create_test_record(
     status = body.get("status", "pending")
     actual_result = body.get("actual_result")
     failure_reason = body.get("failure_reason")
+    await _reject_if_deprecated(db, test_case_id)
 
     existing_stmt = select(TestExecutionRecord).where(
         TestExecutionRecord.round_id == latest_round.id,
@@ -162,6 +175,7 @@ async def create_test_round(
     status = body.get("status", "pending")
     actual_result = body.get("actual_result")
     failure_reason = body.get("failure_reason")
+    await _reject_if_deprecated(db, test_case_id)
 
     rec = TestExecutionRecord(
         round_id=round_.id,

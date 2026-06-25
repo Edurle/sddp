@@ -49,14 +49,19 @@
           :execution-map="tcExecutionMap"
           :filter="testCaseTypeFilter"
           :deleting="isPending('deleteTestCase')"
+          :deprecating="isPending('deprecateTestCase')"
+          :can-deprecate="req?.status === 'approved'"
+          :show-deprecated="showDeprecatedTestCases"
           @add="showTestCaseDialog = true"
           @submit-review="openSubmitTestsReviewDialog"
           @update:filter="testCaseTypeFilter = $event"
+          @update:show-deprecated="showDeprecatedTestCases = $event; fetchTestCases()"
           @change="fetchTestCases"
           @select="viewTestCase = $event"
           @view="openTestCaseDetail"
           @edit="openEditTestCase"
           @delete="deleteTestCase"
+          @deprecate="deprecateTestCase"
         />
 
         <RequirementReviewHistoryTab v-if="activeTab === 'review-history'" :review-comments="reviewComments" />
@@ -424,6 +429,7 @@ const specVersions = ref<SpecVersion[]>([])
 const tasks = ref<TaskItem[]>([])
 const testCases = ref<TestCaseItem[]>([])
 const testCaseTypeFilter = ref('')
+const showDeprecatedTestCases = ref(false)
 const editingTestCase = ref<TestCaseItem | null>(null)
 const tcExecutionMap = ref<Record<number, { status: string; all_results: Array<{ status: string; actual_result?: string; failure_reason?: string; duration_ms?: number; executed_at?: string }> }>>({})
 const testCaseForm = reactive({
@@ -744,6 +750,7 @@ async function fetchTestCases() {
   try {
     const params: Record<string, unknown> = {}
     if (testCaseTypeFilter.value) params.case_type = testCaseTypeFilter.value
+    if (showDeprecatedTestCases.value) params.include_deprecated = true
     const res = await apiClient.get(`/api/v1/requirements/${reqId.value}/test-cases`, { params })
     const data = res.data?.data
     testCases.value = data?.items || data?.list || data || []
@@ -843,6 +850,18 @@ async function deleteTestCase(tcId: number) {
       await fetchTestCases()
     } catch (e: any) {
       notification.showError(e?.response?.data?.message || e?.message || '删除失败')
+    }
+  })
+}
+
+async function deprecateTestCase(tcId: number) {
+  await run('deprecateTestCase', async () => {
+    if (!(await confirm({ title: '废弃测试用例', message: '确定要废弃此测试用例吗？废弃后将不计入覆盖率、不可再执行，且无法恢复。', danger: true, confirmText: '废弃' }))) return
+    try {
+      await apiClient.post(`/api/v1/test-cases/${tcId}/deprecate`)
+      await fetchTestCases()
+    } catch (e: any) {
+      notification.showError(e?.response?.data?.message || e?.message || '废弃失败')
     }
   })
 }

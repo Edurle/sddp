@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.exceptions import (
     ERR_FAILURE_REASON_REQUIRED,
     ERR_NOT_FOUND,
+    ERR_REQUIREMENT_STATUS,
     BusinessError,
 )
 from app.models import TestCase, TestExecutionRecord, TestExecutionRound
@@ -112,6 +113,13 @@ async def batch_update_records(
     round_result = await db.execute(round_stmt)
     if round_result.scalar_one_or_none() is None:
         raise BusinessError(ERR_NOT_FOUND, "执行轮次不存在")
+
+    # 废弃用例不可再执行
+    tc_ids = [item.test_case_id for item in records]
+    if tc_ids:
+        dep_stmt = select(TestCase.id).where(TestCase.id.in_(tc_ids), TestCase.status == "deprecated")
+        if (await db.execute(dep_stmt)).first() is not None:
+            raise BusinessError(ERR_REQUIREMENT_STATUS, "已废弃的测试用例不可再执行")
 
     updated = []
     for item in records:

@@ -333,6 +333,9 @@ async def patch_requirement(
         if body.status not in allowed:
             raise BusinessError(ERR_REQUIREMENT_STATUS, f"不允许从 {req.status} 转换到 {body.status}")
         req.status = body.status
+        # 直接废弃需求（仅能从 approved 转入）→ 其测试用例必然已过审，全部自动废弃。
+        if body.status == "deprecated":
+            await tc_svc.deprecate_test_cases_of_requirement(db, id)
 
     if body.title is not None:
         req.title = body.title
@@ -657,9 +660,12 @@ async def list_test_cases(
     case_type: str | None = Query(default=None),
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1),
+    include_deprecated: bool = Query(default=False),
 ) -> dict:
     offset, limit = _clamp_pagination(offset, limit)
-    data = await tc_svc.list_test_cases(db, reqId, case_type=case_type, offset=offset, limit=limit)
+    data = await tc_svc.list_test_cases(
+        db, reqId, case_type=case_type, offset=offset, limit=limit, include_deprecated=include_deprecated
+    )
     return {"code": 0, "message": "success", "data": data}
 
 

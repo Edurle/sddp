@@ -25,6 +25,7 @@ async def get_requirement_test_statistics(db: AsyncSession, requirement_id: int)
     tc_stmt = select(TestCase).where(
         TestCase.requirement_id == requirement_id,
         TestCase.is_deleted == False,
+        TestCase.status != "deprecated",
     )
     tc_result = await db.execute(tc_stmt)
     test_cases = tc_result.scalars().all()

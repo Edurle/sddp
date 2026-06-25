@@ -13,6 +13,7 @@ class TestCase(Base):
     __table_args__ = (
         Index("idx_tc_req", "requirement_id"),
         Index("idx_tc_type", "case_type"),
+        Index("idx_tc_status", "status"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -28,6 +29,7 @@ class TestCase(Base):
     expected_result: Mapped[str] = mapped_column(Text, nullable=False)
     related_api: Mapped[str | None] = mapped_column(String(500), default=None)
     related_element: Mapped[str | None] = mapped_column(String(200), default=None)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")  # active | deprecated
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
