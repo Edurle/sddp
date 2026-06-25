@@ -54,6 +54,15 @@ class TestTestCasesDelete:
         mock_client.delete.assert_called_with("/test-cases/1")
 
 
+class TestTestCasesDeprecate:
+    def test_deprecate(self, runner: CliRunner, mock_client: MagicMock) -> None:
+        mock_client.post.return_value = {"id": 1, "status": "deprecated"}
+        with patch("sdd_cli.test_cases.get_client", return_value=mock_client):
+            result = runner.invoke(app, ["test-cases", "deprecate", "1"])
+        assert result.exit_code == 0
+        mock_client.post.assert_called_with("/test-cases/1/deprecate")
+
+
 class TestTestCasesSetField:
     def test_set_field_steps(
         self, runner: CliRunner, mock_client: MagicMock, tmp_path

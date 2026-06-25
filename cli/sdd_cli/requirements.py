@@ -318,12 +318,15 @@ def list_test_cases(
     case_type: Optional[str] = typer.Option(None, "--case-type"),
     offset: int = typer.Option(0, "--offset"),
     limit: int = typer.Option(50, "--limit", "-l"),
+    include_deprecated: bool = typer.Option(False, "--include-deprecated"),
 ) -> None:
     try:
         client = get_client()
         params: dict = {"offset": offset, "limit": limit}
         if case_type:
             params["case_type"] = case_type
+        if include_deprecated:
+            params["include_deprecated"] = True
         data = client.get(f"/requirements/{id}/test-cases", params=params)
         print_response(data)
     except APIError as e:

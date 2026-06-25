@@ -226,6 +226,14 @@ class TestRequirementsTestCases:
             result = runner.invoke(app, ["requirements", "test-cases", "1"])
         assert result.exit_code == 0
 
+    def test_list_include_deprecated(self, runner: CliRunner, mock_client: MagicMock) -> None:
+        mock_client.get.return_value = {"items": [], "total": 0, "offset": 0, "limit": 50, "has_more": False}
+        with patch("sdd_cli.requirements.get_client", return_value=mock_client):
+            result = runner.invoke(app, ["requirements", "test-cases", "1", "--include-deprecated"])
+        assert result.exit_code == 0
+        params = mock_client.get.call_args[1]["params"]
+        assert params["include_deprecated"] is True
+
     def test_create(self, runner: CliRunner, mock_client: MagicMock) -> None:
         mock_client.post.return_value = {"id": 2, "title": "TC New"}
         with patch("sdd_cli.requirements.get_client", return_value=mock_client):

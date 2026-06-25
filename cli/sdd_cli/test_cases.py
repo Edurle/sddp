@@ -121,6 +121,18 @@ def delete_test_case(id: int) -> None:
         raise typer.Exit(code=1)
 
 
+@app.command("deprecate")
+def deprecate_test_case(id: int) -> None:
+    """废弃测试用例（仅所属需求已过审时可用，不可恢复）。"""
+    try:
+        client = get_client()
+        data = client.post(f"/test-cases/{id}/deprecate")
+        print_response(data)
+    except APIError as e:
+        typer.echo(f"Error: {e.message}", err=True)
+        raise typer.Exit(code=1)
+
+
 @app.command("execution-results")
 def execution_results(
     requirement_id: int = typer.Option(..., "--requirement", "-r"),
