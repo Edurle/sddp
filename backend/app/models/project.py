@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, String, func
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -14,8 +14,8 @@ class Project(Base):
         Index("idx_proj_team", "team_id"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    team_id: Mapped[int] = mapped_column(ForeignKey("teams.id"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    team_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("teams.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(String, default=None)
     start_date: Mapped[date | None] = mapped_column(Date, default=None)

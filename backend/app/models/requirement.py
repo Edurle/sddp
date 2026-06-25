@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,8 +18,8 @@ class Requirement(Base):
         Index("idx_req_creator", "created_by"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    iteration_id: Mapped[int] = mapped_column(ForeignKey("iterations.id"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    iteration_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("iterations.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     req_type: Mapped[str] = mapped_column(
         String(20),
@@ -34,7 +34,7 @@ class Requirement(Base):
     description: Mapped[str | None] = mapped_column(Text, default=None)
     type_detail: Mapped[dict | None] = mapped_column(JSONB, default=None)
     prototype_html: Mapped[str | None] = mapped_column(Text, default=None)
-    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,13 +16,13 @@ class RequirementReview(Base):
         Index("idx_reviewer", "reviewer_id"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    requirement_id: Mapped[int] = mapped_column(ForeignKey("requirements.id"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    requirement_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("requirements.id"), nullable=False)
     review_type: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
     )
-    reviewer_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    reviewer_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

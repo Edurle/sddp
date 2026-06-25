@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,17 +18,17 @@ class Task(Base):
         Index("idx_task_creator", "created_by"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    requirement_id: Mapped[int] = mapped_column(ForeignKey("requirements.id"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    requirement_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("requirements.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, default=None)
-    assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
+    assignee_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), default=None)
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
         default="pending",
     )
-    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
     git_branch: Mapped[str | None] = mapped_column(String(255), default=None)
     commit_sha: Mapped[str | None] = mapped_column(String(40), default=None)
     task_type: Mapped[str | None] = mapped_column(String(20), default=None)

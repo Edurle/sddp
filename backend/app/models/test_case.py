@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -15,8 +15,8 @@ class TestCase(Base):
         Index("idx_tc_type", "case_type"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    requirement_id: Mapped[int] = mapped_column(ForeignKey("requirements.id"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    requirement_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("requirements.id"), nullable=False)
     case_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     case_type: Mapped[str] = mapped_column(
